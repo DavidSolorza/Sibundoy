@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { MapPin, Phone, Sprout, Wheat, Navigation, X, User, Clock, Route } from "lucide-react";
@@ -23,11 +23,17 @@ function FitBounds({ asociadas }) {
   return null;
 }
 
-function RouteLayer({ origin, destination, onInfo }) {
+function RouteLayer({ destination, origin, onInfo }) {
   const map = useMap();
+  const lineRef = useRef(null);
+  const fetchedKey = useRef(null);
 
   useEffect(() => {
     if (!destination) return;
+
+    const key = `${destination.lat.toFixed(5)}-${destination.lng.toFixed(5)}`;
+    if (fetchedKey.current === key) return;
+    fetchedKey.current = key;
 
     let active = true;
 
@@ -44,32 +50,36 @@ function RouteLayer({ origin, destination, onInfo }) {
           const route = data.routes[0];
           const coordsGeo = route.geometry.coordinates.map((c) => [c[1], c[0]]);
 
-          const routeLine = L.polyline(coordsGeo, {
+          if (lineRef.current) map.removeLayer(lineRef.current);
+
+          lineRef.current = L.polyline(coordsGeo, {
             color: "#3b82f6",
             weight: 5,
             opacity: 0.85,
           }).addTo(map);
 
-          map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
+          map.fitBounds(lineRef.current.getBounds(), { padding: [60, 60] });
 
-          onInfo({
-            distance: (route.distance / 1000).toFixed(1),
-            duration: Math.round(route.duration / 60),
-          });
-
-          return () => {
-            map.removeLayer(routeLine);
-          };
+          if (active) {
+            onInfo({
+              distance: (route.distance / 1000).toFixed(1),
+              duration: Math.round(route.duration / 60),
+            });
+          }
         }
       } catch {
-        if (active) onInfo(null);
+        /* ignore */
       }
     }
 
-    const cleanup = fetchRoute();
+    fetchRoute();
+
     return () => {
       active = false;
-      cleanup?.then((fn) => fn?.());
+      if (lineRef.current) {
+        map.removeLayer(lineRef.current);
+        lineRef.current = null;
+      }
     };
   }, [destination, origin, map, onInfo]);
 
@@ -120,6 +130,7 @@ function Mapa({ filteredAsociadas }) {
   const items = filteredAsociadas || all;
   const [routeDest, setRouteDest] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [origin, setOrigin] = useState({ lat: 1.2035, lng: -76.9201 });
 
   useEffect(() => {
@@ -131,14 +142,28 @@ function Mapa({ filteredAsociadas }) {
     }
   }, []);
 
+  const destination = useMemo(
+    () => (routeDest ? { lat: routeDest[0], lng: routeDest[1] } : null),
+    [routeDest]
+  );
+
   const handleRoute = useCallback((dest) => {
-    setRouteDest(dest);
+    setRouteDest((prev) => {
+      if (prev && prev[0] === dest[0] && prev[1] === dest[1]) return null;
+      return dest;
+    });
     setRouteInfo(null);
+    setLoading(true);
   }, []);
 
   const handleCloseRoute = useCallback(() => {
     setRouteDest(null);
     setRouteInfo(null);
+  }, []);
+
+  const handleInfo = useCallback((info) => {
+    setRouteInfo(info);
+    setLoading(false);
   }, []);
 
   return (
@@ -152,15 +177,20 @@ function Mapa({ filteredAsociadas }) {
             <X className="h-3.5 w-3.5" />
             Cerrar ruta
           </button>
+          {loading && !routeInfo && (
+            <div className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs shadow-md border border-gray-200 text-gray-500">
+              Calculando ruta...
+            </div>
+          )}
           {routeInfo && (
             <div className="inline-flex items-center gap-3 rounded-lg bg-white px-4 py-2 text-xs shadow-md border border-gray-200">
-              <span className="flex items-center gap-1 text-gray-600">
-                <Route className="h-3.5 w-3.5 text-blue-500" />
+              <span className="flex items-center gap-1.5 text-gray-600">
+                <Route className="h-4 w-4 text-blue-500" />
                 {routeInfo.distance} km
               </span>
               <span className="text-gray-300">|</span>
-              <span className="flex items-center gap-1 text-gray-600">
-                <Clock className="h-3.5 w-3.5 text-blue-500" />
+              <span className="flex items-center gap-1.5 text-gray-600">
+                <Clock className="h-4 w-4 text-blue-500" />
                 {routeInfo.duration} min
               </span>
             </div>
@@ -184,11 +214,12 @@ function Mapa({ filteredAsociadas }) {
             </Popup>
           </Marker>
         ))}
-        {routeDest && (
+        {routeDest && destination && (
           <RouteLayer
+            key={`${routeDest[0]}-${routeDest[1]}`}
+            destination={destination}
             origin={origin}
-            destination={{ lat: routeDest[0], lng: routeDest[1] }}
-            onInfo={setRouteInfo}
+            onInfo={handleInfo}
           />
         )}
       </MapContainer>
