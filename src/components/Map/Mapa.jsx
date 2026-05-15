@@ -26,6 +26,7 @@ function FitBounds({ asociadas }) {
 function RouteLayer({ destination, origin, onInfo }) {
   const map = useMap();
   const lineRef = useRef(null);
+  const straightRef = useRef(null);
   const fetchedKey = useRef(null);
 
   useEffect(() => {
@@ -34,6 +35,22 @@ function RouteLayer({ destination, origin, onInfo }) {
     const key = `${destination.lat.toFixed(5)}-${destination.lng.toFixed(5)}`;
     if (fetchedKey.current === key) return;
     fetchedKey.current = key;
+
+    const straight = L.polyline(
+      [
+        [origin.lat, origin.lng],
+        [destination.lat, destination.lng],
+      ],
+      {
+        color: "#3b82f6",
+        weight: 3,
+        opacity: 0.4,
+        dashArray: "8, 10",
+      }
+    ).addTo(map);
+    straightRef.current = straight;
+
+    map.fitBounds(straight.getBounds(), { padding: [60, 60] });
 
     let active = true;
 
@@ -50,15 +67,16 @@ function RouteLayer({ destination, origin, onInfo }) {
           const route = data.routes[0];
           const coordsGeo = route.geometry.coordinates.map((c) => [c[1], c[0]]);
 
-          if (lineRef.current) map.removeLayer(lineRef.current);
+          if (straightRef.current) {
+            map.removeLayer(straightRef.current);
+            straightRef.current = null;
+          }
 
           lineRef.current = L.polyline(coordsGeo, {
             color: "#3b82f6",
             weight: 5,
             opacity: 0.85,
           }).addTo(map);
-
-          map.fitBounds(lineRef.current.getBounds(), { padding: [60, 60] });
 
           if (active) {
             onInfo({
@@ -68,7 +86,7 @@ function RouteLayer({ destination, origin, onInfo }) {
           }
         }
       } catch {
-        /* ignore */
+        /* OSRM unavailable, keep straight line */
       }
     }
 
@@ -76,10 +94,8 @@ function RouteLayer({ destination, origin, onInfo }) {
 
     return () => {
       active = false;
-      if (lineRef.current) {
-        map.removeLayer(lineRef.current);
-        lineRef.current = null;
-      }
+      if (straightRef.current) map.removeLayer(straightRef.current);
+      if (lineRef.current) map.removeLayer(lineRef.current);
     };
   }, [destination, origin, map, onInfo]);
 
@@ -88,26 +104,26 @@ function RouteLayer({ destination, origin, onInfo }) {
 
 function PopupContent({ asociada: a, onRoute }) {
   return (
-    <div className="text-sm leading-relaxed min-w-[200px]">
+    <div className="text-sm leading-relaxed min-w-[180px] max-w-[220px]">
       <p className="font-semibold text-base mb-2 flex items-center gap-1.5">
-        <User className="h-4 w-4 text-blue-600" />
-        {a.nombre}
+        <User className="h-4 w-4 text-blue-600 shrink-0" />
+        <span className="truncate">{a.nombre}</span>
       </p>
       <div className="space-y-1 text-gray-600 mb-3">
         <p className="flex items-center gap-1.5">
-          <MapPin className="h-3.5 w-3.5 text-gray-400" />
+          <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
           <span className="text-gray-400">Sector:</span> {a.sector}
         </p>
         <p className="flex items-center gap-1.5">
-          <Phone className="h-3.5 w-3.5 text-gray-400" />
+          <Phone className="h-3.5 w-3.5 text-gray-400 shrink-0" />
           <span className="text-gray-400">Tel:</span> {a.telefono}
         </p>
         <p className="flex items-center gap-1.5">
-          <Sprout className="h-3.5 w-3.5 text-gray-400" />
+          <Sprout className="h-3.5 w-3.5 text-gray-400 shrink-0" />
           <span className="text-gray-400">Huerta:</span> {a.areaHuerta}
         </p>
         <p className="flex items-center gap-1.5">
-          <Wheat className="h-3.5 w-3.5 text-gray-400" />
+          <Wheat className="h-3.5 w-3.5 text-gray-400 shrink-0" />
           <span className="text-gray-400">Productos:</span> {a.productos}
         </p>
       </div>
@@ -116,7 +132,7 @@ function PopupContent({ asociada: a, onRoute }) {
           e.stopPropagation();
           onRoute([a.lat, a.lng]);
         }}
-        className="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white transition-colors duration-200 hover:bg-blue-700"
+        className="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white transition-colors duration-200 hover:bg-blue-700 active:bg-blue-800"
       >
         <Navigation className="h-3.5 w-3.5" />
         C\u00f3mo llegar
@@ -167,28 +183,28 @@ function Mapa({ filteredAsociadas }) {
   }, []);
 
   return (
-    <div className="relative h-[600px] w-full rounded-xl overflow-hidden shadow-sm border border-gray-200">
+    <div className="relative h-[calc(100dvh-8rem)] min-h-[400px] w-full rounded-xl overflow-hidden shadow-sm border border-gray-200 lg:h-[600px]">
       {routeDest && (
-        <div className="absolute top-3 left-3 z-[1000] flex gap-2">
+        <div className="absolute top-3 left-3 right-3 z-[1000] flex flex-wrap gap-2">
           <button
             onClick={handleCloseRoute}
-            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-md border border-gray-200 transition-colors duration-200 hover:bg-gray-50"
+            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-md border border-gray-200 transition-colors duration-200 hover:bg-gray-50 active:bg-gray-100"
           >
             <X className="h-3.5 w-3.5" />
             Cerrar ruta
           </button>
           {loading && !routeInfo && (
-            <div className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-xs shadow-md border border-gray-200 text-gray-500">
+            <div className="inline-flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-xs shadow-md border border-gray-200 text-gray-500 backdrop-blur-sm">
               Calculando ruta...
             </div>
           )}
           {routeInfo && (
-            <div className="inline-flex items-center gap-3 rounded-lg bg-white px-4 py-2 text-xs shadow-md border border-gray-200">
+            <div className="inline-flex items-center gap-3 rounded-lg bg-white/90 px-3 py-2 text-xs shadow-md border border-gray-200 backdrop-blur-sm">
               <span className="flex items-center gap-1.5 text-gray-600">
                 <Route className="h-4 w-4 text-blue-500" />
                 {routeInfo.distance} km
               </span>
-              <span className="text-gray-300">|</span>
+              <span className="text-gray-300 hidden sm:inline">|</span>
               <span className="flex items-center gap-1.5 text-gray-600">
                 <Clock className="h-4 w-4 text-blue-500" />
                 {routeInfo.duration} min

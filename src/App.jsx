@@ -10,9 +10,9 @@ import AdminPage from "./pages/AdminPage";
 function App() {
   return (
     <BrowserRouter>
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 lg:flex">
         <Navbar />
-        <main className="flex-1 overflow-auto px-8 py-8">
+        <main className="flex-1 overflow-auto px-4 pb-20 pt-16 lg:px-8 lg:py-8">
           <Routes>
             <Route path="/" element={<MapaPage />} />
             <Route path="/tabla" element={<TablaPage />} />
