@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
-import { MapPin, Phone, Sprout, Wheat, Navigation, X, User } from "lucide-react";
+import { MapPin, Phone, Sprout, Wheat, Navigation, X, User, Clock, Route } from "lucide-react";
 import "leaflet/dist/leaflet.css";
-import "leaflet-routing-machine";
 import useAsociadas from "../../hooks/useAsociadas";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -24,39 +23,55 @@ function FitBounds({ asociadas }) {
   return null;
 }
 
-function Routing({ destination }) {
+function RouteLayer({ origin, destination, onInfo }) {
   const map = useMap();
 
   useEffect(() => {
     if (!destination) return;
 
-    const defaultStart = L.latLng(1.2035, -76.9201);
-    const dest = L.latLng(destination[0], destination[1]);
+    let active = true;
 
-    const control = L.Routing.control({
-      waypoints: [defaultStart, dest],
-      routeWhileDragging: true,
-      fitSelectedRoutes: true,
-      showAlternatives: false,
-      lineOptions: {
-        styles: [{ color: "#3b82f6", weight: 5, opacity: 0.8 }],
-      },
-    }).addTo(map);
+    async function fetchRoute() {
+      const coords = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
+      const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false&alternatives=false`;
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          control.setWaypoints([
-            L.latLng(pos.coords.latitude, pos.coords.longitude),
-            dest,
-          ]);
-        },
-        () => {}
-      );
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!active) return;
+
+        if (data.code === "Ok" && data.routes.length > 0) {
+          const route = data.routes[0];
+          const coordsGeo = route.geometry.coordinates.map((c) => [c[1], c[0]]);
+
+          const routeLine = L.polyline(coordsGeo, {
+            color: "#3b82f6",
+            weight: 5,
+            opacity: 0.85,
+          }).addTo(map);
+
+          map.fitBounds(routeLine.getBounds(), { padding: [60, 60] });
+
+          onInfo({
+            distance: (route.distance / 1000).toFixed(1),
+            duration: Math.round(route.duration / 60),
+          });
+
+          return () => {
+            map.removeLayer(routeLine);
+          };
+        }
+      } catch {
+        if (active) onInfo(null);
+      }
     }
 
-    return () => map.removeControl(control);
-  }, [destination, map]);
+    const cleanup = fetchRoute();
+    return () => {
+      active = false;
+      cleanup?.then((fn) => fn?.());
+    };
+  }, [destination, origin, map, onInfo]);
 
   return null;
 }
@@ -104,17 +119,53 @@ function Mapa({ filteredAsociadas }) {
   const { asociadas: all } = useAsociadas();
   const items = filteredAsociadas || all;
   const [routeDest, setRouteDest] = useState(null);
+  const [routeInfo, setRouteInfo] = useState(null);
+  const [origin, setOrigin] = useState({ lat: 1.2035, lng: -76.9201 });
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => {}
+      );
+    }
+  }, []);
+
+  const handleRoute = useCallback((dest) => {
+    setRouteDest(dest);
+    setRouteInfo(null);
+  }, []);
+
+  const handleCloseRoute = useCallback(() => {
+    setRouteDest(null);
+    setRouteInfo(null);
+  }, []);
 
   return (
-    <div className="relative h-[500px] w-full rounded-xl overflow-hidden shadow-sm border border-gray-200">
+    <div className="relative h-[600px] w-full rounded-xl overflow-hidden shadow-sm border border-gray-200">
       {routeDest && (
-        <button
-          onClick={() => setRouteDest(null)}
-          className="absolute top-3 right-3 z-[1000] cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-md border border-gray-200 transition-colors duration-200 hover:bg-gray-50"
-        >
-          <X className="h-3.5 w-3.5" />
-          Cerrar ruta
-        </button>
+        <div className="absolute top-3 left-3 z-[1000] flex gap-2">
+          <button
+            onClick={handleCloseRoute}
+            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-md border border-gray-200 transition-colors duration-200 hover:bg-gray-50"
+          >
+            <X className="h-3.5 w-3.5" />
+            Cerrar ruta
+          </button>
+          {routeInfo && (
+            <div className="inline-flex items-center gap-3 rounded-lg bg-white px-4 py-2 text-xs shadow-md border border-gray-200">
+              <span className="flex items-center gap-1 text-gray-600">
+                <Route className="h-3.5 w-3.5 text-blue-500" />
+                {routeInfo.distance} km
+              </span>
+              <span className="text-gray-300">|</span>
+              <span className="flex items-center gap-1 text-gray-600">
+                <Clock className="h-3.5 w-3.5 text-blue-500" />
+                {routeInfo.duration} min
+              </span>
+            </div>
+          )}
+        </div>
       )}
       <MapContainer
         center={[1.2035, -76.9201]}
@@ -129,11 +180,17 @@ function Mapa({ filteredAsociadas }) {
         {items.map((a) => (
           <Marker key={a.id} position={[a.lat, a.lng]}>
             <Popup>
-              <PopupContent asociada={a} onRoute={setRouteDest} />
+              <PopupContent asociada={a} onRoute={handleRoute} />
             </Popup>
           </Marker>
         ))}
-        {routeDest && <Routing destination={routeDest} />}
+        {routeDest && (
+          <RouteLayer
+            origin={origin}
+            destination={{ lat: routeDest[0], lng: routeDest[1] }}
+            onInfo={setRouteInfo}
+          />
+        )}
       </MapContainer>
     </div>
   );
