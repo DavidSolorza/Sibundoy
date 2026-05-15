@@ -12,6 +12,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function FitBounds({ asociadas }) {
   const map = useMap();
   useEffect(() => {
@@ -52,15 +64,29 @@ function RouteLayer({ destination, origin, onInfo }) {
 
     map.fitBounds(straight.getBounds(), { padding: [60, 60] });
 
+    const distKm = haversineKm(origin.lat, origin.lng, destination.lat, destination.lng);
+    const walkingMin = Math.round((distKm / 5) * 60);
+    const drivingMin = Math.round(distKm * 2);
+
+    onInfo({
+      distance: distKm.toFixed(1),
+      duration: Math.min(walkingMin, drivingMin),
+      approximate: true,
+    });
+
     let active = true;
 
     async function fetchRoute() {
       const coords = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
       const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false&alternatives=false`;
 
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 6000);
+
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: controller.signal });
         const data = await res.json();
+        clearTimeout(timeout);
         if (!active) return;
 
         if (data.code === "Ok" && data.routes.length > 0) {
@@ -82,11 +108,12 @@ function RouteLayer({ destination, origin, onInfo }) {
             onInfo({
               distance: (route.distance / 1000).toFixed(1),
               duration: Math.round(route.duration / 60),
+              approximate: false,
             });
           }
         }
       } catch {
-        /* OSRM unavailable, keep straight line */
+        clearTimeout(timeout);
       }
     }
 
@@ -146,7 +173,6 @@ function Mapa({ filteredAsociadas }) {
   const items = filteredAsociadas || all;
   const [routeDest, setRouteDest] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [origin, setOrigin] = useState({ lat: 1.2035, lng: -76.9201 });
 
   useEffect(() => {
@@ -169,7 +195,6 @@ function Mapa({ filteredAsociadas }) {
       return dest;
     });
     setRouteInfo(null);
-    setLoading(true);
   }, []);
 
   const handleCloseRoute = useCallback(() => {
@@ -177,10 +202,7 @@ function Mapa({ filteredAsociadas }) {
     setRouteInfo(null);
   }, []);
 
-  const handleInfo = useCallback((info) => {
-    setRouteInfo(info);
-    setLoading(false);
-  }, []);
+  const handleInfo = useCallback((info) => setRouteInfo(info), []);
 
   return (
     <div className="relative h-[calc(100dvh-8rem)] min-h-[400px] w-full rounded-xl overflow-hidden shadow-sm border border-gray-200 lg:h-[600px]">
@@ -193,11 +215,6 @@ function Mapa({ filteredAsociadas }) {
             <X className="h-3.5 w-3.5" />
             Cerrar ruta
           </button>
-          {loading && !routeInfo && (
-            <div className="inline-flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 text-xs shadow-md border border-gray-200 text-gray-500 backdrop-blur-sm">
-              Calculando ruta...
-            </div>
-          )}
           {routeInfo && (
             <div className="inline-flex items-center gap-3 rounded-lg bg-white/90 px-3 py-2 text-xs shadow-md border border-gray-200 backdrop-blur-sm">
               <span className="flex items-center gap-1.5 text-gray-600">
@@ -209,6 +226,11 @@ function Mapa({ filteredAsociadas }) {
                 <Clock className="h-4 w-4 text-blue-500" />
                 {routeInfo.duration} min
               </span>
+              {routeInfo.approximate && (
+                <span className="text-amber-500 text-[10px] font-medium ml-1">
+                  (estimado)
+                </span>
+              )}
             </div>
           )}
         </div>
