@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet";
 import L from "leaflet";
-import { MapPin, Phone, Sprout, Wheat, Navigation, X, User, Clock, Route } from "lucide-react";
+import { MapPin, Phone, Sprout, Wheat, Navigation, X, User, Clock, Route, Loader } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import useAsociadas from "../../hooks/useAsociadas";
 
@@ -29,35 +29,33 @@ function FitBounds({ puntos }) {
   useEffect(() => {
     if (puntos.length > 0) {
       const bounds = L.latLngBounds(puntos);
-      map.fitBounds(bounds, { padding: [50, 50] });
+      map.fitBounds(bounds, { padding: [60, 60] });
     }
   }, [puntos, map]);
   return null;
 }
 
 function RouteLayer({ destination, origin, onInfo }) {
-  const [coords, setCoords] = useState([]);
-  const [isApprox, setIsApprox] = useState(false);
+  const straightLine = [
+    [origin.lat, origin.lng],
+    [destination.lat, destination.lng],
+  ];
+
+  const [coords, setCoords] = useState(straightLine);
+  const [isApprox, setIsApprox] = useState(true);
   const fetched = useRef(null);
+
+  const distKm = haversineKm(origin.lat, origin.lng, destination.lat, destination.lng);
 
   useEffect(() => {
     const key = `${destination.lat.toFixed(5)}-${destination.lng.toFixed(5)}`;
     if (fetched.current === key) return;
     fetched.current = key;
 
-    const straight = [
-      [origin.lat, origin.lng],
-      [destination.lat, destination.lng],
-    ];
-    setCoords(straight);
-    setIsApprox(true);
-
-    const distKm = haversineKm(origin.lat, origin.lng, destination.lat, destination.lng);
-    const tMin = Math.round(distKm * 2);
-    onInfo({ distance: distKm.toFixed(1), duration: tMin, approximate: true });
+    onInfo({ distance: distKm.toFixed(1), duration: Math.round(distKm * 2), approximate: true });
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000);
+    const timer = setTimeout(() => controller.abort(), 4000);
 
     fetch(
       `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&steps=false&alternatives=false`,
@@ -78,9 +76,7 @@ function RouteLayer({ destination, origin, onInfo }) {
         }
       })
       .catch(() => clearTimeout(timer));
-  }, [destination, origin, onInfo]);
-
-  if (coords.length === 0) return null;
+  }, [destination, origin, onInfo, distKm]);
 
   return (
     <>
@@ -193,9 +189,14 @@ function Mapa({ filteredAsociadas }) {
                 <Clock className="h-4 w-4 text-blue-500" />
                 {routeInfo.duration} min
               </span>
-              {routeInfo.approximate && (
-                <span className="text-amber-500 text-[10px] font-medium ml-1">
-                  (estimado)
+              {routeInfo.approximate ? (
+                <span className="flex items-center gap-1 text-amber-500 text-[10px] font-medium ml-1 animate-pulse">
+                  <Loader className="h-3 w-3 animate-spin" />
+                  optimizando...
+                </span>
+              ) : (
+                <span className="text-emerald-500 text-[10px] font-medium ml-1">
+                  ruta real
                 </span>
               )}
             </div>
