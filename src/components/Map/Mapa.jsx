@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from "react-leaflet";
 import L from "leaflet";
 import { MapPin, Phone, Sprout, Wheat, Navigation, X, User, Clock, Route } from "lucide-react";
 import "leaflet/dist/leaflet.css";
@@ -24,109 +24,78 @@ function haversineKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function FitBounds({ asociadas }) {
+function FitBounds({ puntos }) {
   const map = useMap();
   useEffect(() => {
-    if (asociadas.length > 0) {
-      const bounds = L.latLngBounds(asociadas.map((a) => [a.lat, a.lng]));
+    if (puntos.length > 0) {
+      const bounds = L.latLngBounds(puntos);
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [asociadas, map]);
+  }, [puntos, map]);
   return null;
 }
 
 function RouteLayer({ destination, origin, onInfo }) {
-  const map = useMap();
-  const lineRef = useRef(null);
-  const straightRef = useRef(null);
-  const fetchedKey = useRef(null);
+  const [coords, setCoords] = useState([]);
+  const [isApprox, setIsApprox] = useState(false);
+  const fetched = useRef(null);
 
   useEffect(() => {
-    if (!destination) return;
-
     const key = `${destination.lat.toFixed(5)}-${destination.lng.toFixed(5)}`;
-    if (fetchedKey.current === key) return;
-    fetchedKey.current = key;
+    if (fetched.current === key) return;
+    fetched.current = key;
 
-    const straight = L.polyline(
-      [
-        [origin.lat, origin.lng],
-        [destination.lat, destination.lng],
-      ],
-      {
-        color: "#3b82f6",
-        weight: 3,
-        opacity: 0.4,
-        dashArray: "8, 10",
-      }
-    ).addTo(map);
-    straightRef.current = straight;
-
-    map.fitBounds(straight.getBounds(), { padding: [60, 60] });
+    const straight = [
+      [origin.lat, origin.lng],
+      [destination.lat, destination.lng],
+    ];
+    setCoords(straight);
+    setIsApprox(true);
 
     const distKm = haversineKm(origin.lat, origin.lng, destination.lat, destination.lng);
-    const walkingMin = Math.round((distKm / 5) * 60);
-    const drivingMin = Math.round(distKm * 2);
+    const tMin = Math.round(distKm * 2);
+    onInfo({ distance: distKm.toFixed(1), duration: tMin, approximate: true });
 
-    onInfo({
-      distance: distKm.toFixed(1),
-      duration: Math.min(walkingMin, drivingMin),
-      approximate: true,
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
 
-    let active = true;
-
-    async function fetchRoute() {
-      const coords = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
-      const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false&alternatives=false`;
-
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 6000);
-
-      try {
-        const res = await fetch(url, { signal: controller.signal });
-        const data = await res.json();
-        clearTimeout(timeout);
-        if (!active) return;
-
+    fetch(
+      `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&steps=false&alternatives=false`,
+      { signal: controller.signal }
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        clearTimeout(timer);
         if (data.code === "Ok" && data.routes.length > 0) {
-          const route = data.routes[0];
-          const coordsGeo = route.geometry.coordinates.map((c) => [c[1], c[0]]);
-
-          if (straightRef.current) {
-            map.removeLayer(straightRef.current);
-            straightRef.current = null;
-          }
-
-          lineRef.current = L.polyline(coordsGeo, {
-            color: "#3b82f6",
-            weight: 5,
-            opacity: 0.85,
-          }).addTo(map);
-
-          if (active) {
-            onInfo({
-              distance: (route.distance / 1000).toFixed(1),
-              duration: Math.round(route.duration / 60),
-              approximate: false,
-            });
-          }
+          const r = data.routes[0];
+          setCoords(r.geometry.coordinates.map((c) => [c[1], c[0]]));
+          setIsApprox(false);
+          onInfo({
+            distance: (r.distance / 1000).toFixed(1),
+            duration: Math.round(r.duration / 60),
+            approximate: false,
+          });
         }
-      } catch {
-        clearTimeout(timeout);
-      }
-    }
+      })
+      .catch(() => clearTimeout(timer));
+  }, [destination, origin, onInfo]);
 
-    fetchRoute();
+  if (coords.length === 0) return null;
 
-    return () => {
-      active = false;
-      if (straightRef.current) map.removeLayer(straightRef.current);
-      if (lineRef.current) map.removeLayer(lineRef.current);
-    };
-  }, [destination, origin, map, onInfo]);
-
-  return null;
+  return (
+    <>
+      <Polyline
+        positions={coords}
+        pathOptions={{
+          color: "#3b82f6",
+          weight: isApprox ? 3 : 5,
+          opacity: isApprox ? 0.4 : 0.85,
+          dashArray: isApprox ? "10, 10" : undefined,
+        }}
+      />
+      <FitBounds puntos={coords} />
+    </>
+  );
 }
 
 function PopupContent({ asociada: a, onRoute }) {
@@ -202,8 +171,6 @@ function Mapa({ filteredAsociadas }) {
     setRouteInfo(null);
   }, []);
 
-  const handleInfo = useCallback((info) => setRouteInfo(info), []);
-
   return (
     <div className="relative h-[calc(100dvh-8rem)] min-h-[400px] w-full rounded-xl overflow-hidden shadow-sm border border-gray-200 lg:h-[600px]">
       {routeDest && (
@@ -244,7 +211,7 @@ function Mapa({ filteredAsociadas }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <FitBounds asociadas={items} />
+        <FitBounds puntos={items.map((a) => [a.lat, a.lng])} />
         {items.map((a) => (
           <Marker key={a.id} position={[a.lat, a.lng]}>
             <Popup>
@@ -254,10 +221,10 @@ function Mapa({ filteredAsociadas }) {
         ))}
         {routeDest && destination && (
           <RouteLayer
-            key={`${routeDest[0]}-${routeDest[1]}`}
+            key={`${routeDest[0].toFixed(5)}-${routeDest[1].toFixed(5)}`}
             destination={destination}
             origin={origin}
-            onInfo={handleInfo}
+            onInfo={(info) => setRouteInfo(info)}
           />
         )}
       </MapContainer>
