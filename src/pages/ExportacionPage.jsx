@@ -8,10 +8,10 @@ function ExportacionPage() {
       <div className="mb-6">
         <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
           <Download className="h-6 w-6" />
-          Exportaci\u00f3n de Datos
+          Exportación de Datos
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Descargue la informaci\u00f3n de las asociadas en formato Excel.
+          Descargue la información de las asociadas en formato Excel.
         </p>
       </div>
       <Card>

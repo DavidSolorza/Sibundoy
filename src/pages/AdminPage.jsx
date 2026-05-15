@@ -10,7 +10,7 @@ function AdminPage() {
           Panel Administrativo
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Estad\u00edsticas y control general de las asociadas.
+          Estadísticas y control general de las asociadas.
         </p>
       </div>
       <Admin />

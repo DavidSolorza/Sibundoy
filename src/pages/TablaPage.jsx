@@ -8,10 +8,10 @@ function TablaPage() {
       <div className="mb-6">
         <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
           <ClipboardList className="h-6 w-6" />
-          Tabla de Informaci\u00f3n
+          Tabla de Información
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Gesti\u00f3n completa de los registros de asociadas.
+          Gestión completa de los registros de asociadas.
         </p>
       </div>
       <Card>

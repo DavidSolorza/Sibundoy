@@ -1,4 +1,14 @@
-const sectores = ["Sector A", "Sector B", "Sector C", "Sector D", "Sector E"];
+const sectores = [
+  "El Municipio",
+  "Vereda Bellavista", "Vereda Cabrera", "Vereda Cabuyayaco",
+  "Vereda Campoalegre", "Vereda El Cedro", "Vereda El Ejido",
+  "Vereda Fátima Carrizayaco", "Vereda La Cumbre",
+  "Vereda Las Cochas", "Vereda Leandro Agreda", "Vereda Llano Grande",
+  "Vereda Machindinoy", "Vereda Palmas",
+  "Vereda Sagrado Corazón de Jesús", "Vereda San Félix Sinsayaco",
+  "Vereda San José la Hidráulica", "Vereda Tamabioy",
+  "Vereda Villaflor"
+];
 
 const nombres = [
   "María López", "Ana Martínez", "Carmen García", "Rosa Pérez", "Lucía Ramírez",
@@ -18,12 +28,28 @@ const telefonos = [
 ];
 
 const productosPorSector = {
-  "Sector A": "Tomate, Cebolla, Lechuga, Maíz, Yuca",
-  "Sector B": "Zanahoria, Papa, Fríjol, Arveja, Habas",
-  "Sector C": "Espinaca, Acelga, Brócoli, Coliflor, Apio",
-  "Sector D": "Pimentón, Repollo, Cilantro, Perejil, Lechuga",
-  "Sector E": "Plátano, Yuca, Ñame, Batata, Malanga",
+  "El Municipio": "Tiendas, Comercio, Servicios, Artesanías, Comida",
+  "Vereda Bellavista": "Tomate, Cebolla, Lechuga, Pimentón, Repollo",
+  "Vereda Cabrera": "Papa, Maíz, Fríjol, Arveja, Habas",
+  "Vereda Cabuyayaco": "Yuca, Plátano, Ñame, Caña, Cacao",
+  "Vereda Campoalegre": "Zanahoria, Papa, Fríjol, Arveja, Habichuela",
+  "Vereda El Cedro": "Madera, Café, Plátano, Yuca, Maíz",
+  "Vereda El Ejido": "Fresa, Mora, Lulo, Granadilla, Curuba",
+  "Vereda Fátima Carrizayaco": "Café, Cacao, Caña, Plátano, Yuca",
+  "Vereda La Cumbre": "Papa, Habas, Arveja, Maíz, Cebolla",
+  "Vereda Las Cochas": "Espinaca, Acelga, Brócoli, Coliflor, Apio",
+  "Vereda Leandro Agreda": "Café, Cacao, Caña, Plátano, Yuca",
+  "Vereda Llano Grande": "Plátano, Yuca, Ñame, Batata, Malanga",
+  "Vereda Machindinoy": "Maíz, Fríjol, Calabaza, Pepino, Lechuga",
+  "Vereda Palmas": "Pimentón, Repollo, Cilantro, Perejil, Tomate",
+  "Vereda Sagrado Corazón de Jesús": "Fresa, Mora, Granadilla, Lulo, Curuba",
+  "Vereda San Félix Sinsayaco": "Tomate, Cebolla, Lechuga, Maíz, Yuca",
+  "Vereda San José la Hidráulica": "Zanahoria, Papa, Fríjol, Arveja, Habas",
+  "Vereda Tamabioy": "Caña, Plátano, Yuca, Cacao, Café",
+  "Vereda Villaflor": "Zanahoria, Papa, Fríjol, Arveja, Habas",
 };
+
+const tiposPersona = ["madre cabeza de hogar", "Adulto mayor", "viuda"];
 
 const observaciones = [
   "Huerta en buen estado",
@@ -54,11 +80,25 @@ function generarFechaVisita(index) {
 
 function generarCoordenadas(sector, index) {
   const bases = {
-    "Sector A": { lat: 1.203, lng: -76.920 },
-    "Sector B": { lat: 1.205, lng: -76.922 },
-    "Sector C": { lat: 1.207, lng: -76.924 },
-    "Sector D": { lat: 1.201, lng: -76.918 },
-    "Sector E": { lat: 1.209, lng: -76.926 },
+    "El Municipio": { lat: 1.2035, lng: -76.919 },
+    "Vereda Bellavista": { lat: 1.238, lng: -76.942 },
+    "Vereda Cabrera": { lat: 1.182, lng: -76.905 },
+    "Vereda Cabuyayaco": { lat: 1.170, lng: -76.928 },
+    "Vereda Campoalegre": { lat: 1.210, lng: -76.916 },
+    "Vereda El Cedro": { lat: 1.200, lng: -76.930 },
+    "Vereda El Ejido": { lat: 1.183, lng: -76.925 },
+    "Vereda Fátima Carrizayaco": { lat: 1.198, lng: -76.905 },
+    "Vereda La Cumbre": { lat: 1.195, lng: -76.895 },
+    "Vereda Las Cochas": { lat: 1.172, lng: -76.918 },
+    "Vereda Leandro Agreda": { lat: 1.158, lng: -76.935 },
+    "Vereda Llano Grande": { lat: 1.168, lng: -76.938 },
+    "Vereda Machindinoy": { lat: 1.195, lng: -76.925 },
+    "Vereda Palmas": { lat: 1.188, lng: -76.935 },
+    "Vereda Sagrado Corazón de Jesús": { lat: 1.187, lng: -76.920 },
+    "Vereda San Félix Sinsayaco": { lat: 1.166, lng: -76.915 },
+    "Vereda San José la Hidráulica": { lat: 1.206, lng: -76.908 },
+    "Vereda Tamabioy": { lat: 1.175, lng: -76.898 },
+    "Vereda Villaflor": { lat: 1.215, lng: -76.925 },
   };
   const base = bases[sector];
   return {
@@ -83,6 +123,7 @@ const asociadas = nombres.map((nombre, i) => {
     fechaUltimaVisita: generarFechaVisita(i),
     numVisitas: 1 + (i % 6),
     observaciones: observaciones[i % observaciones.length],
+    tipoPersona: tiposPersona[i % tiposPersona.length],
     ...coord,
   };
 });

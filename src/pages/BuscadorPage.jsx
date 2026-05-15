@@ -10,7 +10,7 @@ function BuscadorPage() {
           Buscador Inteligente
         </h2>
         <p className="mt-1 text-sm text-gray-500">
-          Busque asociadas por nombre o sector y visualice su ubicaci\u00f3n en el mapa.
+          Busque asociadas por nombre o sector y visualice su ubicación en el mapa.
         </p>
       </div>
       <Buscador />
