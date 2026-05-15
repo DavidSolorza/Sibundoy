@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from "react";
 import data from "../data/asociadas";
 
@@ -11,14 +12,14 @@ function loadData() {
       const parsed = JSON.parse(saved);
       if (parsed._version === DATA_VERSION) return parsed.items;
     }
-  } catch {}
+  } catch { /* ignore */ }
   return data;
 }
 
 function saveData(items) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ _version: DATA_VERSION, items }));
-  } catch {}
+  } catch { /* ignore */ }
 }
 
 const AsociadasContext = createContext(null);
@@ -66,3 +67,4 @@ export function useAsociadasContext() {
   if (!ctx) throw new Error("useAsociadasContext must be used within AsociadasProvider");
   return ctx;
 }
+

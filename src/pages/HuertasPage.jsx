@@ -1,39 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Sprout, MapPin, User, Phone, Wheat, Heart, Users, Calendar, FileText, ClipboardList, Tag, Eye, Navigation, Plus } from "lucide-react";
+import { Search, Sprout, MapPin, User, Phone, Wheat, Heart, Users, Calendar, FileText, ClipboardList, Tag, Navigation, Plus } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import useAsociadas from "../hooks/useAsociadas";
 import Tabla from "../components/Table/Tabla";
 import FormularioAsociada from "../components/Map/FormularioAsociada";
+import { markerIcon } from "../components/Map/markerIcons";
 import { Input } from "../components/ui/Input";
 import { Card, CardHeader, CardTitle } from "../components/ui/Card";
 import Modal from "../components/ui/Modal";
 import ConfirmModal from "../components/ui/ConfirmModal";
 import { useToast } from "../components/ui/Toast";
-
-const markerIcon = L.divIcon({
-  className: "",
-  iconSize: [28, 40],
-  iconAnchor: [14, 40],
-  popupAnchor: [0, -42],
-  html: `<svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#34d399"/>
-        <stop offset="100%" stop-color="#059669"/>
-      </linearGradient>
-      <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.35"/>
-      </filter>
-    </defs>
-    <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.27 21.73 0 14 0z" fill="url(#g)" filter="url(#s)"/>
-    <circle cx="14" cy="14" r="8" fill="#fff" opacity="0.95"/>
-    <circle cx="14" cy="14" r="5" fill="url(#g)"/>
-    <circle cx="14" cy="14" r="1.5" fill="#fff" opacity="0.5"/>
-  </svg>`,
-});
 
 function FitBounds({ puntos }) {
   const map = useMap();
@@ -203,7 +182,9 @@ function HuertasPage() {
   const paginated = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   useEffect(() => {
-    if (page >= totalPages && totalPages > 0) setPage(0);
+    if (page >= totalPages && totalPages > 0)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPage(0);
   }, [page, totalPages]);
 
   return (

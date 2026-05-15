@@ -71,7 +71,7 @@ function generarFechaSiembra(index) {
   return fecha.toISOString().split("T")[0];
 }
 
-function generarFechaVisita(index) {
+function generarFechaVisita() {
   const diasAtras = Math.floor(Math.random() * 30) + 5;
   const fecha = new Date("2025-03-21");
   fecha.setDate(fecha.getDate() - diasAtras);

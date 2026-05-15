@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { CheckCircle, XCircle, X } from "lucide-react";
+/* eslint-disable react-refresh/only-export-components */
 
 function Toast({ message, type = "success", onClose }) {
   useEffect(() => {

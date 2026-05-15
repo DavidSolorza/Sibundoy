@@ -1,3 +1,4 @@
+import { memo } from "react";
 import useAsociadas from "../../hooks/useAsociadas";
 import Badge from "../ui/Badge";
 import { Trash2, MapPin, Pencil, Eye } from "lucide-react";
@@ -9,7 +10,7 @@ const columns = [
   { key: "fechaUltimaVisita", label: "Última Visita" },
 ];
 
-function TableRow({ asociada, onDelete, onViewMap, onEdit, onViewDetails }) {
+const TableRow = memo(function TableRow({ asociada, onDelete, onViewMap, onEdit, onViewDetails }) {
   return (
     <tr className="border-b border-gray-100 transition-colors duration-150 hover:bg-blue-50/50">
       <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-2 py-3 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.05)]">
@@ -57,9 +58,9 @@ function TableRow({ asociada, onDelete, onViewMap, onEdit, onViewDetails }) {
       ))}
     </tr>
   );
-}
+});
 
-function Tabla({ data, onViewMap, onEdit, onViewDetails, onDelete }) {
+const Tabla = memo(function Tabla({ data, onViewMap, onEdit, onViewDetails, onDelete }) {
   const { asociadas: all, deleteAsociada } = useAsociadas();
   const items = data || all;
   const handleDelete = onDelete || deleteAsociada;
@@ -90,6 +91,6 @@ function Tabla({ data, onViewMap, onEdit, onViewDetails, onDelete }) {
       </table>
     </div>
   );
-}
+});
 
 export default Tabla;

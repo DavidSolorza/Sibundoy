@@ -1,4 +1,5 @@
-import { Users, BarChart3, ClipboardList, CheckCircle, MapPin, Calendar, UserCheck, Heart, Target, User } from "lucide-react";
+import { memo } from "react";
+import { Users, BarChart3, ClipboardList, CheckCircle, MapPin, User } from "lucide-react";
 import useAsociadas from "../../hooks/useAsociadas";
 import StatCard from "../ui/StatCard";
 import { Card, CardHeader, CardTitle } from "../ui/Card";
@@ -6,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 
 const COLORS = ["#1e293b", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16", "#06b6d4", "#d946ef", "#eab308", "#64748b"];
 
-function Admin() {
+const Admin = memo(function Admin() {
   const { asociadas } = useAsociadas();
 
   const sectores = {};
@@ -179,6 +180,6 @@ function Admin() {
       </div>
     </div>
   );
-}
+});
 
 export default Admin;

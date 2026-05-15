@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, User, MapPin } from "lucide-react";
+import { Search, User } from "lucide-react";
 import useAsociadas from "../../hooks/useAsociadas";
 import Mapa from "../Map/Mapa";
 import { Input, Select } from "../ui/Input";

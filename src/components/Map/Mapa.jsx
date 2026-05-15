@@ -5,50 +5,13 @@ import { MapPin, Phone, Sprout, Wheat, Navigation, X, User, Clock, Route, Loader
 import "leaflet/dist/leaflet.css";
 import useAsociadas from "../../hooks/useAsociadas";
 import FormularioAsociada from "./FormularioAsociada";
-
-const markerIcon = L.divIcon({
-  className: "",
-  iconSize: [28, 40],
-  iconAnchor: [14, 40],
-  popupAnchor: [0, -42],
-  html: `<svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#34d399"/>
-        <stop offset="100%" stop-color="#059669"/>
-      </linearGradient>
-      <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.35"/>
-      </filter>
-    </defs>
-    <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.27 21.73 0 14 0z" fill="url(#g)" filter="url(#s)"/>
-    <circle cx="14" cy="14" r="8" fill="#fff" opacity="0.95"/>
-    <circle cx="14" cy="14" r="5" fill="url(#g)"/>
-    <circle cx="14" cy="14" r="1.5" fill="#fff" opacity="0.5"/>
-  </svg>`,
+import { markerIcon, tempMarkerIcon } from "./markerIcons";
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
-const tempMarkerIcon = L.divIcon({
-  className: "",
-  iconSize: [28, 40],
-  iconAnchor: [14, 40],
-  popupAnchor: [0, -42],
-  html: `<svg viewBox="0 0 28 40" width="28" height="40" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g" x1="0%" y1="0%" x2="0%" y2="100%">
-        <stop offset="0%" stop-color="#f87171"/>
-        <stop offset="100%" stop-color="#dc2626"/>
-      </linearGradient>
-      <filter id="s" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-opacity="0.35"/>
-      </filter>
-    </defs>
-    <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.27 21.73 0 14 0z" fill="url(#g)" filter="url(#s)"/>
-    <circle cx="14" cy="14" r="8" fill="#fff" opacity="0.95"/>
-    <circle cx="14" cy="14" r="5" fill="url(#g)"/>
-    <circle cx="14" cy="14" r="1.5" fill="#fff" opacity="0.5"/>
-  </svg>`,
-});
 
 function formatDuration(min) {
   if (min >= 60) {
@@ -212,6 +175,7 @@ function Mapa({ filteredAsociadas, initialRouteDest }) {
 
   useEffect(() => {
     if (initialRouteDest) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRouteDest(initialRouteDest);
       setRouteInfo(null);
     }
@@ -307,7 +271,7 @@ function Mapa({ filteredAsociadas, initialRouteDest }) {
         {!routeDest && <FitBounds puntos={items.map((a) => [a.lat, a.lng])} />}
         <ClickHandler onClick={handleMapClick} />
         {visibleMarkers.map((a) => (
-          <Marker key={a.id} position={[a.lat, a.lng]}>
+          <Marker key={a.id} position={[a.lat, a.lng]} icon={markerIcon}>
             <Popup>
               <PopupContent asociada={a} onRoute={handleRoute} />
             </Popup>
@@ -318,7 +282,7 @@ function Mapa({ filteredAsociadas, initialRouteDest }) {
             key={`${routeDest[0].toFixed(5)}-${routeDest[1].toFixed(5)}`}
             destination={destination}
             origin={origin}
-            onInfo={(info) => setRouteInfo(info)}
+            onInfo={setRouteInfo}
           />
         )}
         {tempPin && (
