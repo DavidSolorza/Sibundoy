@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
-import { MapPin, Phone, Sprout, Wheat } from "lucide-react";
+import { MapPin, Phone, Sprout, Wheat, Navigation, X, User } from "lucide-react";
 import "leaflet/dist/leaflet.css";
+import "leaflet-routing-machine";
 import useAsociadas from "../../hooks/useAsociadas";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -23,14 +24,51 @@ function FitBounds({ asociadas }) {
   return null;
 }
 
-function PopupContent({ asociada: a }) {
+function Routing({ destination }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!destination) return;
+
+    const defaultStart = L.latLng(1.2035, -76.9201);
+    const dest = L.latLng(destination[0], destination[1]);
+
+    const control = L.Routing.control({
+      waypoints: [defaultStart, dest],
+      routeWhileDragging: true,
+      fitSelectedRoutes: true,
+      showAlternatives: false,
+      lineOptions: {
+        styles: [{ color: "#3b82f6", weight: 5, opacity: 0.8 }],
+      },
+    }).addTo(map);
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          control.setWaypoints([
+            L.latLng(pos.coords.latitude, pos.coords.longitude),
+            dest,
+          ]);
+        },
+        () => {}
+      );
+    }
+
+    return () => map.removeControl(control);
+  }, [destination, map]);
+
+  return null;
+}
+
+function PopupContent({ asociada: a, onRoute }) {
   return (
-    <div className="text-sm leading-relaxed min-w-[180px]">
+    <div className="text-sm leading-relaxed min-w-[200px]">
       <p className="font-semibold text-base mb-2 flex items-center gap-1.5">
         <User className="h-4 w-4 text-blue-600" />
         {a.nombre}
       </p>
-      <div className="space-y-1 text-gray-600">
+      <div className="space-y-1 text-gray-600 mb-3">
         <p className="flex items-center gap-1.5">
           <MapPin className="h-3.5 w-3.5 text-gray-400" />
           <span className="text-gray-400">Sector:</span> {a.sector}
@@ -48,18 +86,36 @@ function PopupContent({ asociada: a }) {
           <span className="text-gray-400">Productos:</span> {a.productos}
         </p>
       </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRoute([a.lat, a.lng]);
+        }}
+        className="cursor-pointer w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white transition-colors duration-200 hover:bg-blue-700"
+      >
+        <Navigation className="h-3.5 w-3.5" />
+        C\u00f3mo llegar
+      </button>
     </div>
   );
 }
 
-import { User } from "lucide-react";
-
 function Mapa({ filteredAsociadas }) {
   const { asociadas: all } = useAsociadas();
   const items = filteredAsociadas || all;
+  const [routeDest, setRouteDest] = useState(null);
 
   return (
-    <div className="h-[500px] w-full rounded-xl overflow-hidden shadow-sm border border-gray-200">
+    <div className="relative h-[500px] w-full rounded-xl overflow-hidden shadow-sm border border-gray-200">
+      {routeDest && (
+        <button
+          onClick={() => setRouteDest(null)}
+          className="absolute top-3 right-3 z-[1000] cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-md border border-gray-200 transition-colors duration-200 hover:bg-gray-50"
+        >
+          <X className="h-3.5 w-3.5" />
+          Cerrar ruta
+        </button>
+      )}
       <MapContainer
         center={[1.2035, -76.9201]}
         zoom={14}
@@ -73,10 +129,11 @@ function Mapa({ filteredAsociadas }) {
         {items.map((a) => (
           <Marker key={a.id} position={[a.lat, a.lng]}>
             <Popup>
-              <PopupContent asociada={a} />
+              <PopupContent asociada={a} onRoute={setRouteDest} />
             </Popup>
           </Marker>
         ))}
+        {routeDest && <Routing destination={routeDest} />}
       </MapContainer>
     </div>
   );
