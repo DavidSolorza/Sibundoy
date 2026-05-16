@@ -1,8 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import * as XLSX from "xlsx";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
-import { Download, FileSpreadsheet, FileText, FileCode, FileDown, Check, X, SlidersHorizontal, MapPin } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, FileCode, FileDown, Check, X, SlidersHorizontal, MapPin, Loader2 } from "lucide-react";
 import useAsociadas from "../useAsociadas";
 import { Card } from "../../../shared/ui/Card";
 
@@ -42,6 +39,7 @@ function ExportadorAsociadas() {
   const [format, setFormat] = useState("xlsx");
   const [sectorFilter, setSectorFilter] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const sectores = useMemo(() => {
     const map = {};
@@ -82,11 +80,17 @@ function ExportadorAsociadas() {
     }
   }, []);
 
-  const exportToXLSX = useCallback(() => {
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Asociadas");
-    XLSX.writeFile(wb, `asociadas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  const exportToXLSX = useCallback(async () => {
+    setLoading(true);
+    try {
+      const XLSX = await import("xlsx");
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Asociadas");
+      XLSX.writeFile(wb, `asociadas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } finally {
+      setLoading(false);
+    }
   }, [exportData]);
 
   const exportToCSV = useCallback(() => {
@@ -119,33 +123,43 @@ function ExportadorAsociadas() {
     URL.revokeObjectURL(url);
   }, [exportData]);
 
-  const exportToPDF = useCallback(() => {
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    const headers = Object.keys(exportData[0] || {});
-    const rows = exportData.map((row) => headers.map((h) => String(row[h] ?? "")));
+  const exportToPDF = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [{ jsPDF }, autoTableModule] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+      const autoTable = autoTableModule.default;
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const headers = Object.keys(exportData[0] || {});
+      const rows = exportData.map((row) => headers.map((h) => String(row[h] ?? "")));
 
-    const dateStr = new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" });
-    const title = "Asociadas - AgroMap";
-    const subtitle = `Sibundoy, Putumayo · ${dateStr} · ${exportData.length} registros${sectorFilter ? ` · Sector: ${sectorFilter}` : ""}`;
+      const dateStr = new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" });
+      const title = "Asociadas - AgroMap";
+      const subtitle = `Sibundoy, Putumayo · ${dateStr} · ${exportData.length} registros${sectorFilter ? ` · Sector: ${sectorFilter}` : ""}`;
 
-    doc.setFontSize(16);
-    doc.text(title, 14, 18);
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.text(subtitle, 14, 25);
+      doc.setFontSize(16);
+      doc.text(title, 14, 18);
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(subtitle, 14, 25);
 
-    doc.autoTable({
-      head: [headers],
-      body: rows,
-      startY: 30,
-      styles: { fontSize: 7, cellPadding: 1.5 },
-      headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: "bold", fontSize: 7 },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      tableLineColor: [226, 232, 240],
-      tableLineWidth: 0.1,
-    });
+      autoTable(doc, {
+        head: [headers],
+        body: rows,
+        startY: 30,
+        styles: { fontSize: 7, cellPadding: 1.5 },
+        headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: "bold", fontSize: 7 },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        tableLineColor: [226, 232, 240],
+        tableLineWidth: 0.1,
+      });
 
-    doc.save(`asociadas_${new Date().toISOString().slice(0, 10)}.pdf`);
+      doc.save(`asociadas_${new Date().toISOString().slice(0, 10)}.pdf`);
+    } finally {
+      setLoading(false);
+    }
   }, [exportData, sectorFilter]);
 
   const copyJSON = useCallback(() => {
@@ -263,12 +277,12 @@ function ExportadorAsociadas() {
       <Card>
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <button onClick={handleExport} disabled={exportData.length === 0 || selectedCols.length === 0}
+            <button onClick={handleExport} disabled={exportData.length === 0 || selectedCols.length === 0 || loading}
               className="cursor-pointer flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-slate-800 px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors duration-200 hover:bg-slate-700 active:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed">
-              <Download className="h-4 w-4" />
-              Descargar {FORMATS.find((f) => f.id === format)?.label}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              {loading ? "Preparando descarga…" : `Descargar ${FORMATS.find((f) => f.id === format)?.label}`}
             </button>
-            <button onClick={copyJSON} disabled={exportData.length === 0}
+            <button onClick={copyJSON} disabled={exportData.length === 0 || loading}
               className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 shadow-sm transition-colors duration-200 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">
               {copied ? <><Check className="h-4 w-4 text-emerald-500" /> Copiado</> : <><FileCode className="h-4 w-4" /> Copiar JSON</>}
             </button>
