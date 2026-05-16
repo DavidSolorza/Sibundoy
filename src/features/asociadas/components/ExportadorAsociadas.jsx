@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import * as XLSX from "xlsx";
-import { Download, FileSpreadsheet, FileText, FileCode, Check, X, SlidersHorizontal, MapPin } from "lucide-react";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import { Download, FileSpreadsheet, FileText, FileCode, FileDown, Check, X, SlidersHorizontal, MapPin } from "lucide-react";
 import useAsociadas from "../useAsociadas";
 import { Card } from "../../../shared/ui/Card";
 
@@ -23,8 +25,9 @@ const ALL_COLUMNS = [
 
 const FORMATS = [
   { id: "xlsx", label: "Excel (.xlsx)", icon: FileSpreadsheet, color: "bg-emerald-600 hover:bg-emerald-700" },
-  { id: "csv", label: "CSV (.csv)", icon: FileText, color: "bg-blue-600 hover:bg-blue-700" },
-  { id: "json", label: "JSON (.json)", icon: FileCode, color: "bg-slate-800 hover:bg-slate-700" },
+  { id: "csv", label: "CSV (.csv)", icon: FileCode, color: "bg-blue-600 hover:bg-blue-700" },
+  { id: "pdf", label: "PDF (.pdf)", icon: FileDown, color: "bg-red-600 hover:bg-red-700" },
+  { id: "json", label: "JSON (.json)", icon: FileText, color: "bg-slate-800 hover:bg-slate-700" },
 ];
 
 const PRESETS = [
@@ -116,6 +119,35 @@ function ExportadorAsociadas() {
     URL.revokeObjectURL(url);
   }, [exportData]);
 
+  const exportToPDF = useCallback(() => {
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const headers = Object.keys(exportData[0] || {});
+    const rows = exportData.map((row) => headers.map((h) => String(row[h] ?? "")));
+
+    const dateStr = new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" });
+    const title = "Asociadas - AgroMap";
+    const subtitle = `Sibundoy, Putumayo · ${dateStr} · ${exportData.length} registros${sectorFilter ? ` · Sector: ${sectorFilter}` : ""}`;
+
+    doc.setFontSize(16);
+    doc.text(title, 14, 18);
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(subtitle, 14, 25);
+
+    doc.autoTable({
+      head: [headers],
+      body: rows,
+      startY: 30,
+      styles: { fontSize: 7, cellPadding: 1.5 },
+      headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: "bold", fontSize: 7 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      tableLineColor: [226, 232, 240],
+      tableLineWidth: 0.1,
+    });
+
+    doc.save(`asociadas_${new Date().toISOString().slice(0, 10)}.pdf`);
+  }, [exportData, sectorFilter]);
+
   const copyJSON = useCallback(() => {
     navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
     setCopied(true);
@@ -125,8 +157,9 @@ function ExportadorAsociadas() {
   const handleExport = useCallback(() => {
     if (format === "xlsx") exportToXLSX();
     else if (format === "csv") exportToCSV();
+    else if (format === "pdf") exportToPDF();
     else if (format === "json") exportToJSON();
-  }, [format, exportToXLSX, exportToCSV, exportToJSON]);
+  }, [format, exportToXLSX, exportToCSV, exportToPDF, exportToJSON]);
 
   const allSelected = selectedCols.length === ALL_COLUMNS.length;
 
