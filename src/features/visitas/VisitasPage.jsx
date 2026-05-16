@@ -103,25 +103,33 @@ function VisitasPage() {
     setShowForm(true);
   }, []);
 
-  const handleSubmit = useCallback((e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!formData.asociadaId) return;
     const payload = { ...formData, proximaVisita: formData.proximaVisita || null };
-    if (editingId) {
-      editVisita(editingId, payload);
-      showToast("Visita actualizada correctamente");
-    } else {
-      addVisita(payload);
-      showToast("Visita registrada correctamente");
+    try {
+      if (editingId) {
+        await editVisita(editingId, payload);
+        showToast("Visita actualizada correctamente");
+      } else {
+        await addVisita(payload);
+        showToast("Visita registrada correctamente");
+      }
+      setFormData(EMPTY_FORM);
+      setEditingId(null);
+      setShowForm(false);
+    } catch {
+      showToast("Error al guardar la visita");
     }
-    setFormData(EMPTY_FORM);
-    setEditingId(null);
-    setShowForm(false);
   }, [formData, editingId, addVisita, editVisita, showToast]);
 
-  const handleDelete = useCallback((id) => {
-    deleteVisita(id);
-    showToast("Visita eliminada");
+  const handleDelete = useCallback(async (id) => {
+    try {
+      await deleteVisita(id);
+      showToast("Visita eliminada");
+    } catch {
+      showToast("Error al eliminar la visita");
+    }
   }, [deleteVisita, showToast]);
 
   const clearFilters = useCallback(() => {

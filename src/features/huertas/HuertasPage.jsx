@@ -406,13 +406,13 @@ function HuertasPage() {
       <MapModal asociada={mapAsociada} onClose={() => setMapAsociada(null)} />
       <DetailModal asociada={detailAsociada} onClose={() => setDetailAsociada(null)} />
       <ConfirmModal open={!!deletingAsociada} title="Eliminar asociada" message={`¿Estás seguro de eliminar a ${deletingAsociada?.nombre}? Esta acción no se puede deshacer.`}
-        onConfirm={() => { deleteAsociada(deletingAsociada.id); setDeletingAsociada(null); showToast("Asociada eliminada correctamente"); }}
+        onConfirm={async () => { try { await deleteAsociada(deletingAsociada.id); setDeletingAsociada(null); showToast("Asociada eliminada correctamente"); } catch { showToast("Error al eliminar"); } }}
         onCancel={() => setDeletingAsociada(null)} />
       <FormularioAsociada key={editingAsociada?.id || "edit"} open={!!editingAsociada} onClose={() => setEditingAsociada(null)}
-        onSave={(data) => { updateAsociada(editingAsociada.id, data); setEditingAsociada(null); showToast("Asociada actualizada correctamente"); }}
+        onSave={async (data) => { try { await updateAsociada(editingAsociada.id, data); setEditingAsociada(null); showToast("Asociada actualizada correctamente"); } catch { showToast("Error al actualizar"); } }}
         coords={{ lat: 0, lng: 0 }} initialData={editingAsociada} />
       <FormularioAsociada key="create" open={creatingNew} onClose={handleFormClose}
-        onSave={(data) => { addAsociada(data); setCreatingNew(false); setCreatingCoords(null); showToast("Asociada creada correctamente"); }}
+        onSave={async (data) => { try { await addAsociada(data); setCreatingNew(false); setCreatingCoords(null); showToast("Asociada creada correctamente"); } catch { showToast("Error al crear"); } }}
         coords={creatingCoords || SIBUNDOY} />
       {ToastDisplay}
     </section>

@@ -41,18 +41,22 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave({
-      ...form,
-      edad: Number(form.edad),
-      numPersonas: Number(form.numPersonas),
-      numVisitas: Number(form.numVisitas),
-      lat: isEditing ? Number(form.lat) : coords.lat,
-      lng: isEditing ? Number(form.lng) : coords.lng,
-    });
-    setForm(emptyForm);
-    onClose();
+    try {
+      await onSave({
+        ...form,
+        edad: Number(form.edad),
+        numPersonas: Number(form.numPersonas),
+        numVisitas: Number(form.numVisitas),
+        lat: isEditing ? Number(form.lat) : coords.lat,
+        lng: isEditing ? Number(form.lng) : coords.lng,
+      });
+      setForm(emptyForm);
+      onClose();
+    } catch (err) {
+      console.error("Error al guardar asociada:", err);
+    }
   };
 
   const handleClose = () => {
