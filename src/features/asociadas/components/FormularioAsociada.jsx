@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import Modal from "../../../shared/ui/Modal";
 import Button from "../../../shared/ui/Button";
 import { Input, Select } from "../../../shared/ui/Input";
-import { MapPin } from "lucide-react";
+import { MapPin, Navigation } from "lucide-react";
+import LocationPickerModal from "../../../shared/ui/LocationPickerModal";
 
 const SECTORES = [
   "El Municipio",
@@ -35,6 +36,7 @@ const emptyForm = {
 function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
   const isEditing = !!initialData;
   const [form, setForm] = useState(initialData ? { ...initialData } : emptyForm);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -86,10 +88,6 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
     { label: "Observaciones", name: "observaciones", type: "textarea" },
   ];
 
-  const allFields = isEditing
-    ? [...fields, { label: "Latitud", name: "lat", type: "text" }, { label: "Longitud", name: "lng", type: "text" }]
-    : fields;
-
   return (
     <Modal open={open} onClose={handleClose} title={isEditing ? "Editar asociada" : "Nueva asociada"}>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -103,7 +101,7 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {allFields.map((f) => (
+          {fields.map((f) => (
             <div key={f.name} className={f.type === "textarea" ? "col-span-2" : ""}>
               <label className="mb-1 block text-xs font-medium text-slate-500">
                 {f.label}
@@ -137,7 +135,18 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
           ))}
         </div>
 
-        <div className="flex justify-end gap-2 pt-1">
+        {isEditing && (
+          <div className="col-span-2">
+            <button type="button" onClick={() => setPickerOpen(true)} className="cursor-pointer w-full inline-flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50">
+              <Navigation className="h-4 w-4" /> Editar ubicación en el mapa
+            </button>
+            <p className="text-[10px] text-slate-400 mt-1 text-center">
+              {Number(form.lat).toFixed(4)}, {Number(form.lng).toFixed(4)}
+            </p>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-1 col-span-2">
           <Button type="button" variant="secondary" onClick={handleClose}>
             Cancelar
           </Button>
@@ -146,6 +155,16 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
           </Button>
         </div>
       </form>
+
+      <LocationPickerModal
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        initialCoords={{ lat: Number(form.lat), lng: Number(form.lng) }}
+        onConfirm={(c) => {
+          setForm((prev) => ({ ...prev, lat: c.lat, lng: c.lng }));
+          setPickerOpen(false);
+        }}
+      />
     </Modal>
   );
 }
