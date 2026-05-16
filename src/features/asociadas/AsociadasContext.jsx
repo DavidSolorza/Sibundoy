@@ -83,8 +83,16 @@ export function AsociadasProvider({ children }) {
   }, []);
 
   const addAsociada = useCallback(async (data) => {
-    const sectorId = sectorMap[data.sector];
-    if (!sectorId) throw new Error(`Sector "${data.sector}" no encontrado`);
+    let sectorId = sectorMap[data.sector];
+    if (!sectorId) {
+      const { data: sectorRow } = await supabase
+        .from("sectores")
+        .select("id")
+        .eq("nombre", data.sector)
+        .single();
+      if (!sectorRow) throw new Error(`Sector "${data.sector}" no encontrado`);
+      sectorId = sectorRow.id;
+    }
 
     const { data: newRow, error } = await supabase
       .from("asociadas")
@@ -101,7 +109,15 @@ export function AsociadasProvider({ children }) {
   }, [sectorMap]);
 
   const updateAsociada = useCallback(async (id, data) => {
-    const sectorId = data.sector ? sectorMap[data.sector] : undefined;
+    let sectorId = data.sector ? sectorMap[data.sector] : undefined;
+    if (data.sector && !sectorId) {
+      const { data: sectorRow } = await supabase
+        .from("sectores")
+        .select("id")
+        .eq("nombre", data.sector)
+        .single();
+      sectorId = sectorRow?.id;
+    }
 
     const { error } = await supabase
       .from("asociadas")
