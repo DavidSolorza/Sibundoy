@@ -1,24 +1,142 @@
-import { memo } from "react";
-import { Users, BarChart3, ClipboardList, CheckCircle, MapPin, User } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { Users, BarChart3, ClipboardList, CheckCircle, MapPin, User, Navigation } from "lucide-react";
 import useAsociadas from "../asociadas/useAsociadas";
 import StatCard from "../../shared/ui/StatCard";
 import { Card, CardHeader, CardTitle } from "../../shared/ui/Card";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import Modal from "../../shared/ui/Modal";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Legend, Cell } from "recharts";
 
 const COLORS = ["#1e293b", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16", "#06b6d4", "#d946ef", "#eab308", "#64748b"];
+const EDAD_RANGES = ["18–25", "26–35", "36–45", "46–55", "56–65", "66+"];
+const RANGE_MIN = [18, 26, 36, 46, 56, 66];
+const RANGE_MAX = [25, 35, 45, 55, 65, 999];
 
-const AdminDashboard = memo(function AdminDashboard() {
+function CustomTooltip({ active, payload }) {
+  if (active && payload?.length) {
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
+        <p className="font-semibold text-slate-900">{payload[0].payload.name}</p>
+        <p className="text-slate-600">Asociadas: <span className="font-medium">{payload[0].value}</span></p>
+        {payload[0].payload.beneficiarios && <p className="text-slate-600">Beneficiarios: <span className="font-medium">{payload[0].payload.beneficiarios}</span></p>}
+      </div>
+    );
+  }
+  return null;
+}
+
+function SectorDetailModal({ sectorName, asociadas: items, onClose }) {
+  const navigate = useNavigate();
+  const stats = useMemo(() => {
+    const total = items.length;
+    const edades = items.map((a) => a.edad);
+    const promEdad = (edades.reduce((s, e) => s + e, 0) / total).toFixed(1);
+    const beneficiarios = items.reduce((s, a) => s + (a.numPersonas || 1), 0);
+    const visitas = items.reduce((s, a) => s + a.numVisitas, 0);
+    return { total, promEdad, beneficiarios, visitas };
+  }, [items]);
+
+  return (
+    <Modal open={!!sectorName} onClose={onClose} title={sectorName || ""}>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Asociadas</p>
+            <p className="text-lg font-bold text-slate-800">{stats.total}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Edad Prom.</p>
+            <p className="text-lg font-bold text-slate-800">{stats.promEdad}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Beneficiarios</p>
+            <p className="text-lg font-bold text-slate-800">{stats.beneficiarios}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Visitas</p>
+            <p className="text-lg font-bold text-slate-800">{stats.visitas}</p>
+          </div>
+        </div>
+
+        <div className="max-h-64 overflow-y-auto space-y-1.5">
+          {items.map((a) => (
+            <div key={a.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2.5 text-sm hover:bg-slate-50 transition-colors">
+              <div className="flex items-center gap-2 min-w-0">
+                <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <span className="font-medium text-slate-800 truncate">{a.nombre}</span>
+              </div>
+              <div className="flex items-center gap-3 shrink-0 ml-2">
+                <span className="text-xs text-slate-400">{a.edad} años</span>
+                <button onClick={() => { onClose(); navigate("/", { state: { routeTo: [a.lat, a.lng] } }); }} className="cursor-pointer rounded-md bg-blue-50 p-1 text-blue-600 transition-colors hover:bg-blue-100" title="Ver en mapa">
+                  <Navigation className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function TipoDetailModal({ tipoName, asociadas: items, onClose }) {
+  const stats = useMemo(() => {
+    const total = items.length;
+    const edades = items.map((a) => a.edad);
+    const promEdad = (edades.reduce((s, e) => s + e, 0) / total).toFixed(1);
+    return { total, promEdad };
+  }, [items]);
+
+  return (
+    <Modal open={!!tipoName} onClose={onClose} title={tipoName || ""}>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Asociadas</p>
+            <p className="text-lg font-bold text-slate-800">{stats.total}</p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Edad Prom.</p>
+            <p className="text-lg font-bold text-slate-800">{stats.promEdad}</p>
+          </div>
+        </div>
+
+        <div className="max-h-64 overflow-y-auto space-y-1.5">
+          {items.map((a) => (
+            <div key={a.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2.5 text-sm hover:bg-slate-50 transition-colors">
+              <div className="flex items-center gap-2 min-w-0">
+                <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <span className="font-medium text-slate-800 truncate">{a.nombre}</span>
+              </div>
+              <span className="text-xs text-slate-400 shrink-0 ml-2">Edad: {a.edad}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function AdminDashboard() {
   const { asociadas } = useAsociadas();
+  const [sectorModal, setSectorModal] = useState(null);
+  const [tipoModal, setTipoModal] = useState(null);
+  const [detailSector, setDetailSector] = useState(null);
 
-  const sectores = {};
-  const sectoresEdad = {};
-  const sectoresPersonas = {};
-  asociadas.forEach((a) => {
-    sectores[a.sector] = (sectores[a.sector] || 0) + 1;
-    if (!sectoresEdad[a.sector]) sectoresEdad[a.sector] = [];
-    sectoresEdad[a.sector].push(a.edad);
-    sectoresPersonas[a.sector] = (sectoresPersonas[a.sector] || 0) + (a.numPersonas || 1);
-  });
+  const stats = useMemo(() => {
+    const sectores = {};
+    const sectoresEdad = {};
+    const sectoresPersonas = {};
+    const tipos = {};
+    asociadas.forEach((a) => {
+      sectores[a.sector] = (sectores[a.sector] || 0) + 1;
+      if (!sectoresEdad[a.sector]) sectoresEdad[a.sector] = [];
+      sectoresEdad[a.sector].push(a.edad);
+      sectoresPersonas[a.sector] = (sectoresPersonas[a.sector] || 0) + (a.numPersonas || 1);
+      tipos[a.tipoPersona] = (tipos[a.tipoPersona] || 0) + 1;
+    });
+    return { sectores, sectoresEdad, sectoresPersonas, tipos };
+  }, [asociadas]);
 
   const totalVisitas = asociadas.reduce((sum, a) => sum + a.numVisitas, 0);
   const promedioEdad = (asociadas.reduce((sum, a) => sum + a.edad, 0) / asociadas.length).toFixed(1);
@@ -27,27 +145,45 @@ const AdminDashboard = memo(function AdminDashboard() {
   const promPersonas = (totalBeneficiarios / asociadas.length).toFixed(1);
   const edadMin = Math.min(...asociadas.map((a) => a.edad));
   const edadMax = Math.max(...asociadas.map((a) => a.edad));
-  const tipos = {};
-  asociadas.forEach((a) => { tipos[a.tipoPersona] = (tipos[a.tipoPersona] || 0) + 1; });
+  const sectorNamesList = Object.keys(stats.sectores);
 
-  const sectorChartData = Object.entries(sectores)
-    .map(([name, value]) => ({ name: name.replace("Vereda ", ""), value, beneficiarios: sectoresPersonas[name] || value }))
-    .sort((a, b) => b.value - a.value);
+  const sectorChartData = useMemo(() =>
+    Object.entries(stats.sectores)
+      .map(([name, value]) => ({ name: name.replace("Vereda ", ""), value, beneficiarios: stats.sectoresPersonas[name] || value, fullName: name }))
+      .sort((a, b) => b.value - a.value),
+    [stats.sectores, stats.sectoresPersonas]
+  );
 
-  const tipoChartData = Object.entries(tipos).map(([name, value]) => ({ name, value }));
+  const tipoChartData = useMemo(() =>
+    Object.entries(stats.tipos).map(([name, value]) => ({ name, value })),
+    [stats.tipos]
+  );
 
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload?.length) {
-      return (
-        <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
-          <p className="font-semibold text-slate-900">{payload[0].payload.name}</p>
-          <p className="text-slate-600">Asociadas: <span className="font-medium">{payload[0].value}</span></p>
-          {payload[0].payload.beneficiarios && <p className="text-slate-600">Beneficiarios: <span className="font-medium">{payload[0].payload.beneficiarios}</span></p>}
-        </div>
-      );
+  const edadChartData = useMemo(() =>
+    EDAD_RANGES.map((label, i) => ({
+      name: label,
+      value: asociadas.filter((a) => a.edad >= RANGE_MIN[i] && a.edad <= RANGE_MAX[i]).length,
+    })),
+    [asociadas]
+  );
+
+  const handleBarClick = useCallback((data) => {
+    if (data?.fullName) {
+      setSectorModal({ name: data.fullName, list: asociadas.filter((a) => a.sector === data.fullName) });
     }
-    return null;
-  };
+  }, [asociadas]);
+
+  const handlePieClick = useCallback((data) => {
+    if (data?.name) {
+      setTipoModal({ name: data.name, list: asociadas.filter((a) => a.tipoPersona === data.name) });
+    }
+  }, [asociadas]);
+
+  const handleTableRowClick = useCallback((sectorFullName) => {
+    setDetailSector({ name: sectorFullName, list: asociadas.filter((a) => a.sector === sectorFullName) });
+  }, [asociadas]);
+
+  const maxSectorVal = Math.max(...sectorChartData.map((d) => d.value));
 
   return (
     <div className="space-y-6">
@@ -69,7 +205,7 @@ const AdminDashboard = memo(function AdminDashboard() {
                 <XAxis type="number" tick={{ fontSize: 11, fill: "#64748b" }} allowDecimals={false} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#334155" }} width={110} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={20}>
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={20} cursor="pointer" onClick={(e) => handleBarClick(e?.payload)}>
                   {sectorChartData.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}
                 </Bar>
               </BarChart>
@@ -84,7 +220,7 @@ const AdminDashboard = memo(function AdminDashboard() {
           <div className="flex h-72 items-center justify-center px-2 pb-2">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={tipoChartData} cx="50%" cy="50%" outerRadius={90} innerRadius={50} dataKey="value" paddingAngle={3}>
+                <Pie data={tipoChartData} cx="50%" cy="50%" outerRadius={90} innerRadius={50} dataKey="value" paddingAngle={3} cursor="pointer" onClick={(e) => handlePieClick(e?.payload)}>
                   {tipoChartData.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} stroke="transparent" />))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
@@ -94,6 +230,24 @@ const AdminDashboard = memo(function AdminDashboard() {
           </div>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-emerald-600" />Distribución por Edad</CardTitle>
+        </CardHeader>
+        <div className="h-64 px-2 pb-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={edadChartData} margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} />
+              <YAxis tick={{ fontSize: 11, fill: "#64748b" }} allowDecimals={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={50}>
+                {edadChartData.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -113,11 +267,11 @@ const AdminDashboard = memo(function AdminDashboard() {
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {sectorChartData.map((item, i) => {
-                const edades = sectoresEdad[Object.keys(sectores)[i]] || [];
+                const edades = stats.sectoresEdad[sectorNamesList[i]] || [];
                 const prom = (edades.reduce((s, e) => s + e, 0) / edades.length).toFixed(1);
-                const pct = (item.value / Math.max(...sectorChartData.map((d) => d.value))) * 100;
+                const pct = (item.value / maxSectorVal) * 100;
                 return (
-                  <tr key={i} className="transition-colors duration-150 hover:bg-slate-50">
+                  <tr key={i} onClick={() => handleTableRowClick(item.fullName)} className="transition-colors duration-150 hover:bg-slate-50 cursor-pointer">
                     <td className="px-4 py-2.5 text-sm text-slate-400">{i + 1}</td>
                     <td className="px-4 py-2.5 text-sm font-medium text-slate-900 whitespace-nowrap">{item.name}</td>
                     <td className="px-4 py-2.5 text-sm text-slate-700 font-semibold">{item.value}</td>
@@ -139,7 +293,7 @@ const AdminDashboard = memo(function AdminDashboard() {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Sectores</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{Object.keys(sectores).length}</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{sectorNamesList.length}</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Beneficiarios</p>
@@ -154,8 +308,18 @@ const AdminDashboard = memo(function AdminDashboard() {
           <p className="mt-1 text-2xl font-bold text-slate-900">{edadMin} - {edadMax}</p>
         </div>
       </div>
+
+      {sectorModal && (
+        <SectorDetailModal sectorName={sectorModal.name} asociadas={sectorModal.list} onClose={() => setSectorModal(null)} />
+      )}
+      {tipoModal && (
+        <TipoDetailModal tipoName={tipoModal.name} asociadas={tipoModal.list} onClose={() => setTipoModal(null)} />
+      )}
+      {detailSector && (
+        <SectorDetailModal sectorName={detailSector.name} asociadas={detailSector.list} onClose={() => setDetailSector(null)} />
+      )}
     </div>
   );
-});
+}
 
 export default AdminDashboard;
