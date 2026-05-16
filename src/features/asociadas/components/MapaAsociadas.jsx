@@ -105,20 +105,27 @@ function LongPressHandler({ onLongPress }) {
   const map = useMap();
   const timerRef = useRef(null);
   const startPosRef = useRef(null);
+  const pointersRef = useRef(new Set());
 
   useEffect(() => {
     const container = map.getContainer();
     if (!container) return;
+    const cancel = () => { if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; } startPosRef.current = null; };
     const handleDown = (e) => {
+      pointersRef.current.add(e.pointerId);
+      if (pointersRef.current.size > 1) { cancel(); return; }
       startPosRef.current = { x: e.clientX, y: e.clientY };
       timerRef.current = setTimeout(() => { const latlng = map.mouseEventToLatLng(e); if (latlng) onLongPress(latlng); }, 600);
     };
-    const handleUp = () => { if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; } startPosRef.current = null; };
+    const handleUp = (e) => {
+      pointersRef.current.delete(e.pointerId);
+      cancel();
+    };
     const handleMove = (e) => {
       if (!timerRef.current || !startPosRef.current) return;
       const dx = e.clientX - startPosRef.current.x;
       const dy = e.clientY - startPosRef.current.y;
-      if (dx * dx + dy * dy > 100) { clearTimeout(timerRef.current); timerRef.current = null; }
+      if (dx * dx + dy * dy > 100) cancel();
     };
     container.addEventListener("pointerdown", handleDown);
     container.addEventListener("pointerup", handleUp);
