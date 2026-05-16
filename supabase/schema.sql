@@ -22,7 +22,7 @@ create table if not exists sectores (
 comment on table sectores is 'Catálogo de veredas/sectores con coordenadas base';
 
 insert into sectores (nombre, lat_base, lng_base) values
-  ('El Municipio',                    1.2035, -76.9190),
+  ('Cabecera Municipal',              1.2035, -76.9190),
   ('Vereda Bellavista',               1.2380, -76.9420),
   ('Vereda Cabrera',                  1.1820, -76.9050),
   ('Vereda Cabuyayaco',              1.1700, -76.9280),

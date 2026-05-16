@@ -6,7 +6,7 @@ import { MapPin, Navigation } from "lucide-react";
 import LocationPickerModal from "../../../shared/ui/LocationPickerModal";
 
 const SECTORES = [
-  "El Municipio",
+  "Cabecera Municipal",
   "Vereda Bellavista", "Vereda Cabrera", "Vereda Cabuyayaco",
   "Vereda Campoalegre", "Vereda El Cedro", "Vereda El Ejido",
   "Vereda Fátima Carrizayaco", "Vereda La Cumbre",

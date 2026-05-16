@@ -172,9 +172,23 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
 
   const handleLongPress = useCallback((latlng) => { setFormCoords({ lat: latlng.lat, lng: latlng.lng }); }, []);
 
-  const handleSave = useCallback((asociada) => { addAsociada(asociada); showToast("Asociada agregada correctamente"); }, [addAsociada, showToast]);
+  const handleSave = useCallback(async (asociada) => {
+    try {
+      await addAsociada(asociada);
+      showToast("Asociada agregada correctamente");
+    } catch {
+      showToast("Error al crear asociada", "error");
+    }
+  }, [addAsociada, showToast]);
 
-  const handleUpdate = useCallback((asociada) => { updateAsociada(asociada.id, asociada); showToast("Asociada actualizada correctamente"); }, [updateAsociada, showToast]);
+  const handleUpdate = useCallback(async (asociada) => {
+    try {
+      await updateAsociada(asociada.id, asociada);
+      showToast("Asociada actualizada correctamente");
+    } catch {
+      showToast("Error al actualizar asociada", "error");
+    }
+  }, [updateAsociada, showToast]);
 
   useEffect(() => {
     if ("geolocation" in navigator) {

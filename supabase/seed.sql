@@ -66,7 +66,7 @@ begin
       (select id from sectores where nombre = sector_nombre),
       format('%s m²', 20 + ((idx - 1) % 7) * 10),
       case sector_nombre
-        when 'El Municipio' then 'Tiendas, Comercio, Servicios, Artesanías, Comida'
+        when 'Cabecera Municipal' then 'Tiendas, Comercio, Servicios, Artesanías, Comida'
         when 'Vereda Bellavista' then 'Tomate, Cebolla, Lechuga, Pimentón, Repollo'
         when 'Vereda Cabrera' then 'Papa, Maíz, Fríjol, Arveja, Habas'
         when 'Vereda Cabuyayaco' then 'Yuca, Plátano, Ñame, Caña, Cacao'
