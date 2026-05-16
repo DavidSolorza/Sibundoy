@@ -158,7 +158,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   const [editingAsociada, setEditingAsociada] = useState(null);
   const [deletingAsociada, setDeletingAsociada] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [infoVisible, setInfoVisible] = useState(true);
+  const [infoVisible, setInfoVisible] = useState(() => window.matchMedia("(hover: none) and (pointer: coarse)").matches);
   const mapRef = useRef(null);
   const containerRef = useRef(null);
 
