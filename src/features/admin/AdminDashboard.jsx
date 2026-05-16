@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, BarChart3, ClipboardList, CheckCircle, MapPin, User, Navigation, AlertTriangle, Clock, FileText, Printer } from "lucide-react";
+import { Users, BarChart3, ClipboardList, CheckCircle, MapPin, User, Navigation, AlertTriangle, Clock, Printer } from "lucide-react";
 import useAsociadas from "../asociadas/useAsociadas";
 import StatCard from "../../shared/ui/StatCard";
 import { Card, CardHeader, CardTitle } from "../../shared/ui/Card";
@@ -136,6 +136,8 @@ function ReporteModal({ onClose }) {
     const sectores = [...new Set(asociadas.map((a) => a.sector))];
     const pendientes = asociadas.filter((a) => daysSince(a.fechaUltimaVisita) > DIAS_ALERTA_VISITA);
     const bajaFrec = asociadas.filter((a) => a.numVisitas < 2);
+    const edadMin = Math.min(...asociadas.map((a) => a.edad));
+    const edadMax = Math.max(...asociadas.map((a) => a.edad));
     const prodCount = {};
     asociadas.forEach((a) => {
       (a.productos || "").split(",").forEach((p) => {
@@ -144,21 +146,21 @@ function ReporteModal({ onClose }) {
       });
     });
     const topProds = Object.entries(prodCount).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    return { total, totalBenef, promEdad, totalVis, activas, sectores, pendientes, bajaFrec, topProds };
+    return { total, totalBenef, promEdad, totalVis, activas, sectores, pendientes, bajaFrec, topProds, edadMin, edadMax };
   }, [asociadas]);
 
   const handlePrint = () => window.print();
 
   return (
     <Modal open onClose={onClose} title="Informe Ejecutivo">
-      <div className="space-y-5 text-sm print:text-xs">
-        <div className="hidden print:block text-center mb-4">
+      <div className="reporte-content space-y-5 text-sm">
+        <div className="text-center mb-4 print:mb-6">
           <p className="text-lg font-bold text-slate-900">AgroMap · Informe Ejecutivo</p>
-          <p className="text-xs text-slate-500">Sibundoy, Putumayo · {new Date().toLocaleDateString("es-CO")}</p>
+          <p className="text-xs text-slate-500">Sibundoy, Putumayo · {new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}</p>
         </div>
 
         <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Resumen General</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 print:text-gray-600">Resumen General</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
               <p className="text-[10px] text-slate-400">Asociadas</p>
@@ -194,6 +196,29 @@ function ReporteModal({ onClose }) {
               <p className="text-[10px] text-slate-400">Inactivas</p>
               <p className="text-lg font-bold text-slate-500">{report.total - report.activas}</p>
             </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Rango de Edad</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="text-[10px] text-slate-400">Edad Mínima</p>
+              <p className="text-lg font-bold text-slate-800">{report.edadMin} años</p>
+            </div>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="text-[10px] text-slate-400">Edad Máxima</p>
+              <p className="text-lg font-bold text-slate-800">{report.edadMax} años</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Sectores participantes</p>
+          <div className="flex flex-wrap gap-1.5">
+            {report.sectores.map((s) => (
+              <span key={s} className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">{s.replace("Vereda ", "")}</span>
+            ))}
           </div>
         </div>
 
@@ -236,7 +261,7 @@ function ReporteModal({ onClose }) {
 
         <div className="print:hidden flex gap-2 pt-2 border-t border-slate-200">
           <button onClick={handlePrint} className="cursor-pointer flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
-            <Printer className="h-4 w-4" /> Imprimir / PDF
+            <Printer className="h-4 w-4" /> Guardar PDF / Imprimir
           </button>
           <button onClick={onClose} className="cursor-pointer flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-700">
             Cerrar
@@ -247,12 +272,11 @@ function ReporteModal({ onClose }) {
   );
 }
 
-function AdminDashboard() {
+function AdminDashboard({ reporteOpen, onReporteClose }) {
   const { asociadas } = useAsociadas();
   const [sectorModal, setSectorModal] = useState(null);
   const [tipoModal, setTipoModal] = useState(null);
   const [detailSector, setDetailSector] = useState(null);
-  const [reporteOpen, setReporteOpen] = useState(false);
 
   const stats = useMemo(() => {
     const sectores = {};
@@ -567,13 +591,18 @@ function AdminDashboard() {
         </div>
       </div>
 
-      <div className="flex justify-center">
-        <button onClick={() => setReporteOpen(true)} className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-slate-800 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700 active:bg-slate-900">
-          <FileText className="h-4 w-4" /> Ver Informe Ejecutivo
-        </button>
-      </div>
-
-      <style>{`@media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }`}</style>
+      <style>{`
+        @media print {
+          body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          nav, header, aside, .fixed, .print\\:hidden { display: none !important; }
+          .reporte-content { display: block !important; max-width: 100%; margin: 0; padding: 0; }
+          .reporte-content .border, .reporte-content .rounded-lg { border-radius: 4px; border: 1px solid #e2e8f0; box-shadow: none; }
+          .reporte-content .bg-slate-50 { background-color: #f8fafc !important; }
+          .reporte-content .bg-amber-50 { background-color: #fffbeb !important; }
+          .reporte-content .bg-emerald-100 { background-color: #d1fae5 !important; }
+          .reporte-content .bg-blue-100 { background-color: #dbeafe !important; }
+        }
+      `}</style>
 
       {sectorModal && (
         <SectorDetailModal sectorName={sectorModal.name} asociadas={sectorModal.list} onClose={() => setSectorModal(null)} />
@@ -584,7 +613,7 @@ function AdminDashboard() {
       {detailSector && (
         <SectorDetailModal sectorName={detailSector.name} asociadas={detailSector.list} onClose={() => setDetailSector(null)} />
       )}
-      {reporteOpen && <ReporteModal onClose={() => setReporteOpen(false)} />}
+      {reporteOpen && <ReporteModal onClose={() => onReporteClose?.()} />}
     </div>
   );
 }
