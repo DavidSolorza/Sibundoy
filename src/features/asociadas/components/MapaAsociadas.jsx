@@ -281,7 +281,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
         </button>
       </div>
       <FormularioAsociada open={!!formCoords} onClose={handleFormClose} onSave={handleSave} coords={formCoords || { lat: 0, lng: 0 }} />
-      <FormularioAsociada open={!!editingAsociada} onClose={handleFormClose} onSave={handleUpdate} coords={{ lat: editingAsociada?.lat || 0, lng: editingAsociada?.lng || 0 }} initialData={editingAsociada} />
+      <FormularioAsociada key={editingAsociada?.id || "edit"} open={!!editingAsociada} onClose={handleFormClose} onSave={handleUpdate} coords={{ lat: editingAsociada?.lat || 0, lng: editingAsociada?.lng || 0 }} initialData={editingAsociada} />
       <ConfirmModal open={!!deletingAsociada} title="Eliminar asociada" message={`¿Estás seguro de eliminar a ${deletingAsociada?.nombre || ""}? Esta acción no se puede deshacer.`} onConfirm={handleConfirmDelete} onCancel={() => setDeletingAsociada(null)} />
       {ToastDisplay}
     </div>

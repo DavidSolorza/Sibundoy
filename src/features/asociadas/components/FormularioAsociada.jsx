@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "../../../shared/ui/Modal";
 import Button from "../../../shared/ui/Button";
 import { Input, Select } from "../../../shared/ui/Input";
@@ -35,6 +35,13 @@ const emptyForm = {
 function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
   const isEditing = !!initialData;
   const [form, setForm] = useState(initialData ? { ...initialData } : emptyForm);
+
+  useEffect(() => {
+    if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setForm(initialData ? { ...initialData } : emptyForm);
+    }
+  }, [open, initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
