@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, BarChart3, ClipboardList, CheckCircle, MapPin, User, Navigation, AlertTriangle, Clock, Printer } from "lucide-react";
+import { Users, BarChart3, ClipboardList, CheckCircle, MapPin, User, Navigation, AlertTriangle, Clock } from "lucide-react";
 import useAsociadas from "../asociadas/useAsociadas";
 import StatCard from "../../shared/ui/StatCard";
 import { Card, CardHeader, CardTitle } from "../../shared/ui/Card";
@@ -125,154 +125,7 @@ function TipoDetailModal({ tipoName, asociadas: items, onClose }) {
   );
 }
 
-function ReporteModal({ onClose }) {
-  const { asociadas } = useAsociadas();
-  const report = useMemo(() => {
-    const total = asociadas.length;
-    const totalBenef = asociadas.reduce((s, a) => s + a.numPersonas, 0);
-    const promEdad = (asociadas.reduce((s, a) => s + a.edad, 0) / total).toFixed(1);
-    const totalVis = asociadas.reduce((s, a) => s + a.numVisitas, 0);
-    const activas = asociadas.filter((a) => a.numVisitas > 0).length;
-    const sectores = [...new Set(asociadas.map((a) => a.sector))];
-    const pendientes = asociadas.filter((a) => daysSince(a.fechaUltimaVisita) > DIAS_ALERTA_VISITA);
-    const bajaFrec = asociadas.filter((a) => a.numVisitas < 2);
-    const edadMin = Math.min(...asociadas.map((a) => a.edad));
-    const edadMax = Math.max(...asociadas.map((a) => a.edad));
-    const prodCount = {};
-    asociadas.forEach((a) => {
-      (a.productos || "").split(",").forEach((p) => {
-        const name = p.trim().toLowerCase();
-        if (name) prodCount[name] = (prodCount[name] || 0) + 1;
-      });
-    });
-    const topProds = Object.entries(prodCount).sort((a, b) => b[1] - a[1]).slice(0, 10);
-    return { total, totalBenef, promEdad, totalVis, activas, sectores, pendientes, bajaFrec, topProds, edadMin, edadMax };
-  }, [asociadas]);
-
-  const handlePrint = () => window.print();
-
-  return (
-    <Modal open onClose={onClose} title="Informe Ejecutivo">
-      <div className="reporte-content space-y-5 text-sm">
-        <div className="text-center mb-4 print:mb-6">
-          <p className="text-lg font-bold text-slate-900">AgroMap · Informe Ejecutivo</p>
-          <p className="text-xs text-slate-500">Sibundoy, Putumayo · {new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" })}</p>
-        </div>
-
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 print:text-gray-600">Resumen General</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-[10px] text-slate-400">Asociadas</p>
-              <p className="text-lg font-bold text-slate-800">{report.total}</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-[10px] text-slate-400">Beneficiarios</p>
-              <p className="text-lg font-bold text-slate-800">{report.totalBenef}</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-[10px] text-slate-400">Edad Prom.</p>
-              <p className="text-lg font-bold text-slate-800">{report.promEdad}</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-[10px] text-slate-400">Visitas</p>
-              <p className="text-lg font-bold text-slate-800">{report.totalVis}</p>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Cobertura</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-[10px] text-slate-400">Sectores</p>
-              <p className="text-lg font-bold text-slate-800">{report.sectores.length}</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-[10px] text-slate-400">Activas</p>
-              <p className="text-lg font-bold text-emerald-600">{report.activas}</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-[10px] text-slate-400">Inactivas</p>
-              <p className="text-lg font-bold text-slate-500">{report.total - report.activas}</p>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Rango de Edad</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-[10px] text-slate-400">Edad Mínima</p>
-              <p className="text-lg font-bold text-slate-800">{report.edadMin} años</p>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="text-[10px] text-slate-400">Edad Máxima</p>
-              <p className="text-lg font-bold text-slate-800">{report.edadMax} años</p>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Sectores participantes</p>
-          <div className="flex flex-wrap gap-1.5">
-            {report.sectores.map((s) => (
-              <span key={s} className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">{s.replace("Vereda ", "")}</span>
-            ))}
-          </div>
-        </div>
-
-        {(report.pendientes.length > 0 || report.bajaFrec.length > 0) && (
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-amber-600 mb-2">Puntos de Atención</p>
-            <div className="space-y-2">
-              {report.pendientes.length > 0 && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-                  <p className="text-xs font-medium text-amber-800">
-                    {report.pendientes.length} asociada{report.pendientes.length !== 1 ? "s" : ""} sin visita en más de {DIAS_ALERTA_VISITA} días
-                  </p>
-                  <p className="text-xs text-amber-600 mt-0.5">{report.pendientes.map((a) => a.nombre).join(", ")}</p>
-                </div>
-              )}
-              {report.bajaFrec.length > 0 && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-                  <p className="text-xs font-medium text-amber-800">
-                    {report.bajaFrec.length} asociada{report.bajaFrec.length !== 1 ? "s" : ""} con menos de 2 visitas registradas
-                  </p>
-                  <p className="text-xs text-amber-600 mt-0.5">{report.bajaFrec.map((a) => a.nombre).join(", ")}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {report.topProds.length > 0 && (
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Top Productos Cultivados</p>
-            <div className="flex flex-wrap gap-1.5">
-              {report.topProds.map(([prod, count]) => (
-                <span key={prod} className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                  {prod} <span className="text-emerald-500">({count})</span>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="print:hidden flex gap-2 pt-2 border-t border-slate-200">
-          <button onClick={handlePrint} className="cursor-pointer flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
-            <Printer className="h-4 w-4" /> Guardar PDF / Imprimir
-          </button>
-          <button onClick={onClose} className="cursor-pointer flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-700">
-            Cerrar
-          </button>
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-function AdminDashboard({ reporteOpen, onReporteClose }) {
+function AdminDashboard() {
   const { asociadas } = useAsociadas();
   const [sectorModal, setSectorModal] = useState(null);
   const [tipoModal, setTipoModal] = useState(null);
@@ -591,18 +444,7 @@ function AdminDashboard({ reporteOpen, onReporteClose }) {
         </div>
       </div>
 
-      <style>{`
-        @media print {
-          body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-          nav, header, aside, .fixed, .print\\:hidden { display: none !important; }
-          .reporte-content { display: block !important; max-width: 100%; margin: 0; padding: 0; }
-          .reporte-content .border, .reporte-content .rounded-lg { border-radius: 4px; border: 1px solid #e2e8f0; box-shadow: none; }
-          .reporte-content .bg-slate-50 { background-color: #f8fafc !important; }
-          .reporte-content .bg-amber-50 { background-color: #fffbeb !important; }
-          .reporte-content .bg-emerald-100 { background-color: #d1fae5 !important; }
-          .reporte-content .bg-blue-100 { background-color: #dbeafe !important; }
-        }
-      `}</style>
+
 
       {sectorModal && (
         <SectorDetailModal sectorName={sectorModal.name} asociadas={sectorModal.list} onClose={() => setSectorModal(null)} />
@@ -613,7 +455,7 @@ function AdminDashboard({ reporteOpen, onReporteClose }) {
       {detailSector && (
         <SectorDetailModal sectorName={detailSector.name} asociadas={detailSector.list} onClose={() => setDetailSector(null)} />
       )}
-      {reporteOpen && <ReporteModal onClose={() => onReporteClose?.()} />}
+
     </div>
   );
 }

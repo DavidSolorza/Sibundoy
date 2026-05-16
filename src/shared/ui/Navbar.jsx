@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { Map, Sprout, Download, Settings, Menu, X } from "lucide-react";
+import { Map, Sprout, ClipboardList, Download, Settings, Menu, X } from "lucide-react";
 
 const links = [
   { to: "/", label: "Mapa", icon: Map },
   { to: "/huertas", label: "Huertas", icon: Sprout },
+  { to: "/visitas", label: "Visitas", icon: ClipboardList },
   { to: "/exportacion", label: "Exportar", icon: Download },
   { to: "/admin", label: "Admin", icon: Settings },
 ];

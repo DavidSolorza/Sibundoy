@@ -82,9 +82,14 @@ function DetailModal({ asociada, onClose }) {
               </div>
             ))}
           </div>
-          <button onClick={() => { onClose(); navigate("/", { state: { routeTo: [asociada.lat, asociada.lng] } }); }} className="mt-2 w-full cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 active:bg-blue-800">
-            <Navigation className="h-4 w-4" /> Cómo llegar
-          </button>
+          <div className="flex gap-2 mt-2">
+            <button onClick={() => { onClose(); navigate(`/asociada/${asociada.id}`); }} className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-700 active:bg-slate-900">
+              <User className="h-4 w-4" /> Ver Perfil
+            </button>
+            <button onClick={() => { onClose(); navigate("/", { state: { routeTo: [asociada.lat, asociada.lng] } }); }} className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 active:bg-blue-800">
+              <Navigation className="h-4 w-4" /> Cómo llegar
+            </button>
+          </div>
         </div>
       )}
     </Modal>

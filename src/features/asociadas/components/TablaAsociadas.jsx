@@ -1,7 +1,8 @@
 import { memo } from "react";
+import { useNavigate } from "react-router-dom";
 import useAsociadas from "../useAsociadas";
 import Badge from "../../../shared/ui/Badge";
-import { Trash2, MapPin, Pencil, Eye, ChevronUp, ChevronDown } from "lucide-react";
+import { Trash2, MapPin, Pencil, Eye, User, ChevronUp, ChevronDown } from "lucide-react";
 
 const defaultColumns = [
   { key: "nombre", label: "Nombre" },
@@ -18,10 +19,14 @@ function SortIcon({ columnKey, sortBy }) {
 }
 
 const TableRow = memo(function TableRow({ asociada, onDelete, onViewMap, onEdit, onViewDetails, onRowClick }) {
+  const navigate = useNavigate();
   return (
     <tr className="border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50 cursor-pointer" onClick={() => onRowClick?.(asociada)}>
       <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-2 py-3 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.05)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-1">
+          <button onClick={() => navigate(`/asociada/${asociada.id}`)} className="cursor-pointer rounded-md bg-slate-800 text-white transition-colors hover:bg-slate-700 min-h-9 min-w-9 flex items-center justify-center" title="Perfil completo">
+            <User className="h-4 w-4" />
+          </button>
           <button onClick={() => onViewDetails(asociada)} className="cursor-pointer rounded-md bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 min-h-9 min-w-9 flex items-center justify-center" title="Ver detalle">
             <Eye className="h-4 w-4" />
           </button>
