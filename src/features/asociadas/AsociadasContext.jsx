@@ -66,7 +66,7 @@ export function AsociadasProvider({ children }) {
   useEffect(() => {
     supabase
       .from("asociadas")
-      .select("asociadas.*, sectores!inner(nombre)")
+      .select("*, sectores(nombre)")
       .then(({ data, error }) => {
         if (error) {
           console.error("Error cargando asociadas:", error.message);
@@ -89,7 +89,7 @@ export function AsociadasProvider({ children }) {
     const { data: newRow, error } = await supabase
       .from("asociadas")
       .insert(toDB(data, sectorId))
-      .select("*, sectores!inner(nombre)")
+      .select("*, sectores(nombre)")
       .single();
 
     if (error) throw error;
