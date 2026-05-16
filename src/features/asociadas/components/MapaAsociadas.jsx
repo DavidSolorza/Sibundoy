@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, LayersControl, CircleMarker, Circle, ScaleControl } from "react-leaflet";
 import L from "leaflet";
-import { MapPin, Phone, Sprout, Navigation, X, User, Clock, Route, Loader, Heart, Calendar, Crosshair, LocateFixed, Maximize2, Minimize2, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Phone, Sprout, Navigation, X, User, Clock, Route, Loader, Heart, Calendar, Crosshair, LocateFixed, Maximize2, Minimize2, Pencil, Trash2, Info } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
@@ -111,6 +111,7 @@ function LongPressHandler({ onLongPress }) {
     const container = map.getContainer();
     if (!container) return;
     const cancel = () => { if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; } startPosRef.current = null; };
+    const handleContextMenu = (e) => e.preventDefault();
     const handleDown = (e) => {
       pointersRef.current.add(e.pointerId);
       if (pointersRef.current.size > 1) { cancel(); return; }
@@ -131,11 +132,13 @@ function LongPressHandler({ onLongPress }) {
     container.addEventListener("pointerup", handleUp);
     container.addEventListener("pointercancel", handleUp);
     container.addEventListener("pointermove", handleMove);
+    container.addEventListener("contextmenu", handleContextMenu);
     return () => {
       container.removeEventListener("pointerdown", handleDown);
       container.removeEventListener("pointerup", handleUp);
       container.removeEventListener("pointercancel", handleUp);
       container.removeEventListener("pointermove", handleMove);
+      container.removeEventListener("contextmenu", handleContextMenu);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [map, onLongPress]);
@@ -155,6 +158,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   const [editingAsociada, setEditingAsociada] = useState(null);
   const [deletingAsociada, setDeletingAsociada] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [infoVisible, setInfoVisible] = useState(true);
   const mapRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -232,6 +236,15 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
               )}
             </div>
           )}
+        </div>
+      )}
+      {infoVisible && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 rounded-lg bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md px-3 py-2 text-xs text-slate-600 max-w-[90%] sm:max-w-md">
+          <Info className="h-4 w-4 shrink-0 text-blue-500" />
+          <span className="leading-tight">Toca un marcador para ver detalles. Mantén presionado en un lugar vacío para añadir una nueva asociada. Usa dos dedos para moverte y acercarte.</span>
+          <button onClick={() => setInfoVisible(false)} className="cursor-pointer shrink-0 rounded-md p-0.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
       <MapContainer center={[1.2035, -76.9201]} zoom={14} className="h-full w-full" doubleClickZoom={false} ref={mapRef}>
