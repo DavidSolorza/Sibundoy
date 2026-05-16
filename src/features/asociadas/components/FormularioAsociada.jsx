@@ -1,7 +1,7 @@
 import { useState } from "react";
-import Modal from "../ui/Modal";
-import Button from "../ui/Button";
-import { Input, Select } from "../ui/Input";
+import Modal from "../../../shared/ui/Modal";
+import Button from "../../../shared/ui/Button";
+import { Input, Select } from "../../../shared/ui/Input";
 import { MapPin } from "lucide-react";
 
 const SECTORES = [
@@ -81,20 +81,20 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
 
   return (
     <Modal open={open} onClose={handleClose} title={isEditing ? "Editar asociada" : "Nueva asociada"}>
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-4">
         {!isEditing && (
-          <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700">
-            <MapPin className="h-4 w-4 shrink-0" />
-            <span>
+          <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+            <MapPin className="h-4 w-4 shrink-0 text-slate-400" />
+            <span className="font-mono text-xs">
               {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
             </span>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {allFields.map((f) => (
             <div key={f.name} className={f.type === "textarea" ? "col-span-2" : ""}>
-              <label className="mb-1 block text-xs font-medium text-gray-600">
+              <label className="mb-1 block text-xs font-medium text-slate-500">
                 {f.label}
                 {f.required && <span className="text-red-400 ml-0.5">*</span>}
               </label>
@@ -111,7 +111,7 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
                   value={form[f.name] || ""}
                   onChange={handleChange}
                   rows={3}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-colors duration-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors duration-200 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
                 />
               ) : (
                 <Input
@@ -126,7 +126,7 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
           ))}
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-1">
           <Button type="button" variant="secondary" onClick={handleClose}>
             Cancelar
           </Button>

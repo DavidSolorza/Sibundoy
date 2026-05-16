@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from "react";
-import data from "../data/asociadas";
+import data from "./asociadas.data";
 
 const STORAGE_KEY = "sibundoy_asociadas";
 const DATA_VERSION = 3;
@@ -27,9 +27,7 @@ const AsociadasContext = createContext(null);
 export function AsociadasProvider({ children }) {
   const [asociadas, setAsociadas] = useState(loadData);
 
-  useEffect(() => {
-    saveData(asociadas);
-  }, [asociadas]);
+  useEffect(() => { saveData(asociadas); }, [asociadas]);
 
   const addAsociada = (asociada) => {
     const newId = asociadas.length > 0 ? Math.max(...asociadas.map((a) => a.id)) + 1 : 1;
@@ -67,4 +65,3 @@ export function useAsociadasContext() {
   if (!ctx) throw new Error("useAsociadasContext must be used within AsociadasProvider");
   return ctx;
 }
-

@@ -10,7 +10,7 @@ function Toast({ message, type = "success", onClose }) {
 
   return (
     <div
-      className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 rounded-xl px-5 py-3.5 shadow-xl transition-all duration-300 ${
+      className={`fixed bottom-4 left-4 right-4 z-[9999] mx-auto flex max-w-sm items-center gap-3 rounded-xl px-4 py-3 shadow-xl animate-slide-up sm:left-auto sm:right-6 sm:mx-0 sm:px-5 sm:py-3.5 pb-[env(safe-area-inset-bottom,0px)] ${
         type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
       }`}
     >

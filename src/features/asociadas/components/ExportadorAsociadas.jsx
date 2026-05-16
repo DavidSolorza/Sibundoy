@@ -1,9 +1,9 @@
 import * as XLSX from "xlsx";
 import { Download } from "lucide-react";
-import useAsociadas from "../../hooks/useAsociadas";
-import Button from "../ui/Button";
+import useAsociadas from "../useAsociadas";
+import Button from "../../../shared/ui/Button";
 
-function Exportacion() {
+function ExportadorAsociadas() {
   const { asociadas } = useAsociadas();
 
   const exportToExcel = () => {
@@ -29,7 +29,7 @@ function Exportacion() {
 
   return (
     <div className="flex flex-col items-center gap-6 py-4">
-      <p className="text-sm text-gray-500 text-center max-w-md">
+      <p className="text-sm text-slate-500 text-center max-w-md">
         Descargue la información completa de todas las asociadas registradas en formato Excel (.xlsx).
       </p>
       <Button variant="success" size="lg" onClick={exportToExcel}>
@@ -40,4 +40,4 @@ function Exportacion() {
   );
 }
 
-export default Exportacion;
+export default ExportadorAsociadas;
