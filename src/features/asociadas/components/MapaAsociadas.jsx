@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, LayersControl, CircleMarker, Circle, ScaleControl } from "react-leaflet";
 import L from "leaflet";
-import { MapPin, Phone, Sprout, Navigation, X, User, Clock, Route, Loader, Heart, Calendar, Crosshair, LocateFixed, Maximize2, Minimize2, Pencil, Trash2, Info } from "lucide-react";
+import { MapPin, Phone, Sprout, Navigation, X, User, Clock, Route, Loader, Heart, Calendar, Crosshair, LocateFixed, Maximize2, Minimize2, Pencil, Trash2, Info, Eye } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
@@ -11,6 +11,7 @@ import FormularioAsociada from "./FormularioAsociada";
 import ConfirmModal from "../../../shared/ui/ConfirmModal";
 import { useToast } from "../../../shared/ui/Toast";
 import { markerIcon } from "./markerIcons";
+import useViewMode from "../../../shared/lib/useViewMode";
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
@@ -72,7 +73,7 @@ function RouteLayer({ destination, origin, onInfo }) {
   );
 }
 
-function PopupContent({ asociada: a, onRoute, onEdit, onDelete }) {
+function PopupContent({ asociada: a, onRoute, onEdit, onDelete, viewOnly }) {
   return (
     <div className="text-sm leading-relaxed min-w-[190px] max-w-[250px]">
       <p className="font-semibold text-[15px] mb-2.5 flex items-center gap-1.5">
@@ -90,12 +91,16 @@ function PopupContent({ asociada: a, onRoute, onEdit, onDelete }) {
         <button onClick={(e) => { e.stopPropagation(); onRoute([a.lat, a.lng]); }} className="cursor-pointer flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-2.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-blue-700 active:bg-blue-800 min-h-[36px]">
           <Navigation className="h-4 w-4" /> Ruta
         </button>
-        <button onClick={(e) => { e.stopPropagation(); onEdit(a); }} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-amber-600 active:bg-amber-700 min-h-[36px]">
-          <Pencil className="h-4 w-4" />
-        </button>
-        <button onClick={(e) => { e.stopPropagation(); onDelete(a); }} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-red-500 px-3 py-2.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-red-600 active:bg-red-700 min-h-[36px]">
-          <Trash2 className="h-4 w-4" />
-        </button>
+        {!viewOnly && (
+          <>
+            <button onClick={(e) => { e.stopPropagation(); onEdit(a); }} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-amber-600 active:bg-amber-700 min-h-[36px]">
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(a); }} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-red-500 px-3 py-2.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-red-600 active:bg-red-700 min-h-[36px]">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -149,6 +154,7 @@ function LongPressHandler({ onLongPress }) {
 function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   const { asociadas: all, addAsociada, updateAsociada, deleteAsociada } = useAsociadas();
   const { showToast, ToastDisplay } = useToast();
+  const { isViewOnly } = useViewMode();
   const items = filteredAsociadas || all;
   const [routeDest, setRouteDest] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
@@ -170,7 +176,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
     }
   }, [initialRouteDest]);
 
-  const handleLongPress = useCallback((latlng) => { setFormCoords({ lat: latlng.lat, lng: latlng.lng }); }, []);
+  const handleLongPress = useCallback((latlng) => { if (!isViewOnly) setFormCoords({ lat: latlng.lat, lng: latlng.lng }); }, [isViewOnly]);
 
   const handleSave = useCallback(async (asociada) => {
     try {
@@ -255,10 +261,15 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
       {infoVisible && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 rounded-lg bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md px-3 py-2 text-xs text-slate-600 max-w-[90%] sm:max-w-md">
           <Info className="h-4 w-4 shrink-0 text-blue-500" />
-          <span className="leading-tight">Toca un marcador para ver detalles. Mantén presionado en un lugar vacío para añadir una nueva asociada. Usa dos dedos para moverte y acercarte.</span>
+          <span className="leading-tight">{isViewOnly ? "Toca un marcador para ver los detalles de cada asociada." : "Toca un marcador para ver detalles. Mantén presionado en un lugar vacío para añadir una nueva asociada. Usa dos dedos para moverte y acercarte."}</span>
           <button onClick={() => setInfoVisible(false)} className="cursor-pointer shrink-0 rounded-md p-0.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
             <X className="h-4 w-4" />
           </button>
+        </div>
+      )}
+      {isViewOnly && (
+        <div className="absolute top-14 left-3 z-[1000] flex items-center gap-1.5 rounded-lg bg-white/90 backdrop-blur-sm border border-slate-200 shadow-sm px-2.5 py-1.5 text-[11px] text-slate-500">
+          <Eye className="h-3.5 w-3.5" /> Solo vista
         </div>
       )}
       <MapContainer center={[1.2035, -76.9201]} zoom={14} className="h-full w-full" doubleClickZoom={false} ref={mapRef}>
@@ -280,7 +291,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
           {visibleMarkers.map((a) => (
             <Marker key={a.id} position={[a.lat, a.lng]} icon={markerIcon}>
               <Popup>
-                <PopupContent asociada={a} onRoute={handleRoute} onEdit={handleEditAsociada} onDelete={handleDeleteRequest} />
+                <PopupContent asociada={a} onRoute={handleRoute} onEdit={handleEditAsociada} onDelete={handleDeleteRequest} viewOnly={isViewOnly} />
               </Popup>
             </Marker>
           ))}
@@ -306,9 +317,11 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
         <button onClick={() => { if (mapRef.current && origin) { mapRef.current.flyTo([origin.lat, origin.lng], 15); } }} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-xs font-medium text-slate-700 shadow-md transition-colors hover:bg-slate-50 active:bg-slate-100 border border-slate-200 min-h-[40px]" title="Centrar en mi ubicación">
           <LocateFixed className="h-4 w-4 text-blue-600" /> <span className="hidden sm:inline">Centrar aquí</span>
         </button>
-        <button onClick={() => setFormCoords({ lat: origin.lat, lng: origin.lng })} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white shadow-md transition-colors hover:bg-emerald-700 active:bg-emerald-800 min-h-[40px]" title="Añadir productora en mi ubicación">
-          <Crosshair className="h-4 w-4" /> <span className="hidden sm:inline">Añadir aquí</span>
-        </button>
+          {!isViewOnly && (
+            <button onClick={() => setFormCoords({ lat: origin.lat, lng: origin.lng })} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white shadow-md transition-colors hover:bg-emerald-700 active:bg-emerald-800 min-h-[40px]" title="Añadir productora en mi ubicación">
+              <Crosshair className="h-4 w-4" /> <span className="hidden sm:inline">Añadir aquí</span>
+            </button>
+          )}
         <button onClick={handleFullscreenToggle} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-xs font-medium text-slate-700 shadow-md transition-colors hover:bg-slate-50 active:bg-slate-100 border border-slate-200 min-h-[40px]" title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}>
           {isFullscreen ? <Minimize2 className="h-4 w-4 text-slate-600" /> : <Maximize2 className="h-4 w-4 text-slate-600" />}
           <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla completa"}</span>

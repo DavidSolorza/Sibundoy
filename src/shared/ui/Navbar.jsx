@@ -1,18 +1,27 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useState, useMemo } from "react";
+import { NavLink, useSearchParams } from "react-router-dom";
 import { Map, Sprout, ClipboardList, Download, Settings, Menu, X } from "lucide-react";
-
-const links = [
-  { to: "/", label: "Mapa", icon: Map },
-  { to: "/huertas", label: "Huertas", icon: Sprout },
-  { to: "/visitas", label: "Visitas", icon: ClipboardList },
-  { to: "/exportacion", label: "Exportar", icon: Download },
-  { to: "/admin", label: "Admin", icon: Settings },
-];
 
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [params] = useSearchParams();
+  const isViewOnly = useMemo(() => params.has("view"), [params]);
   const closeMobile = () => setMobileOpen(false);
+
+  const links = useMemo(() => {
+    const all = [
+      { to: "/", label: "Mapa", icon: Map },
+      { to: "/huertas", label: "Huertas", icon: Sprout },
+      { to: "/visitas", label: "Visitas", icon: ClipboardList },
+    ];
+    if (!isViewOnly) {
+      all.push(
+        { to: "/exportacion", label: "Exportar", icon: Download },
+        { to: "/admin", label: "Admin", icon: Settings },
+      );
+    }
+    return all;
+  }, [isViewOnly]);
 
   return (
     <>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Sprout, MapPin, User, Phone, Wheat, Heart, Users, Calendar, FileText, ClipboardList, Tag, Navigation, Plus, X, SlidersHorizontal, Crosshair, Check } from "lucide-react";
+import { Search, Sprout, MapPin, User, Phone, Wheat, Heart, Users, Calendar, FileText, ClipboardList, Tag, Navigation, Plus, X, SlidersHorizontal, Crosshair, Check, Eye } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -13,6 +13,7 @@ import { Card, CardHeader, CardTitle } from "../../shared/ui/Card";
 import Modal from "../../shared/ui/Modal";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
 import { useToast } from "../../shared/ui/Toast";
+import useViewMode from "../../shared/lib/useViewMode";
 
 const SIBUNDOY = { lat: 1.2035, lng: -76.9201 };
 
@@ -167,6 +168,7 @@ const SORTABLE_COLUMNS = [
 function HuertasPage() {
   const { asociadas, getSectores, addAsociada, updateAsociada, deleteAsociada } = useAsociadas();
   const { showToast, ToastDisplay } = useToast();
+  const { isViewOnly } = useViewMode();
   const [query, setQuery] = useState("");
   const [activeSector, setActiveSector] = useState(null);
   const [mapAsociada, setMapAsociada] = useState(null);
@@ -272,10 +274,17 @@ function HuertasPage() {
             </h2>
             <p className="mt-0.5 text-sm text-slate-500">Gestione los registros de las asociadas del programa.</p>
           </div>
-          <button onClick={handleStartAdd} className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700 active:bg-slate-900">
-            <Plus className="h-4 w-4" /> Agregar
-          </button>
+          {!isViewOnly && (
+            <button onClick={handleStartAdd} className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700 active:bg-slate-900">
+              <Plus className="h-4 w-4" /> Agregar
+            </button>
+          )}
         </div>
+        {isViewOnly && (
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
+            <Eye className="h-3.5 w-3.5" /> Solo vista — no se pueden hacer cambios
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -376,7 +385,7 @@ function HuertasPage() {
             </div>
           ) : (
             <>
-              <TablaAsociadas data={paginated} onViewMap={(a) => setMapAsociada(a)} onEdit={(a) => setEditingAsociada(a)} onViewDetails={(a) => setDetailAsociada(a)} onDelete={(a) => setDeletingAsociada(a)} onRowClick={handleRowClick} sortBy={sortBy} onSort={handleSort} columns={SORTABLE_COLUMNS} />
+              <TablaAsociadas data={paginated} onViewMap={(a) => setMapAsociada(a)} onEdit={(a) => setEditingAsociada(a)} onViewDetails={(a) => setDetailAsociada(a)} onDelete={(a) => setDeletingAsociada(a)} onRowClick={handleRowClick} sortBy={sortBy} onSort={handleSort} columns={SORTABLE_COLUMNS} viewOnly={isViewOnly} />
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
                   <span className="text-xs text-slate-400">

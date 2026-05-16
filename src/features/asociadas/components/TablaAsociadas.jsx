@@ -18,7 +18,7 @@ function SortIcon({ columnKey, sortBy }) {
     : <ChevronDown className="h-3 w-3 ml-0.5 inline-block" />;
 }
 
-const TableRow = memo(function TableRow({ asociada, onDelete, onViewMap, onEdit, onViewDetails, onRowClick }) {
+const TableRow = memo(function TableRow({ asociada, onDelete, onViewMap, onEdit, onViewDetails, onRowClick, viewOnly }) {
   const navigate = useNavigate();
   return (
     <tr className="border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50 cursor-pointer" onClick={() => onRowClick?.(asociada)}>
@@ -33,12 +33,16 @@ const TableRow = memo(function TableRow({ asociada, onDelete, onViewMap, onEdit,
           <button onClick={() => onViewMap(asociada)} className="cursor-pointer rounded-md bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-100 min-h-9 min-w-9 flex items-center justify-center" title="Ver en mapa">
             <MapPin className="h-4 w-4" />
           </button>
-          <button onClick={() => onEdit(asociada)} className="cursor-pointer rounded-md bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100 min-h-9 min-w-9 flex items-center justify-center" title="Editar">
-            <Pencil className="h-4 w-4" />
-          </button>
-          <button onClick={() => onDelete(asociada)} className="cursor-pointer rounded-md bg-red-50 text-red-500 transition-colors hover:bg-red-100 min-h-9 min-w-9 flex items-center justify-center" title="Eliminar">
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {!viewOnly && (
+            <>
+              <button onClick={() => onEdit(asociada)} className="cursor-pointer rounded-md bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100 min-h-9 min-w-9 flex items-center justify-center" title="Editar">
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button onClick={() => onDelete(asociada)} className="cursor-pointer rounded-md bg-red-50 text-red-500 transition-colors hover:bg-red-100 min-h-9 min-w-9 flex items-center justify-center" title="Eliminar">
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </>
+          )}
         </div>
       </td>
       {defaultColumns.map((col) => (
@@ -56,7 +60,7 @@ const TableRow = memo(function TableRow({ asociada, onDelete, onViewMap, onEdit,
   );
 });
 
-const TablaAsociadas = memo(function TablaAsociadas({ data, onViewMap, onEdit, onViewDetails, onDelete, onRowClick, sortBy, onSort, columns }) {
+const TablaAsociadas = memo(function TablaAsociadas({ data, onViewMap, onEdit, onViewDetails, onDelete, onRowClick, sortBy, onSort, columns, viewOnly }) {
   const { asociadas: all, deleteAsociada } = useAsociadas();
   const items = data || all;
   const handleDelete = onDelete || deleteAsociada;
@@ -84,7 +88,7 @@ const TablaAsociadas = memo(function TablaAsociadas({ data, onViewMap, onEdit, o
         </thead>
         <tbody className="divide-y divide-slate-100 bg-white">
           {items.map((a) => (
-            <TableRow key={a.id} asociada={a} onDelete={handleDelete} onViewMap={onViewMap} onEdit={onEdit} onViewDetails={onViewDetails} onRowClick={onRowClick} />
+            <TableRow key={a.id} asociada={a} onDelete={handleDelete} onViewMap={onViewMap} onEdit={onEdit} onViewDetails={onViewDetails} onRowClick={onRowClick} viewOnly={viewOnly} />
           ))}
         </tbody>
       </table>
