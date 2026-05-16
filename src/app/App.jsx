@@ -43,7 +43,7 @@ function ExportacionWrapper() {
           <Download className="h-5 w-5" />
           Exportar datos
         </h2>
-        <p className="mt-0.5 text-sm text-slate-500">Descargue la información de todas las asociadas en formato Excel.</p>
+        <p className="mt-0.5 text-sm text-slate-500">Seleccione campos, filtre por sector y exporte en múltiples formatos.</p>
       </div>
       <ExportadorAsociadas />
     </section>
