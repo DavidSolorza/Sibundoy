@@ -31,3 +31,5 @@ function createMockClient() {
 export const supabase = supabaseUrl && supabaseKey
   ? createClient(supabaseUrl, supabaseKey)
   : (console.warn("⚠️ Supabase no configurado. Copia .env.example a .env con tus credenciales."), createMockClient());
+
+export const isSupabaseMock = !supabaseUrl || !supabaseKey;
