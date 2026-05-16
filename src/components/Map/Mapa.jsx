@@ -223,9 +223,9 @@ function Mapa({ filteredAsociadas, initialRouteDest }) {
   }, [items, routeDest]);
 
   return (
-    <div className="relative h-[calc(100dvh-8rem)] min-h-[400px] w-full rounded-xl overflow-hidden shadow-sm border border-gray-200 lg:h-[600px]">
+    <div className="relative h-[calc(100dvh-7.5rem)] min-h-[250px] w-full rounded-xl overflow-hidden shadow-sm border border-gray-200 lg:h-[600px]">
       {routeDest && (
-        <div className="absolute top-3 left-3 right-3 z-[1000] flex flex-wrap gap-2">
+        <div className="absolute top-3 left-3 z-[1000] flex flex-wrap gap-2">
           <button
             onClick={handleCloseRoute}
             className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-md border border-gray-200 transition-colors duration-200 hover:bg-gray-50 active:bg-gray-100"
@@ -311,7 +311,7 @@ function Mapa({ filteredAsociadas, initialRouteDest }) {
       </MapContainer>
       <button
         onClick={() => setFormCoords({ lat: origin.lat, lng: origin.lng })}
-        className="absolute bottom-4 right-4 z-[1000] cursor-pointer inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white shadow-lg transition-colors hover:bg-emerald-700 active:bg-emerald-800"
+        className="absolute top-4 right-4 z-[1000] cursor-pointer inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white shadow-lg transition-colors hover:bg-emerald-700 active:bg-emerald-800"
       >
         <Crosshair className="h-4 w-4" />
         Mi ubicación

@@ -14,7 +14,7 @@ function App() {
       <AsociadasProvider>
         <div className="min-h-screen bg-gray-50 md:flex">
           <Navbar />
-          <main className="flex-1 overflow-auto px-4 pb-20 pt-16 md:px-8 md:py-8">
+          <main className="flex-1 overflow-auto px-4 pb-4 pt-14 md:px-8 md:py-8">
             <Suspense fallback={
               <div className="flex items-center justify-center py-20">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
