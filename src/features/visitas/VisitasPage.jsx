@@ -8,6 +8,7 @@ import { Card } from "../../shared/ui/Card";
 import Modal from "../../shared/ui/Modal";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
 import { Input, Select } from "../../shared/ui/Input";
+import SearchableSelect from "../../shared/ui/SearchableSelect";
 import { useToast } from "../../shared/ui/Toast";
 import { CalendarView, DayDetailModal } from "./CalendarView";
 import { parseLocalDate, getLocalDateString } from "../../shared/lib/dates";
@@ -388,12 +389,15 @@ function VisitasPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Asociada <span className="text-red-400">*</span></label>
-            <Select name="asociadaId" value={formData.asociadaId} onChange={(e) => setFormData({ ...formData, asociadaId: e.target.value ? Number(e.target.value) : "" })} required>
-              <option value="">Seleccionar...</option>
-              {asociadas.map((a) => (
-                <option key={a.id} value={a.id}>{a.nombre} — {a.sector.replace("Vereda ", "")}</option>
-              ))}
-            </Select>
+            <SearchableSelect
+              value={formData.asociadaId}
+              onChange={(val) => setFormData({ ...formData, asociadaId: val ? Number(val) : "" })}
+              options={asociadas}
+              getOptionValue={(a) => a.id}
+              getOptionLabel={(a) => `${a.nombre} — ${a.sector.replace("Vereda ", "")}`}
+              placeholder="Seleccionar..."
+              searchPlaceholder="Buscar asociada..."
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Fecha de la visita</label>

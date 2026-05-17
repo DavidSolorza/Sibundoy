@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import Modal from "../../../shared/ui/Modal";
 import Button from "../../../shared/ui/Button";
 import { Input, Select } from "../../../shared/ui/Input";
+import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import { MapPin, Navigation, AlertTriangle } from "lucide-react";
 import LocationPickerModal from "../../../shared/ui/LocationPickerModal";
 import { useToast } from "../../../shared/ui/Toast";
@@ -94,7 +95,7 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
     { label: "Núm. Personas", name: "numPersonas", type: "number", attrs: { min: 1 } },
     { label: "Menores Hogar", name: "menoresHogar", type: "number", attrs: { min: 0 } },
     { label: "Estado Civil", name: "tipoPersona", type: "select", options: ESTADOS_CIVIL },
-    { label: "Sector", name: "sector", type: "select", options: SECTORES, required: true },
+    { label: "Sector", name: "sector", type: "select", options: SECTORES, required: true, searchable: true },
     { label: "Área Huerta", name: "areaHuerta", type: "text" },
     { label: "Productos", name: "productos", type: "text" },
     { label: "Fecha Siembra", name: "fechaSiembra", type: "date" },
@@ -132,12 +133,24 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
                 {f.required && <span className="text-red-400 ml-0.5">*</span>}
               </label>
               {f.type === "select" ? (
+                f.searchable ? (
+                  <SearchableSelect
+                    value={form[f.name] || ""}
+                    onChange={(val) => handleChange({ target: { name: f.name, value: val } })}
+                    options={f.options}
+                    getOptionLabel={(o) => o}
+                    getOptionValue={(o) => o}
+                    placeholder="Seleccionar..."
+                    searchPlaceholder={`Buscar ${f.label.toLowerCase()}...`}
+                  />
+                ) : (
                 <Select name={f.name} value={form[f.name] || ""} onChange={handleChange} required={f.required}>
                   <option value="">Seleccionar...</option>
                   {f.options.map((o) => (
                     <option key={o} value={o}>{o}</option>
                   ))}
                 </Select>
+                )
               ) : f.type === "textarea" ? (
                 <textarea
                   name={f.name}
