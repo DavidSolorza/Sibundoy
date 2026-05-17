@@ -7,6 +7,8 @@ import StatCard from "../../shared/ui/StatCard";
 import { Card, CardHeader, CardTitle } from "../../shared/ui/Card";
 import Modal from "../../shared/ui/Modal";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Legend, Cell, LineChart, Line, CartesianGrid } from "recharts";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 const COLORS = ["#1e293b", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16", "#06b6d4", "#d946ef", "#eab308", "#64748b"];
 const EDAD_RANGES = ["18–25", "26–35", "36–45", "46–55", "56–65", "66+"];
@@ -297,8 +299,6 @@ function AdminDashboard() {
   const handleExportPDF = useCallback(async () => {
     setExporting(true);
     try {
-      const { default: jsPDF } = await import("jspdf");
-      await import("jspdf-autotable");
       const pdf = new jsPDF("p", "mm", "a4");
       const pageW = pdf.internal.pageSize.getWidth();
       let y = 15;
