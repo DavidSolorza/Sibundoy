@@ -20,15 +20,11 @@ const TIPOS_PERSONA = ["madre cabeza de hogar", "Adulto mayor", "viuda"];
 
 const emptyForm = {
   nombre: "",
-  edad: "",
   telefono: "",
-  numPersonas: "",
   sector: "",
   areaHuerta: "",
   productos: "",
   fechaSiembra: "",
-  fechaUltimaVisita: "",
-  numVisitas: "",
   observaciones: "",
   tipoPersona: "",
 };
@@ -55,11 +51,8 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
     try {
       await onSave({
         ...form,
-        edad: Number(form.edad),
-        numPersonas: Number(form.numPersonas),
-        numVisitas: Number(form.numVisitas),
-        lat: isEditing ? Number(form.lat) : coords.lat,
-        lng: isEditing ? Number(form.lng) : coords.lng,
+        lat: coords?.lat ?? null,
+        lng: coords?.lng ?? null,
       });
       setForm(emptyForm);
       onClose();
@@ -75,16 +68,12 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
 
   const fields = [
     { label: "Nombre", name: "nombre", type: "text", required: true },
-    { label: "Edad", name: "edad", type: "number" },
     { label: "Teléfono", name: "telefono", type: "text" },
-    { label: "Núm. Personas", name: "numPersonas", type: "number" },
     { label: "Tipo", name: "tipoPersona", type: "select", options: TIPOS_PERSONA },
     { label: "Sector", name: "sector", type: "select", options: SECTORES, required: true },
     { label: "Área Huerta", name: "areaHuerta", type: "text" },
     { label: "Productos", name: "productos", type: "text" },
     { label: "Fecha Siembra", name: "fechaSiembra", type: "date" },
-    { label: "Última Visita", name: "fechaUltimaVisita", type: "date" },
-    { label: "Núm. Visitas", name: "numVisitas", type: "number" },
     { label: "Observaciones", name: "observaciones", type: "textarea" },
   ];
 

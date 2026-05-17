@@ -27,19 +27,19 @@ function toFrontend(row) {
 function toDB(data, sectorId) {
   return {
     nombre: data.nombre,
-    edad: data.edad,
+    edad: data.edad || null,
     telefono: data.telefono || null,
-    num_personas: data.numPersonas,
+    num_personas: data.numPersonas || null,
     sector_id: sectorId,
     area_huerta: data.areaHuerta || null,
     productos: data.productos || null,
     fecha_siembra: data.fechaSiembra || null,
     fecha_ultima_visita: data.fechaUltimaVisita || null,
-    num_visitas: data.numVisitas || 0,
+    num_visitas: data.numVisitas ?? null,
     tipo_persona: data.tipoPersona || null,
     observaciones: data.observaciones || null,
-    lat: data.lat || null,
-    lng: data.lng || null,
+    lat: data.lat ?? null,
+    lng: data.lng ?? null,
   };
 }
 
