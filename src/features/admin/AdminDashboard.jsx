@@ -128,12 +128,51 @@ function TipoDetailModal({ tipoName, asociadas: items, onClose }) {
   );
 }
 
+function ListModal({ title, items, onClose }) {
+  const navigate = useNavigate();
+  return (
+    <Modal open={!!title} onClose={onClose} title={title || ""}>
+      <div className="max-h-96 overflow-y-auto space-y-1.5">
+        {items.map((a) => (
+          <div key={a.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2.5 text-sm hover:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-2 min-w-0">
+              <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+              <button onClick={() => { onClose(); navigate(`/asociada/${a.id}`); }}
+                className="cursor-pointer font-medium text-slate-800 truncate hover:text-blue-600 transition-colors">
+                {a.nombre}
+              </button>
+            </div>
+            {a.subtext && <span className="text-xs text-slate-400 shrink-0 ml-2">{a.subtext}</span>}
+          </div>
+        ))}
+      </div>
+    </Modal>
+  );
+}
+
+function BreakdownModal({ title, items, onClose, valueLabel }) {
+  return (
+    <Modal open={!!title} onClose={onClose} title={title || ""}>
+      <div className="max-h-96 overflow-y-auto space-y-1">
+        {items.map((item, i) => (
+          <div key={i} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2.5 text-sm hover:bg-slate-50 transition-colors">
+            <span className="font-medium text-slate-800 truncate">{item.name}</span>
+            <span className="text-xs font-semibold text-slate-500 shrink-0 ml-2">{item.value} {valueLabel}</span>
+          </div>
+        ))}
+      </div>
+    </Modal>
+  );
+}
+
 function AdminDashboard() {
   const { asociadas } = useAsociadas();
   const { visitas } = useVisitas();
   const [sectorModal, setSectorModal] = useState(null);
   const [tipoModal, setTipoModal] = useState(null);
   const [detailSector, setDetailSector] = useState(null);
+  const [listModal, setListModal] = useState(null);
+  const [breakdownModal, setBreakdownModal] = useState(null);
 
   const stats = useMemo(() => {
     const sectores = {};
@@ -256,11 +295,12 @@ function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Total Asociadas" value={asociadas.length} icon={Users} />
-        <StatCard label="Promedio Edad" value={`${promedioEdad} años`} icon={BarChart3} />
-        <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} />
-        <StatCard label="Asociadas Activas" value={activas} icon={CheckCircle} />
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+        <StatCard label="Total Asociadas" value={asociadas.length} icon={Users} onClick={() => setListModal({ title: "Todas las Asociadas", items: asociadas.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) })} />
+        <StatCard label="Promedio Edad" value={`${promedioEdad} años`} icon={BarChart3} onClick={() => setListModal({ title: "Promedio de Edad", items: [...asociadas].sort((a, b) => b.edad - a.edad).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) })} />
+        <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} onClick={() => setListModal({ title: "Total Visitas", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
+        <StatCard label="Asociadas Activas" value={activas} icon={CheckCircle} onClick={() => setListModal({ title: "Asociadas Activas", items: asociadas.filter(a => a.numVisitas > 0).sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
+        <button onClick={() => document.getElementById('alertas-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-amber-200 active:bg-amber-50/50">
           <div className="flex items-center gap-4">
             <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${totalAlertas > 0 ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"}`}>
               <AlertTriangle className="h-6 w-6" />
@@ -270,57 +310,67 @@ function AdminDashboard() {
               <p className={`text-2xl font-bold ${totalAlertas > 0 ? "text-amber-600" : "text-emerald-600"}`}>{totalAlertas}</p>
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        <button onClick={() => setBreakdownModal({ title: "Total Sectores", items: Object.entries(stats.sectores).map(([name, value]) => ({ name: name.replace("Vereda ", ""), value })).sort((a, b) => b.value - a.value) })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Sectores</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{sectorNamesList.length}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        </button>
+        <button onClick={() => setListModal({ title: "Total Beneficiarios", items: [...asociadas].sort((a, b) => (b.numPersonas || 1) - (a.numPersonas || 1)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numPersonas || 1} personas` })) })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Beneficiarios</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{totalBeneficiarios}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        </button>
+        <button onClick={() => setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta).sort((a, b) => parseFloat(b.areaHuerta) - parseFloat(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.areaHuerta} m²` })) })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Extensión De Tierra</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{totalExtension.toFixed(1)} m²</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        </button>
+        <button onClick={() => setListModal({ title: "Menores De Edad", items: asociadas.filter(a => a.menoresHogar > 0).sort((a, b) => (b.menoresHogar || 0) - (a.menoresHogar || 0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.menoresHogar} menores` })) })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Menores De Edad</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{totalMenores}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        </button>
+        <button onClick={() => setBreakdownModal({ title: "Productos", items: prodChartData, valueLabel: "asoc" })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Productos</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{prodChartData.length}</p>
-        </div>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        <button onClick={() => setListModal({ title: "Con Ubicación", items: asociadas.filter(a => a.lat != null && a.lng != null).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Con ubicación" })) })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Con Ubicación</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{conUbicacion} <span className="text-sm font-normal text-slate-400">/ {asociadas.length}</span></p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        </button>
+        <button onClick={() => setListModal({ title: "Prom. Visitas/Asoc", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Prom. Visitas/Asoc</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{promVisitas}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        </button>
+        <button onClick={() => setListModal({ title: "Prom. Productos/Asoc", items: [...asociadas].sort((a, b) => (b.productos || "").split(",").filter(Boolean).length - (a.productos || "").split(",").filter(Boolean).length).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${(a.productos || "").split(",").filter(Boolean).length} productos` })) })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Prom. Productos/Asoc</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{promProductos}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        </button>
+        <button onClick={() => setListModal({ title: "Sin Visitas", items: asociadas.filter(a => !a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Sin visitas" })) })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Sin Visitas</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{sinVisitas}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        </button>
+        <button onClick={() => setBreakdownModal({ title: "% Cobertura", items: [{ name: "Con ubicación", value: conUbicacion }, { name: "Sin ubicación", value: asociadas.length - conUbicacion }], valueLabel: "asoc" })}
+          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">% Cobertura</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{asociadas.length > 0 ? ((conUbicacion / asociadas.length) * 100).toFixed(0) : 0}%</p>
-        </div>
+        </button>
       </div>
 
       {totalAlertas > 0 && (
-        <Card>
+        <Card id="alertas-section">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="h-4 w-4 text-amber-600" />Alertas Inteligentes</CardTitle>
           </CardHeader>
@@ -536,6 +586,12 @@ function AdminDashboard() {
       )}
       {detailSector && (
         <SectorDetailModal sectorName={detailSector.name} asociadas={detailSector.list} onClose={() => setDetailSector(null)} />
+      )}
+      {listModal && (
+        <ListModal title={listModal.title} items={listModal.items} onClose={() => setListModal(null)} />
+      )}
+      {breakdownModal && (
+        <BreakdownModal title={breakdownModal.title} items={breakdownModal.items} onClose={() => setBreakdownModal(null)} valueLabel={breakdownModal.valueLabel} />
       )}
 
     </div>

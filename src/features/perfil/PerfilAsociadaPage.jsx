@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, User, Phone, Sprout, Wheat, Calendar, ClipboardList, Heart, Navigation, Clock, Users, FileText, Tag, CalendarClock } from "lucide-react";
+import { ArrowLeft, MapPin, User, Phone, Sprout, Wheat, Calendar, ClipboardList, Heart, Navigation, Clock, Users, FileText, Tag, CalendarClock, TrendingUp, PieChart as PieChartIcon } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import useAsociadas from "../asociadas/useAsociadas";
@@ -9,6 +9,7 @@ import { markerIcon } from "../asociadas/components/markerIcons";
 import { Card, CardHeader, CardTitle } from "../../shared/ui/Card";
 import Badge from "../../shared/ui/Badge";
 import { parseLocalDate } from "../../shared/lib/dates";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 
 function PerfilAsociadaPage() {
   const { id } = useParams();
@@ -19,6 +20,37 @@ function PerfilAsociadaPage() {
   const asociada = useMemo(() => asociadas.find((a) => a.id === Number(id)), [asociadas, id]);
   const visitas = useMemo(() => asociada ? getVisitasByAsociada(asociada.id) : [], [asociada, getVisitasByAsociada]);
   const totalBeneficiarios = useMemo(() => asociada ? (asociada.numPersonas ?? 0) : 0, [asociada]);
+
+  const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+  const visitasPorMes = useMemo(() => {
+    const counts = {};
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      counts[key] = { label: MESES[d.getMonth()], count: 0 };
+    }
+    visitas.forEach((v) => {
+      if (!v.fecha) return;
+      const d = new Date(v.fecha);
+      if (isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      if (counts[key]) counts[key].count++;
+    });
+    return Object.values(counts);
+  }, [visitas]);
+
+  const TIPO_LABELS = { visita: "Visita", seguimiento: "Seguimiento", capacitacion: "Capacitación" };
+  const COLORS = ["#3b82f6", "#f59e0b", "#10b981"];
+
+  const tipoChartData = useMemo(() => {
+    const tipos = {};
+    visitas.forEach((v) => {
+      tipos[v.tipo] = (tipos[v.tipo] || 0) + 1;
+    });
+    return Object.entries(tipos).map(([name, value]) => ({ name: TIPO_LABELS[name] || name, value }));
+  }, [visitas]);
 
   if (!asociada) {
     return (
@@ -121,6 +153,56 @@ function PerfilAsociadaPage() {
             </div>
           </Card>
         </div>
+
+        {visitas.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base"><TrendingUp className="h-4 w-4 text-blue-600" />Visitas por Mes</CardTitle>
+              </CardHeader>
+              <div className="h-48 px-2 pb-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={visitasPorMes} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#64748b" }} />
+                    <YAxis tick={{ fontSize: 11, fill: "#64748b" }} allowDecimals={false} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: "#3b82f6" }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base"><PieChartIcon className="h-4 w-4 text-emerald-600" />Tipo de Visitas</CardTitle>
+              </CardHeader>
+              <div className="flex h-48 items-center justify-center gap-4 px-2 pb-2">
+                {tipoChartData.length > 0 && (
+                  <div className="h-full w-32 shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={tipoChartData} cx="50%" cy="50%" outerRadius={55} innerRadius={30} dataKey="value" paddingAngle={3}>
+                          {tipoChartData.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} stroke="transparent" />))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  {tipoChartData.map((item, i) => (
+                    <div key={item.name} className="flex items-center gap-2 text-xs">
+                      <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                      <span className="text-slate-600">{item.name}</span>
+                      <span className="font-semibold text-slate-800">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {productos.length > 0 && (
           <Card>
