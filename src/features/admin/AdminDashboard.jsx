@@ -182,7 +182,18 @@ function AdminDashboard() {
     try {
       const html2canvas = (await import("html2canvas")).default;
       const { default: jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(dashboardRef.current, { backgroundColor: "#f8fafc", scale: 2, useCORS: true });
+      const canvas = await html2canvas(dashboardRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+        onclone: (doc) => {
+          const all = doc.querySelectorAll("*");
+          all.forEach((el) => {
+            const style = el.getAttribute("style");
+            if (style) el.setAttribute("style", style.replace(/oklch\([^)]+\)/g, "#cbd5e1"));
+          });
+        },
+      });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
