@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle } from "../../shared/ui/Card";
 import Modal from "../../shared/ui/Modal";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Legend, Cell, LineChart, Line, CartesianGrid } from "recharts";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 const COLORS = ["#1e293b", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16", "#06b6d4", "#d946ef", "#eab308", "#64748b"];
 const EDAD_RANGES = ["18–25", "26–35", "36–45", "46–55", "56–65", "66+"];
@@ -336,7 +336,7 @@ function AdminDashboard() {
       const table = (headers, rows) => {
         if (rows.length === 0) { text("Sin datos", 9); return; }
         if (y > 230) { pdf.addPage(); y = 20; }
-        pdf.autoTable({
+        autoTable(pdf, {
           startY: y,
           head: [headers],
           body: rows,
@@ -402,7 +402,7 @@ function AdminDashboard() {
 
       section("8. Asociadas Sin Visita Reciente (+30 días)");
       const sinVRows = alertas.sinVisita.slice(0, 20).map((a) => [a.nombre, a.sector?.replace("Vereda ", ""), a.fechaUltimaVisita || "Nunca"]);
-      pdf.autoTable({
+      autoTable(pdf, {
         startY: y,
         head: [["Nombre", "Sector", "Última Visita"]],
         body: sinVRows,
