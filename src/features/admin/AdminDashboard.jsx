@@ -1,17 +1,19 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, BarChart3, ClipboardList, CheckCircle, MapPin, User, Navigation, AlertTriangle, Clock } from "lucide-react";
+import { Users, BarChart3, ClipboardList, CheckCircle, User, Navigation, AlertTriangle, Clock, TrendingUp, Layers } from "lucide-react";
 import useAsociadas from "../asociadas/useAsociadas";
+import useVisitas from "../visitas/useVisitas";
 import StatCard from "../../shared/ui/StatCard";
 import { Card, CardHeader, CardTitle } from "../../shared/ui/Card";
 import Modal from "../../shared/ui/Modal";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Legend, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Legend, Cell, LineChart, Line, CartesianGrid } from "recharts";
 
 const COLORS = ["#1e293b", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16", "#06b6d4", "#d946ef", "#eab308", "#64748b"];
 const EDAD_RANGES = ["18–25", "26–35", "36–45", "46–55", "56–65", "66+"];
 const RANGE_MIN = [18, 26, 36, 46, 56, 66];
 const RANGE_MAX = [25, 35, 45, 55, 65, 999];
 const DIAS_ALERTA_VISITA = 30;
+const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 function daysSince(dateStr) {
   if (!dateStr) return 999;
@@ -128,6 +130,7 @@ function TipoDetailModal({ tipoName, asociadas: items, onClose }) {
 
 function AdminDashboard() {
   const { asociadas } = useAsociadas();
+  const { visitas } = useVisitas();
   const [sectorModal, setSectorModal] = useState(null);
   const [tipoModal, setTipoModal] = useState(null);
   const [detailSector, setDetailSector] = useState(null);
@@ -209,6 +212,29 @@ function AdminDashboard() {
       .slice(0, 12);
   }, [asociadas]);
 
+  const visitasPorMes = useMemo(() => {
+    const counts = {};
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      counts[key] = { label: MESES[d.getMonth()], año: d.getFullYear(), key, count: 0, completo: `${MESES[d.getMonth()]} ${d.getFullYear()}` };
+    }
+    visitas.forEach((v) => {
+      if (!v.fecha) return;
+      const d = new Date(v.fecha);
+      if (isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      if (counts[key]) counts[key].count++;
+    });
+    return Object.values(counts);
+  }, [visitas]);
+
+  const conUbicacion = asociadas.filter((a) => a.lat != null && a.lng != null).length;
+  const sinVisitas = asociadas.filter((a) => !a.numVisitas).length;
+  const promVisitas = asociadas.length > 0 ? (totalVisitas / asociadas.length).toFixed(1) : "0";
+  const promProductos = asociadas.length > 0 ? (asociadas.reduce((s, a) => s + ((a.productos || "").split(",").filter(Boolean).length), 0) / asociadas.length).toFixed(1) : "0";
+
   const handleBarClick = useCallback((data) => {
     if (data?.fullName) {
       setSectorModal({ name: data.fullName, list: asociadas.filter((a) => a.sector === data.fullName) });
@@ -268,6 +294,29 @@ function AdminDashboard() {
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Productos</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{prodChartData.length}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Con Ubicación</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{conUbicacion} <span className="text-sm font-normal text-slate-400">/ {asociadas.length}</span></p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Prom. Visitas/Asoc</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{promVisitas}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Prom. Productos/Asoc</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{promProductos}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Sin Visitas</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{sinVisitas}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">% Cobertura</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{asociadas.length > 0 ? ((conUbicacion / asociadas.length) * 100).toFixed(0) : 0}%</p>
         </div>
       </div>
 
@@ -418,49 +467,78 @@ function AdminDashboard() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><MapPin className="h-5 w-5" />Distribución Detallada por Sector</CardTitle>
-        </CardHeader>
-        <div className="overflow-auto rounded-lg border border-slate-200 max-h-72">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-800 sticky top-0">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white">#</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white">Sector</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white">Asociadas</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white">Beneficiarios</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white">Edad Prom.</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white">Visitas</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white">Barra</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {sectorChartData.map((item, i) => {
-                const edades = stats.sectoresEdad[sectorNamesList[i]] || [];
-                const prom = (edades.reduce((s, e) => s + e, 0) / edades.length).toFixed(1);
-                const pct = (item.value / maxSectorVal) * 100;
-                const visitasSector = stats.sectoresVisitas[sectorNamesList[i]] || 0;
-                return (
-                  <tr key={i} onClick={() => handleTableRowClick(item.fullName)} className="transition-colors duration-150 hover:bg-slate-50 cursor-pointer">
-                    <td className="px-4 py-2.5 text-sm text-slate-400">{i + 1}</td>
-                    <td className="px-4 py-2.5 text-sm font-medium text-slate-900 whitespace-nowrap">{item.name}</td>
-                    <td className="px-4 py-2.5 text-sm text-slate-700 font-semibold">{item.value}</td>
-                    <td className="px-4 py-2.5 text-sm text-slate-600">{item.beneficiarios}</td>
-                    <td className="px-4 py-2.5 text-sm text-slate-600">{prom}</td>
-                    <td className="px-4 py-2.5 text-sm text-slate-600">{visitasSector}</td>
-                    <td className="px-4 py-2.5">
-                      <div className="h-2.5 w-24 rounded-full bg-slate-100">
-                        <div className="h-2.5 rounded-full bg-blue-600 transition-all duration-500" style={{ width: `${pct}%` }} />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-blue-600" />Visitas por Mes</CardTitle>
+          </CardHeader>
+          <div className="h-64 px-2 pb-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={visitasPorMes} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#64748b" }} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748b" }} allowDecimals={false} />
+                <Tooltip
+                  content={({ active, payload }) => active && payload?.length ? (
+                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
+                      <p className="font-semibold text-slate-900">{payload[0].payload.completo}</p>
+                      <p className="text-slate-600">Visitas: <span className="font-medium">{payload[0].value}</span></p>
+                    </div>
+                  ) : null}
+                />
+                <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 3, fill: "#3b82f6" }} activeDot={{ r: 5 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Layers className="h-5 w-5 text-emerald-600" />Detalle por Sector</CardTitle>
+          </CardHeader>
+          <div className="overflow-auto rounded-lg border border-slate-200 max-h-72">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-800 sticky top-0">
+                <tr>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">#</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Sector</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Asoc</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Benef</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Edad</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Vis</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Men</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Barra</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {sectorChartData.map((item, i) => {
+                  const edades = stats.sectoresEdad[sectorNamesList[i]] || [];
+                  const prom = (edades.reduce((s, e) => s + e, 0) / edades.length).toFixed(1);
+                  const pct = (item.value / maxSectorVal) * 100;
+                  const visitasSector = stats.sectoresVisitas[sectorNamesList[i]] || 0;
+                  const menoresSector = asociadas.filter((a) => a.sector === item.fullName).reduce((s, a) => s + (a.menoresHogar || 0), 0);
+                  return (
+                    <tr key={i} onClick={() => handleTableRowClick(item.fullName)} className="transition-colors duration-150 hover:bg-slate-50 cursor-pointer">
+                      <td className="px-3 py-2 text-sm text-slate-400">{i + 1}</td>
+                      <td className="px-3 py-2 text-sm font-medium text-slate-900 whitespace-nowrap">{item.name}</td>
+                      <td className="px-3 py-2 text-sm text-slate-700 font-semibold">{item.value}</td>
+                      <td className="px-3 py-2 text-sm text-slate-600">{item.beneficiarios}</td>
+                      <td className="px-3 py-2 text-sm text-slate-600">{prom}</td>
+                      <td className="px-3 py-2 text-sm text-slate-600">{visitasSector}</td>
+                      <td className="px-3 py-2 text-sm text-slate-600">{menoresSector}</td>
+                      <td className="px-3 py-2">
+                        <div className="h-2 w-20 rounded-full bg-slate-100">
+                          <div className="h-2 rounded-full bg-blue-600 transition-all duration-500" style={{ width: `${pct}%` }} />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
 
       {sectorModal && (
         <SectorDetailModal sectorName={sectorModal.name} asociadas={sectorModal.list} onClose={() => setSectorModal(null)} />
