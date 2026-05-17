@@ -251,7 +251,6 @@ function AdminDashboard() {
     setDetailSector({ name: sectorFullName, list: asociadas.filter((a) => a.sector === sectorFullName) });
   }, [asociadas]);
 
-  const maxSectorVal = Math.max(...sectorChartData.map((d) => d.value));
   const totalAlertas = alertas.sinVisita.length + alertas.bajaFrec.length;
 
   return (
@@ -504,17 +503,12 @@ function AdminDashboard() {
                   <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Sector</th>
                   <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Asoc</th>
                   <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Benef</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Edad</th>
                   <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Vis</th>
                   <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Men</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-white">Barra</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {sectorChartData.map((item, i) => {
-                  const edades = stats.sectoresEdad[sectorNamesList[i]] || [];
-                  const prom = (edades.reduce((s, e) => s + e, 0) / edades.length).toFixed(1);
-                  const pct = (item.value / maxSectorVal) * 100;
                   const visitasSector = stats.sectoresVisitas[sectorNamesList[i]] || 0;
                   const menoresSector = asociadas.filter((a) => a.sector === item.fullName).reduce((s, a) => s + (a.menoresHogar || 0), 0);
                   return (
@@ -523,14 +517,8 @@ function AdminDashboard() {
                       <td className="px-3 py-2 text-sm font-medium text-slate-900 whitespace-nowrap">{item.name}</td>
                       <td className="px-3 py-2 text-sm text-slate-700 font-semibold">{item.value}</td>
                       <td className="px-3 py-2 text-sm text-slate-600">{item.beneficiarios}</td>
-                      <td className="px-3 py-2 text-sm text-slate-600">{prom}</td>
                       <td className="px-3 py-2 text-sm text-slate-600">{visitasSector}</td>
                       <td className="px-3 py-2 text-sm text-slate-600">{menoresSector}</td>
-                      <td className="px-3 py-2">
-                        <div className="h-2 w-20 rounded-full bg-slate-100">
-                          <div className="h-2 rounded-full bg-blue-600 transition-all duration-500" style={{ width: `${pct}%` }} />
-                        </div>
-                      </td>
                     </tr>
                   );
                 })}
