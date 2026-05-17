@@ -1,18 +1,22 @@
 import { useState, useMemo } from "react";
 import { NavLink, useSearchParams } from "react-router-dom";
-import { Map, Sprout, ClipboardList, Download, Upload, Settings, Menu, X } from "lucide-react";
+import { Map, Sprout, ClipboardList, Download, Upload, Settings, Menu, X, Bell } from "lucide-react";
+import useVisitas from "../../features/visitas/useVisitas";
 
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [params] = useSearchParams();
   const isViewOnly = useMemo(() => params.has("view"), [params]);
   const closeMobile = () => setMobileOpen(false);
+  const { getProximasVisitas } = useVisitas();
+  const proximas = useMemo(() => getProximasVisitas(), [getProximasVisitas]);
+  const notifCount = proximas.length;
 
   const links = useMemo(() => {
     const all = [
       { to: "/", label: "Mapa", icon: Map },
       { to: "/huertas", label: "Huertas", icon: Sprout },
-      { to: "/visitas", label: "Visitas", icon: ClipboardList },
+      { to: "/visitas", label: "Visitas", icon: ClipboardList, badge: notifCount > 0 ? notifCount : undefined },
     ];
     if (!isViewOnly) {
       all.push(
@@ -22,7 +26,7 @@ function Navbar() {
       );
     }
     return all;
-  }, [isViewOnly]);
+  }, [isViewOnly, notifCount]);
 
   return (
     <>
@@ -31,6 +35,12 @@ function Navbar() {
           <Menu className="h-5 w-5" />
         </button>
         <span className="text-sm font-semibold text-slate-800">AgroMap</span>
+        {notifCount > 0 && (
+          <button onClick={() => { setMobileOpen(true); }} className="ml-auto cursor-pointer relative p-1.5 text-amber-600">
+            <Bell className="h-5 w-5" />
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white">{notifCount}</span>
+          </button>
+        )}
       </header>
 
       {mobileOpen && <div className="fixed inset-0 z-[1100] bg-black/40 md:hidden" onClick={closeMobile} role="presentation" />}
@@ -52,7 +62,7 @@ function Navbar() {
         </div>
 
         <nav className="flex-1 space-y-0.5 px-2 py-4">
-          {links.map(({ to, label, icon: Icon }) => (
+          {links.map(({ to, label, icon: Icon, badge }) => (
             <NavLink
               key={to}
               to={to}
@@ -65,7 +75,10 @@ function Navbar() {
               }
             >
               <Icon className="h-5 w-5 shrink-0 md:h-4 md:w-4" />
-              <span>{label}</span>
+              <span className="flex-1">{label}</span>
+              {badge && (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">{badge}</span>
+              )}
             </NavLink>
           ))}
         </nav>

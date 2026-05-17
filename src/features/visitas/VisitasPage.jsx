@@ -1,5 +1,7 @@
-import { useState, useMemo, useCallback } from "react";
-import { Calendar, ClipboardList, Plus, X, Search, Clock, Trash2, Filter, LayoutList, Edit3, CalendarClock } from "lucide-react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { Calendar, ClipboardList, Plus, X, Search, Clock, Trash2, Filter, LayoutList, Edit3, CalendarClock, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import useDebounce from "../../shared/lib/useDebounce";
+import { formatTimeAgo } from "../../shared/lib/dates";
 import useAsociadas from "../asociadas/useAsociadas";
 import useVisitas from "./useVisitas";
 import { Card } from "../../shared/ui/Card";
@@ -20,15 +22,19 @@ function getEmptyForm() {
 
 function VisitasPage() {
   const { asociadas } = useAsociadas();
-  const { visitas, loading, addVisita, editVisita, deleteVisita, getProximasVisitas } = useVisitas();
+  const { visitas, loading, addVisita, editVisita, deleteVisita, getProximasVisitas, refresh, lastUpdated } = useVisitas();
   const { showToast, ToastDisplay } = useToast();
 
+  const searchRef = useRef(null);
+  const PER_PAGE = 10;
   const [view, setView] = useState("list");
+  const [page, setPage] = useState(0);
   const [deletingVisita, setDeletingVisita] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(getEmptyForm());
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 250);
   const [filterTipo, setFilterTipo] = useState(null);
   const [filterAsociada, setFilterAsociada] = useState(null);
   const [quickFilter, setQuickFilter] = useState(null);
@@ -53,7 +59,7 @@ function VisitasPage() {
   }, [visitas]);
 
   const filtered = useMemo(() => {
-    const q = searchQuery.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
     const today = new Date().toISOString().split("T")[0];
     return visitas.filter((v) => {
       const a = asociadaMap[v.asociadaId];
@@ -72,7 +78,7 @@ function VisitasPage() {
       }
       return matchesSearch && matchesTipo && matchesAsociada && matchesQuick;
     });
-  }, [visitas, searchQuery, filterTipo, filterAsociada, quickFilter, asociadaMap]);
+  }, [visitas, debouncedSearch, filterTipo, filterAsociada, quickFilter, asociadaMap]);
 
   const grouped = useMemo(() => {
     const groups = {};
@@ -82,6 +88,9 @@ function VisitasPage() {
     });
     return Object.entries(groups).sort((a, b) => new Date(b[0]) - new Date(a[0]));
   }, [filtered]);
+
+  const totalPages = Math.ceil(grouped.length / PER_PAGE);
+  const paginatedGroups = grouped.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   const hasFilters = searchQuery || filterTipo || filterAsociada || quickFilter;
 
@@ -135,6 +144,19 @@ function VisitasPage() {
       showToast(err?.message || "Error al eliminar la visita");
     }
   }, [deletingVisita, deleteVisita, showToast]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch, filterTipo, filterAsociada, quickFilter]);
+
+  useEffect(() => {
+    function handleKey(e) {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "/") { e.preventDefault(); searchRef.current?.focus(); }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   const clearFilters = useCallback(() => {
     setSearchQuery("");
@@ -198,7 +220,7 @@ function VisitasPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-5 gap-3 mb-4">
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Totales</p>
           <p className="mt-0.5 text-xl font-bold text-slate-800">{stats.total}</p>
@@ -223,6 +245,15 @@ function VisitasPage() {
             ) : "—"}
           </p>
         </div>
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Actualizado</p>
+            <p className="mt-0.5 text-xs text-slate-500">{lastUpdated ? formatTimeAgo(lastUpdated) : "—"}</p>
+          </div>
+          <button onClick={refresh} disabled={loading} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:cursor-default" title="Actualizar datos">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
       </div>
 
       {view === "calendar" ? (
@@ -240,7 +271,7 @@ function VisitasPage() {
           <div className="space-y-3 mb-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <Input type="text" placeholder="Buscar por asociada o sector..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+              <Input ref={searchRef} type="text" placeholder="Buscar por asociada o sector... (presiona /)" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
               {quickFilters.map(({ key, label }) => (
@@ -274,8 +305,8 @@ function VisitasPage() {
               <p className="text-xs text-slate-400 mt-1">Programa la primera visita para empezar el seguimiento.</p>
             </div>
           ) : (
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-              {grouped.map(([fecha, items]) => (
+            <div className="space-y-4 pr-1">
+              {paginatedGroups.map(([fecha, items]) => (
                 <div key={fecha}>
                   <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
                     <Calendar className="h-3.5 w-3.5" />
@@ -321,6 +352,29 @@ function VisitasPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          {!loading && filtered.length > 0 && totalPages > 1 && (
+            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
+              <span className="text-xs text-slate-400">
+                {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, grouped.length)} de {grouped.length} fechas
+              </span>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
+                  className="cursor-pointer disabled:opacity-30 disabled:cursor-default text-slate-500 hover:text-slate-800 transition-colors">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <div className="flex items-center gap-1.5">
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button key={i} onClick={() => setPage(i)}
+                      className={`cursor-pointer h-2 rounded-full transition-all duration-200 ${i === page ? "w-6 bg-slate-800" : "w-2 bg-slate-300 hover:bg-slate-400"}`} />
+                  ))}
+                </div>
+                <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page === totalPages - 1}
+                  className="cursor-pointer disabled:opacity-30 disabled:cursor-default text-slate-500 hover:text-slate-800 transition-colors">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           )}
         </Card>

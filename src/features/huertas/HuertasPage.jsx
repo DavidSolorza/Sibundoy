@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Sprout, MapPin, User, Phone, Wheat, Heart, Users, Calendar, FileText, ClipboardList, Tag, Navigation, Plus, X, SlidersHorizontal, Crosshair, Check, Eye } from "lucide-react";
+import { Search, Sprout, MapPin, User, Phone, Wheat, Heart, Users, Calendar, FileText, ClipboardList, Tag, Navigation, Plus, X, SlidersHorizontal, Crosshair, Check, Eye, RefreshCw } from "lucide-react";
+import useDebounce from "../../shared/lib/useDebounce";
+import { formatTimeAgo } from "../../shared/lib/dates";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -168,10 +170,11 @@ const SORTABLE_COLUMNS = [
 ];
 
 function HuertasPage() {
-  const { asociadas, loading, getSectores, addAsociada, updateAsociada, deleteAsociada } = useAsociadas();
+  const { asociadas, loading, getSectores, addAsociada, updateAsociada, deleteAsociada, refresh, lastUpdated } = useAsociadas();
   const { showToast, ToastDisplay } = useToast();
   const { isViewOnly } = useViewMode();
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 250);
   const [activeSector, setActiveSector] = useState(null);
   const [mapAsociada, setMapAsociada] = useState(null);
   const [editingAsociada, setEditingAsociada] = useState(null);
@@ -190,7 +193,7 @@ function HuertasPage() {
   const hasActiveFilters = query || activeSector;
 
   const filtered = useMemo(() => {
-    const q = query.toLowerCase();
+    const q = debouncedQuery.toLowerCase();
     return asociadas.filter((a) => {
       const matchesSearch = !q
         || a.nombre?.toLowerCase().includes(q)
@@ -201,7 +204,7 @@ function HuertasPage() {
       const matchesSector = !activeSector || a.sector === activeSector;
       return matchesSearch && matchesSector;
     });
-  }, [asociadas, query, activeSector]);
+  }, [asociadas, debouncedQuery, activeSector]);
 
   const sorted = useMemo(() => {
     if (!sortBy) return filtered;
@@ -232,6 +235,15 @@ function HuertasPage() {
       }
       return { key, dir: "asc" };
     });
+  }, []);
+
+  useEffect(() => {
+    function handleKey(e) {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "/") { e.preventDefault(); searchRef.current?.focus(); }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -346,7 +358,7 @@ function HuertasPage() {
           </div>
         </Card>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total</p>
             <p className="mt-0.5 text-xl font-bold text-slate-800">{asociadas.length}</p>
@@ -358,6 +370,15 @@ function HuertasPage() {
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
             <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Sectores</p>
             <p className="mt-0.5 text-xl font-bold text-slate-800">{uniqueSectores}</p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Actualizado</p>
+              <p className="mt-0.5 text-xs text-slate-500">{lastUpdated ? formatTimeAgo(lastUpdated) : "—"}</p>
+            </div>
+            <button onClick={refresh} disabled={loading} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:cursor-default" title="Actualizar datos">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            </button>
           </div>
         </div>
 

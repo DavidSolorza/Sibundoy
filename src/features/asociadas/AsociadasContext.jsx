@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../../services/supabase";
 
 const AsociadasContext = createContext(null);
@@ -87,6 +87,7 @@ export function AsociadasProvider({ children }) {
     fetchAsociadas().then((mapped) => {
       if (mapped) {
         setAsociadas(mapped);
+        setLastUpdated(Date.now());
         setLoading(false);
       } else {
         setLoading(false);
@@ -239,8 +240,26 @@ export function AsociadasProvider({ children }) {
       .filter(Boolean);
   }, [asociadas]);
 
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  const refreshing = useRef(false);
+
+  const refresh = useCallback(async () => {
+    if (refreshing.current) return;
+    refreshing.current = true;
+    try {
+      const mapped = await fetchAsociadas();
+      if (mapped) {
+        setAsociadas(mapped);
+        setLastUpdated(Date.now());
+      }
+    } finally {
+      refreshing.current = false;
+    }
+  }, [fetchAsociadas]);
+
   return (
-    <AsociadasContext.Provider value={{ asociadas, loading, addAsociada, updateAsociada, deleteAsociada, getAsociada, getSectores, findDuplicates }}>
+    <AsociadasContext.Provider value={{ asociadas, loading, addAsociada, updateAsociada, deleteAsociada, getAsociada, getSectores, findDuplicates, refresh, lastUpdated }}>
       {children}
     </AsociadasContext.Provider>
   );

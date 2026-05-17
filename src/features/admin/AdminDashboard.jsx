@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, BarChart3, ClipboardList, CheckCircle, User, Navigation, AlertTriangle, Clock, TrendingUp, Layers } from "lucide-react";
+import { Users, BarChart3, ClipboardList, CheckCircle, User, Navigation, AlertTriangle, Clock, TrendingUp, Layers, Download } from "lucide-react";
 import useAsociadas from "../asociadas/useAsociadas";
 import useVisitas from "../visitas/useVisitas";
 import StatCard from "../../shared/ui/StatCard";
@@ -173,6 +173,39 @@ function AdminDashboard() {
   const [detailSector, setDetailSector] = useState(null);
   const [listModal, setListModal] = useState(null);
   const [breakdownModal, setBreakdownModal] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const dashboardRef = useRef(null);
+
+  const handleExportPDF = useCallback(async () => {
+    if (!dashboardRef.current) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const { default: jsPDF } = await import("jspdf");
+      const canvas = await html2canvas(dashboardRef.current, { backgroundColor: "#f8fafc", scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = pageWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 10;
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - 20;
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 10;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight - 20;
+      }
+      pdf.save("dashboard.pdf");
+    } catch (err) {
+      console.error("Error exportando PDF:", err);
+    } finally {
+      setExporting(false);
+    }
+  }, []);
 
   const stats = useMemo(() => {
     const sectores = {};
@@ -293,7 +326,18 @@ function AdminDashboard() {
   const totalAlertas = alertas.sinVisita.length + alertas.bajaFrec.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" ref={dashboardRef}>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-800 tracking-tight">
+          <BarChart3 className="h-5 w-5" />
+          Panel Administrativo
+        </h2>
+        <button onClick={handleExportPDF} disabled={exporting}
+          className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50">
+          <Download className="h-4 w-4" />
+          {exporting ? "Exportando..." : "Exportar PDF"}
+        </button>
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="Total Asociadas" value={asociadas.length} icon={Users} onClick={() => setListModal({ title: "Todas las Asociadas", items: asociadas.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) })} />
         <StatCard label="Promedio Edad" value={`${promedioEdad} años`} icon={BarChart3} onClick={() => setListModal({ title: "Promedio de Edad", items: [...asociadas].sort((a, b) => b.edad - a.edad).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) })} />

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "../../services/supabase";
 
 const VisitasContext = createContext(null);
@@ -28,6 +28,8 @@ function toDB(data) {
 export function VisitasProvider({ children }) {
   const [visitas, setVisitas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const refreshing = useRef(false);
 
   const fetchVisitas = useCallback(async () => {
     const { data, error } = await supabase
@@ -42,9 +44,26 @@ export function VisitasProvider({ children }) {
     return (data || []).map(toFrontend);
   }, []);
 
+  const refresh = useCallback(async () => {
+    if (refreshing.current) return;
+    refreshing.current = true;
+    try {
+      const mapped = await fetchVisitas();
+      if (mapped) {
+        setVisitas(mapped);
+        setLastUpdated(Date.now());
+      }
+    } finally {
+      refreshing.current = false;
+    }
+  }, [fetchVisitas]);
+
   useEffect(() => {
     fetchVisitas().then((mapped) => {
-      if (mapped) setVisitas(mapped);
+      if (mapped) {
+        setVisitas(mapped);
+        setLastUpdated(Date.now());
+      }
       setLoading(false);
     });
   }, [fetchVisitas]);
@@ -150,7 +169,7 @@ export function VisitasProvider({ children }) {
   }, [visitas]);
 
   return (
-    <VisitasContext.Provider value={{ visitas, loading, addVisita, editVisita, deleteVisita, getVisitasByAsociada, getProximasVisitas }}>
+    <VisitasContext.Provider value={{ visitas, loading, addVisita, editVisita, deleteVisita, getVisitasByAsociada, getProximasVisitas, refresh, lastUpdated }}>
       {children}
     </VisitasContext.Provider>
   );

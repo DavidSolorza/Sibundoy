@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Search, X, User } from "lucide-react";
 import useAsociadas from "../asociadas/useAsociadas";
@@ -9,9 +9,19 @@ import Badge from "../../shared/ui/Badge";
 function MapaPage() {
   const { asociadas } = useAsociadas();
   const location = useLocation();
+  const searchRef = useRef(null);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  useEffect(() => {
+    function handleKey(e) {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "/") { e.preventDefault(); searchRef.current?.focus(); }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   const initialRouteDest = location.state?.routeTo || null;
 
@@ -35,9 +45,9 @@ function MapaPage() {
       <div className="relative mb-1 md:mb-4">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
+          <Input ref={searchRef}
             type="text"
-            placeholder="Buscar persona o zona..."
+            placeholder="Buscar persona o zona... (presiona /)"
             value={query}
             onChange={(e) => { setQuery(e.target.value); setShowDropdown(true); setSelectedId(null); }}
             onFocus={() => setShowDropdown(true)}
