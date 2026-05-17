@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { NavLink, useSearchParams } from "react-router-dom";
-import { Map, Sprout, ClipboardList, Download, Settings, Menu, X } from "lucide-react";
+import { Map, Sprout, ClipboardList, Download, Upload, Settings, Menu, X } from "lucide-react";
 
 function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -17,6 +17,7 @@ function Navbar() {
     if (!isViewOnly) {
       all.push(
         { to: "/exportacion", label: "Exportar", icon: Download },
+        { to: "/importar", label: "Importar", icon: Upload },
         { to: "/admin", label: "Admin", icon: Settings },
       );
     }

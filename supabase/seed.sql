@@ -26,7 +26,7 @@ declare
     '3101234567', '3107654321', '3209876543', '3204567890', '3112345678',
     '3123456789', '3134567890', '3145678901', '3156789012', '3167890123'
   ];
-  tipos_persona text[] := array['madre cabeza de hogar', 'Adulto mayor', 'viuda'];
+  tipos_persona text[] := array['Casada', 'Madre Cabeza De Hogar', 'Viuda', 'Separada'];
   tipos_visita text[] := array['visita', 'seguimiento', 'capacitacion'];
   observaciones text[] := array[
     'Revisión general de la huerta. Buen estado.',
@@ -89,7 +89,7 @@ begin
       (date '2025-03-21' - (60 + (idx - 1) * 3)),
       (date '2025-03-21' - (5 + ((idx - 1) % 30))),
       1 + ((idx - 1) % 6),
-      (tipos_persona[1 + ((idx - 1) % 3)])::tipo_persona,
+      (tipos_persona[1 + ((idx - 1) % array_length(tipos_persona, 1))])::tipo_persona,
       observaciones[1 + ((idx - 1) % 10)],
       lat_final,
       lng_final

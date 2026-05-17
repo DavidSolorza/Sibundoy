@@ -6,7 +6,8 @@ import { Trash2, MapPin, Pencil, Eye, User, ChevronUp, ChevronDown } from "lucid
 
 const defaultColumns = [
   { key: "nombre", label: "Nombre" },
-  { key: "tipoPersona", label: "Tipo" },
+  { key: "tipoPersona", label: "Estado Civil" },
+  { key: "menoresHogar", label: "Menores Hogar" },
   { key: "sector", label: "Sector" },
   { key: "fechaUltimaVisita", label: "Última Visita" },
 ];
@@ -18,19 +19,20 @@ function SortIcon({ columnKey, sortBy }) {
     : <ChevronDown className="h-3 w-3 ml-0.5 inline-block" />;
 }
 
-const TableRow = memo(function TableRow({ asociada, onDelete, onViewMap, onEdit, onViewDetails, onRowClick, viewOnly }) {
+const TableRow = memo(function TableRow({ asociada, onDelete, onViewMap, onEdit, onViewDetails, onRowClick, viewOnly, columns }) {
   const navigate = useNavigate();
+  const cols = columns || defaultColumns;
   return (
     <tr className="border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50 cursor-pointer" onClick={() => onRowClick?.(asociada)}>
       <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-2 py-3 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.05)]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-1">
-          <button onClick={() => navigate(`/asociada/${asociada.id}`)} className="cursor-pointer rounded-md bg-slate-800 text-white transition-colors hover:bg-slate-700 min-h-9 min-w-9 flex items-center justify-center" title="Perfil completo">
+          <button onClick={() => navigate(`/asociada/${asociada.id}`)} className="cursor-pointer rounded-md bg-slate-800 text-white transition-colors hover:bg-slate-700 min-h-9 min-w-9 flex items-center justify-center" title="Perfil Completo">
             <User className="h-4 w-4" />
           </button>
-          <button onClick={() => onViewDetails(asociada)} className="cursor-pointer rounded-md bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 min-h-9 min-w-9 flex items-center justify-center" title="Ver detalle">
+          <button onClick={() => onViewDetails(asociada)} className="cursor-pointer rounded-md bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 min-h-9 min-w-9 flex items-center justify-center" title="Ver Detalle">
             <Eye className="h-4 w-4" />
           </button>
-          <button onClick={() => onViewMap(asociada)} className="cursor-pointer rounded-md bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-100 min-h-9 min-w-9 flex items-center justify-center" title="Ver en mapa">
+          <button onClick={() => onViewMap(asociada)} className="cursor-pointer rounded-md bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-100 min-h-9 min-w-9 flex items-center justify-center" title="Ver En Mapa">
             <MapPin className="h-4 w-4" />
           </button>
           {!viewOnly && (
@@ -45,14 +47,14 @@ const TableRow = memo(function TableRow({ asociada, onDelete, onViewMap, onEdit,
           )}
         </div>
       </td>
-      {defaultColumns.map((col) => (
+      {cols.map((col) => (
         <td key={col.key} className="whitespace-nowrap px-3 py-3 text-sm text-slate-700">
           {col.key === "sector" ? (
             <Badge variant="primary">{asociada[col.key]}</Badge>
           ) : col.key === "tipoPersona" ? (
             <Badge variant="warning">{asociada[col.key]}</Badge>
           ) : (
-            asociada[col.key]
+            asociada[col.key] ?? ""
           )}
         </td>
       ))}
@@ -88,7 +90,7 @@ const TablaAsociadas = memo(function TablaAsociadas({ data, onViewMap, onEdit, o
         </thead>
         <tbody className="divide-y divide-slate-100 bg-white">
           {items.map((a) => (
-            <TableRow key={a.id} asociada={a} onDelete={handleDelete} onViewMap={onViewMap} onEdit={onEdit} onViewDetails={onViewDetails} onRowClick={onRowClick} viewOnly={viewOnly} />
+            <TableRow key={a.id} asociada={a} onDelete={handleDelete} onViewMap={onViewMap} onEdit={onEdit} onViewDetails={onViewDetails} onRowClick={onRowClick} viewOnly={viewOnly} columns={cols} />
           ))}
         </tbody>
       </table>

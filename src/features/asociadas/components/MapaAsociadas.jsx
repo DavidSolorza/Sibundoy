@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, LayersControl, CircleMarker, Circle, ScaleControl } from "react-leaflet";
 import L from "leaflet";
-import { MapPin, Phone, Sprout, Navigation, X, User, Clock, Route, Loader, Heart, Calendar, Crosshair, LocateFixed, Maximize2, Minimize2, Pencil, Trash2, Info, Eye } from "lucide-react";
+import { MapPin, Phone, Sprout, Navigation, X, User, Clock, Route, Loader, Heart, Calendar, Crosshair, LocateFixed, Maximize2, Minimize2, Pencil, Trash2, Info, Eye, Users } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
@@ -81,11 +81,12 @@ function PopupContent({ asociada: a, onRoute, onEdit, onDelete, viewOnly }) {
         <span className="truncate">{a.nombre}</span>
       </p>
       <div className="space-y-1.5 text-slate-600 mb-3">
-        <p className="flex items-center gap-1.5"><Heart className="h-3.5 w-3.5 text-slate-400 shrink-0" /><span className="text-slate-400">Tipo:</span> {a.tipoPersona || "—"}</p>
+        <p className="flex items-center gap-1.5"><Heart className="h-3.5 w-3.5 text-slate-400 shrink-0" /><span className="text-slate-400">Estado Civil:</span> {a.tipoPersona || "—"}</p>
         <p className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" /><span className="text-slate-400">Sector:</span> {a.sector}</p>
         <p className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-slate-400 shrink-0" /><span className="text-slate-400">Tel:</span> {a.telefono || "—"}</p>
         <p className="flex items-center gap-1.5"><Sprout className="h-3.5 w-3.5 text-slate-400 shrink-0" /><span className="text-slate-400">Huerta:</span> {a.areaHuerta || "—"}</p>
-        <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" /><span className="text-slate-400">Últ. visita:</span> {a.fechaUltimaVisita || "—"}</p>
+        <p className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-slate-400 shrink-0" /><span className="text-slate-400">Menores:</span> {a.menoresHogar ?? "—"}</p>
+        <p className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-slate-400 shrink-0" /><span className="text-slate-400">Últ. Visita:</span> {a.fechaUltimaVisita || "—"}</p>
       </div>
       <div className="flex gap-1.5">
         <button onClick={(e) => { e.stopPropagation(); onRoute([a.lat, a.lng]); }} className="cursor-pointer flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-2.5 py-2.5 text-xs font-medium text-white transition-colors duration-200 hover:bg-blue-700 active:bg-blue-800 min-h-[36px]">
@@ -155,7 +156,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   const { asociadas: all, addAsociada, updateAsociada, deleteAsociada } = useAsociadas();
   const { showToast, ToastDisplay } = useToast();
   const { isViewOnly } = useViewMode();
-  const items = filteredAsociadas || all;
+  const items = (filteredAsociadas || all).filter((a) => a.lat != null && a.lng != null);
   const [routeDest, setRouteDest] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
   const [origin, setOrigin] = useState({ lat: 1.2035, lng: -76.9201 });
@@ -181,18 +182,18 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   const handleSave = useCallback(async (asociada) => {
     try {
       await addAsociada(asociada);
-      showToast("Asociada agregada correctamente");
+      showToast("Asociada Agregada Correctamente");
     } catch {
-      showToast("Error al crear asociada", "error");
+      showToast("Error Al Crear Asociada", "error");
     }
   }, [addAsociada, showToast]);
 
   const handleUpdate = useCallback(async (asociada) => {
     try {
       await updateAsociada(asociada.id, asociada);
-      showToast("Asociada actualizada correctamente");
+      showToast("Asociada Actualizada Correctamente");
     } catch {
-      showToast("Error al actualizar asociada", "error");
+      showToast("Error Al Actualizar Asociada", "error");
     }
   }, [updateAsociada, showToast]);
 
@@ -200,7 +201,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => { setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setAccuracy(pos.coords.accuracy); },
-        () => { showToast("No se pudo obtener tu ubicación", "error"); }
+        () => { showToast("No Se Pudo Obtener Tu Ubicación", "error"); }
       );
     }
   }, [showToast]);
@@ -227,7 +228,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   const handleEditAsociada = useCallback((a) => { setEditingAsociada(a); }, []);
   const handleDeleteRequest = useCallback((a) => { setDeletingAsociada(a); }, []);
   const handleConfirmDelete = useCallback(() => {
-    if (deletingAsociada) { deleteAsociada(deletingAsociada.id); showToast("Asociada eliminada correctamente"); setDeletingAsociada(null); }
+    if (deletingAsociada) { deleteAsociada(deletingAsociada.id); showToast("Asociada Eliminada Correctamente"); setDeletingAsociada(null); }
   }, [deletingAsociada, deleteAsociada, showToast]);
   const handleFormClose = useCallback(() => { setFormCoords(null); setEditingAsociada(null); }, []);
 
@@ -314,22 +315,22 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
         )}
       </MapContainer>
       <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
-        <button onClick={() => { if (mapRef.current && origin) { mapRef.current.flyTo([origin.lat, origin.lng], 15); } }} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-xs font-medium text-slate-700 shadow-md transition-colors hover:bg-slate-50 active:bg-slate-100 border border-slate-200 min-h-[40px]" title="Centrar en mi ubicación">
-          <LocateFixed className="h-4 w-4 text-blue-600" /> <span className="hidden sm:inline">Centrar aquí</span>
+        <button onClick={() => { if (mapRef.current && origin) { mapRef.current.flyTo([origin.lat, origin.lng], 15); } }} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-xs font-medium text-slate-700 shadow-md transition-colors hover:bg-slate-50 active:bg-slate-100 border border-slate-200 min-h-[40px]" title="Centrar En Mi Ubicación">
+          <LocateFixed className="h-4 w-4 text-blue-600" /> <span className="hidden sm:inline">Centrar Aquí</span>
         </button>
           {!isViewOnly && (
-            <button onClick={() => setFormCoords({ lat: origin.lat, lng: origin.lng })} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white shadow-md transition-colors hover:bg-emerald-700 active:bg-emerald-800 min-h-[40px]" title="Añadir productora en mi ubicación">
-              <Crosshair className="h-4 w-4" /> <span className="hidden sm:inline">Añadir aquí</span>
+            <button onClick={() => setFormCoords({ lat: origin.lat, lng: origin.lng })} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white shadow-md transition-colors hover:bg-emerald-700 active:bg-emerald-800 min-h-[40px]" title="Añadir Productora En Mi Ubicación">
+              <Crosshair className="h-4 w-4" /> <span className="hidden sm:inline">Añadir Aquí</span>
             </button>
           )}
-        <button onClick={handleFullscreenToggle} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-xs font-medium text-slate-700 shadow-md transition-colors hover:bg-slate-50 active:bg-slate-100 border border-slate-200 min-h-[40px]" title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}>
+        <button onClick={handleFullscreenToggle} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-white px-4 py-2.5 text-xs font-medium text-slate-700 shadow-md transition-colors hover:bg-slate-50 active:bg-slate-100 border border-slate-200 min-h-[40px]" title={isFullscreen ? "Salir De Pantalla Completa" : "Pantalla Completa"}>
           {isFullscreen ? <Minimize2 className="h-4 w-4 text-slate-600" /> : <Maximize2 className="h-4 w-4 text-slate-600" />}
-          <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla completa"}</span>
+          <span className="hidden sm:inline">{isFullscreen ? "Salir" : "Pantalla Completa"}</span>
         </button>
       </div>
       <FormularioAsociada open={!!formCoords} onClose={handleFormClose} onSave={handleSave} coords={formCoords || { lat: 0, lng: 0 }} />
       <FormularioAsociada key={editingAsociada?.id || "edit"} open={!!editingAsociada} onClose={handleFormClose} onSave={handleUpdate} coords={{ lat: editingAsociada?.lat || 0, lng: editingAsociada?.lng || 0 }} initialData={editingAsociada} />
-      <ConfirmModal open={!!deletingAsociada} title="Eliminar asociada" message={`¿Estás seguro de eliminar a ${deletingAsociada?.nombre || ""}? Esta acción no se puede deshacer.`} onConfirm={handleConfirmDelete} onCancel={() => setDeletingAsociada(null)} />
+      <ConfirmModal open={!!deletingAsociada} title="Eliminar Asociada" message={`¿Estás seguro de eliminar a ${deletingAsociada?.nombre || ""}? Esta acción no se puede deshacer.`} onConfirm={handleConfirmDelete} onCancel={() => setDeletingAsociada(null)} />
       {ToastDisplay}
     </div>
   );

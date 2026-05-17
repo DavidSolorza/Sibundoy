@@ -56,8 +56,9 @@ function MapModal({ asociada, onClose }) {
 }
 
 const detailFields = [
-  { label: "Tipo", key: "tipoPersona", icon: Heart }, { label: "Edad", key: "edad", icon: Tag },
-  { label: "Teléfono", key: "telefono", icon: Phone }, { label: "Núm. Personas", key: "numPersonas", icon: Users },
+  { label: "Estado Civil", key: "tipoPersona", icon: Heart }, { label: "Edad", key: "edad", icon: Tag },
+  { label: "Teléfono", key: "telefono", icon: Phone },   { label: "Núm. Personas", key: "numPersonas", icon: Users },
+  { label: "Menores Hogar", key: "menoresHogar", icon: Users },
   { label: "Sector", key: "sector", icon: MapPin }, { label: "Área Huerta", key: "areaHuerta", icon: Sprout },
   { label: "Productos", key: "productos", icon: Wheat }, { label: "Fecha Siembra", key: "fechaSiembra", icon: Calendar },
   { label: "Última Visita", key: "fechaUltimaVisita", icon: Calendar }, { label: "Núm. Visitas", key: "numVisitas", icon: ClipboardList },
@@ -67,7 +68,7 @@ const detailFields = [
 function DetailModal({ asociada, onClose }) {
   const navigate = useNavigate();
   return (
-    <Modal open={!!asociada} onClose={onClose} title="Detalle de asociada">
+    <Modal open={!!asociada} onClose={onClose} title="Detalle De Asociada">
       {asociada && (
         <div className="space-y-3">
           <p className="text-lg font-semibold text-slate-900 flex items-center gap-2"><User className="h-5 w-5 text-blue-600" />{asociada.nombre}</p>
@@ -121,7 +122,7 @@ function MapLocationPicker({ open, onClose, onConfirm }) {
   }, [open]);
 
   return (
-    <Modal open={open} onClose={onClose} title="Ubicación en el mapa">
+    <Modal open={open} onClose={onClose} title="Ubicación En El Mapa">
       <div className="space-y-3">
         <p className="text-xs text-slate-500 flex items-center gap-1.5">
           <Crosshair className="h-3.5 w-3.5 text-slate-400" />
@@ -133,7 +134,7 @@ function MapLocationPicker({ open, onClose, onConfirm }) {
             <ClickPicker onPick={handlePick} />
             {coords && (
               <Marker position={[coords.lat, coords.lng]} icon={markerIcon}>
-                <Popup><p className="text-sm font-semibold">Ubicación seleccionada</p></Popup>
+                <Popup><p className="text-sm font-semibold">Ubicación Seleccionada</p></Popup>
               </Marker>
             )}
             {coords && <FitBounds puntos={[[coords.lat, coords.lng]]} />}
@@ -150,7 +151,7 @@ function MapLocationPicker({ open, onClose, onConfirm }) {
             Cancelar
           </button>
           <button onClick={() => onConfirm(coords)} className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-700 active:bg-slate-900">
-            <Check className="h-4 w-4" /> Confirmar ubicación
+            <Check className="h-4 w-4" /> Confirmar Ubicación
           </button>
         </div>
       </div>
@@ -160,7 +161,8 @@ function MapLocationPicker({ open, onClose, onConfirm }) {
 
 const SORTABLE_COLUMNS = [
   { key: "nombre", label: "Nombre" },
-  { key: "tipoPersona", label: "Tipo" },
+  { key: "tipoPersona", label: "Estado Civil" },
+  { key: "menoresHogar", label: "Menores Hogar" },
   { key: "sector", label: "Sector" },
   { key: "fechaUltimaVisita", label: "Última Visita" },
 ];
@@ -292,9 +294,9 @@ function HuertasPage() {
           <div className="space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <Input ref={searchRef} type="text" placeholder="Buscar por nombre, sector, teléfono, productos..." value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }} className="pl-10 pr-10" />
+              <Input ref={searchRef} type="text" placeholder="Buscar Por Nombre, Sector, Teléfono, Productos..." value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }} className="pl-10 pr-10" />
               {query && (
-                <button onClick={clearSearch} className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" aria-label="Limpiar búsqueda">
+                <button onClick={clearSearch} className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" aria-label="Limpiar Búsqueda">
                   <X className="h-4 w-4" />
                 </button>
               )}
@@ -375,11 +377,11 @@ function HuertasPage() {
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
                 <Search className="h-6 w-6 text-slate-400" />
               </div>
-              <p className="text-sm font-medium text-slate-700">No se encontraron resultados</p>
-              <p className="mt-1 text-xs text-slate-400">Prueba con otros términos de búsqueda o filtros.</p>
+              <p className="text-sm font-medium text-slate-700">No Se Encontraron Resultados</p>
+              <p className="mt-1 text-xs text-slate-400">Prueba Con Otros Términos De Búsqueda O Filtros.</p>
               {hasActiveFilters && (
                 <button onClick={clearFilters} className="mt-3 cursor-pointer inline-flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-700">
-                  <X className="h-3 w-3" /> Limpiar filtros
+                  <X className="h-3 w-3" /> Limpiar Filtros
                 </button>
               )}
             </div>
@@ -414,14 +416,14 @@ function HuertasPage() {
       <MapLocationPicker open={pickerOpen} onClose={() => setPickerOpen(false)} onConfirm={handlePickerConfirm} />
       <MapModal asociada={mapAsociada} onClose={() => setMapAsociada(null)} />
       <DetailModal asociada={detailAsociada} onClose={() => setDetailAsociada(null)} />
-      <ConfirmModal open={!!deletingAsociada} title="Eliminar asociada" message={`¿Estás seguro de eliminar a ${deletingAsociada?.nombre}? Esta acción no se puede deshacer.`}
-        onConfirm={async () => { try { await deleteAsociada(deletingAsociada.id); setDeletingAsociada(null); showToast("Asociada eliminada correctamente"); } catch { showToast("Error al eliminar"); } }}
+      <ConfirmModal open={!!deletingAsociada} title="Eliminar Asociada" message={`¿Estás seguro de eliminar a ${deletingAsociada?.nombre}? Esta acción no se puede deshacer.`}
+        onConfirm={async () => { try { await deleteAsociada(deletingAsociada.id); setDeletingAsociada(null); showToast("Asociada Eliminada Correctamente"); } catch { showToast("Error Al Eliminar"); } }}
         onCancel={() => setDeletingAsociada(null)} />
       <FormularioAsociada key={editingAsociada?.id || "edit"} open={!!editingAsociada} onClose={() => setEditingAsociada(null)}
-        onSave={async (data) => { try { await updateAsociada(editingAsociada.id, data); setEditingAsociada(null); showToast("Asociada actualizada correctamente"); } catch { showToast("Error al actualizar"); } }}
+        onSave={async (data) => { try { await updateAsociada(editingAsociada.id, data); setEditingAsociada(null); showToast("Asociada Actualizada Correctamente"); } catch { showToast("Error Al Actualizar"); } }}
         coords={{ lat: 0, lng: 0 }} initialData={editingAsociada} />
       <FormularioAsociada key="create" open={creatingNew} onClose={handleFormClose}
-        onSave={async (data) => { try { await addAsociada(data); setCreatingNew(false); setCreatingCoords(null); showToast("Asociada creada correctamente"); } catch { showToast("Error al crear"); } }}
+        onSave={async (data) => { try { await addAsociada(data); setCreatingNew(false); setCreatingCoords(null); showToast("Asociada Creada Correctamente"); } catch { showToast("Error Al Crear"); } }}
         coords={creatingCoords || SIBUNDOY} />
       {ToastDisplay}
     </section>

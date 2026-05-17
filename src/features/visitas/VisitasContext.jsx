@@ -29,20 +29,71 @@ export function VisitasProvider({ children }) {
   const [visitas, setVisitas] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    supabase
+  const fetchVisitas = useCallback(async () => {
+    const { data, error } = await supabase
       .from("visitas")
       .select("*")
-      .order("fecha", { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          console.error("Error cargando visitas:", error.message);
-          setLoading(false);
-          return;
+      .order("fecha", { ascending: false });
+
+    if (error) {
+      console.error("Error cargando visitas:", error.message);
+      return null;
+    }
+    return (data || []).map(toFrontend);
+  }, []);
+
+  useEffect(() => {
+    fetchVisitas().then((mapped) => {
+      if (mapped) setVisitas(mapped);
+      setLoading(false);
+    });
+  }, [fetchVisitas]);
+
+  useEffect(() => {
+    const id = setInterval(async () => {
+      const mapped = await fetchVisitas();
+      if (mapped) setVisitas(mapped);
+    }, 15000);
+
+    return () => clearInterval(id);
+  }, [fetchVisitas]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("visitas-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "visitas" },
+        async (payload) => {
+          if (payload.eventType === "DELETE") {
+            setVisitas((prev) => prev.filter((v) => v.id !== payload.old.id));
+            return;
+          }
+
+          const { data, error } = await supabase
+            .from("visitas")
+            .select("*")
+            .eq("id", payload.new.id)
+            .single();
+
+          if (error || !data) return;
+
+          const mapped = toFrontend(data);
+
+          setVisitas((prev) => {
+            const idx = prev.findIndex((v) => v.id === mapped.id);
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = mapped;
+              return next;
+            }
+            return [mapped, ...prev];
+          });
         }
-        setVisitas((data || []).map(toFrontend));
-        setLoading(false);
-      });
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const addVisita = useCallback(async (visita) => {
@@ -52,7 +103,10 @@ export function VisitasProvider({ children }) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase insert error:", error);
+      throw new Error(error.message);
+    }
 
     const mapped = toFrontend(newRow);
     setVisitas((prev) => [mapped, ...prev]);
@@ -65,14 +119,20 @@ export function VisitasProvider({ children }) {
       .update(toDB(data))
       .eq("id", id);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase update error:", error);
+      throw new Error(error.message);
+    }
 
     setVisitas((prev) => prev.map((v) => (v.id === id ? { ...v, ...data } : v)));
   }, []);
 
   const deleteVisita = useCallback(async (id) => {
     const { error } = await supabase.from("visitas").delete().eq("id", id);
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase delete error:", error);
+      throw new Error(error.message);
+    }
     setVisitas((prev) => prev.filter((v) => v.id !== id));
   }, []);
 

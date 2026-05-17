@@ -71,7 +71,7 @@ function SectorDetailModal({ sectorName, asociadas: items, onClose }) {
             <div key={a.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2.5 text-sm hover:bg-slate-50 transition-colors">
               <div className="flex items-center gap-2 min-w-0">
                 <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <span className="font-medium text-slate-800 truncate">{a.nombre}</span>
+                <button onClick={() => { onClose(); navigate(`/asociada/${a.id}`); }} className="cursor-pointer font-medium text-slate-800 truncate hover:text-blue-600 transition-colors">{a.nombre}</button>
               </div>
               <div className="flex items-center gap-3 shrink-0 ml-2">
                 <span className="text-xs text-slate-400">{a.edad} años</span>
@@ -88,6 +88,7 @@ function SectorDetailModal({ sectorName, asociadas: items, onClose }) {
 }
 
 function TipoDetailModal({ tipoName, asociadas: items, onClose }) {
+  const navigate = useNavigate();
   const stats = useMemo(() => {
     const total = items.length;
     const edades = items.map((a) => a.edad);
@@ -114,7 +115,7 @@ function TipoDetailModal({ tipoName, asociadas: items, onClose }) {
             <div key={a.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2.5 text-sm hover:bg-slate-50 transition-colors">
               <div className="flex items-center gap-2 min-w-0">
                 <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <span className="font-medium text-slate-800 truncate">{a.nombre}</span>
+                <button onClick={() => { onClose(); navigate(`/asociada/${a.id}`); }} className="cursor-pointer font-medium text-slate-800 truncate hover:text-blue-600 transition-colors">{a.nombre}</button>
               </div>
               <span className="text-xs text-slate-400 shrink-0 ml-2">Edad: {a.edad}</span>
             </div>
@@ -138,23 +139,25 @@ function AdminDashboard() {
     const sectoresVisitas = {};
     const tipos = {};
     asociadas.forEach((a) => {
-      sectores[a.sector] = (sectores[a.sector] || 0) + 1;
-      if (!sectoresEdad[a.sector]) sectoresEdad[a.sector] = [];
-      sectoresEdad[a.sector].push(a.edad);
-      sectoresPersonas[a.sector] = (sectoresPersonas[a.sector] || 0) + (a.numPersonas || 1);
-      sectoresVisitas[a.sector] = (sectoresVisitas[a.sector] || 0) + a.numVisitas;
-      tipos[a.tipoPersona] = (tipos[a.tipoPersona] || 0) + 1;
+      if (a.sector) {
+        sectores[a.sector] = (sectores[a.sector] || 0) + 1;
+        if (!sectoresEdad[a.sector]) sectoresEdad[a.sector] = [];
+        sectoresEdad[a.sector].push(a.edad);
+        sectoresPersonas[a.sector] = (sectoresPersonas[a.sector] || 0) + (a.numPersonas || 1);
+        sectoresVisitas[a.sector] = (sectoresVisitas[a.sector] || 0) + a.numVisitas;
+      }
+      if (a.tipoPersona) tipos[a.tipoPersona] = (tipos[a.tipoPersona] || 0) + 1;
     });
     return { sectores, sectoresEdad, sectoresPersonas, sectoresVisitas, tipos };
   }, [asociadas]);
 
   const totalVisitas = asociadas.reduce((sum, a) => sum + a.numVisitas, 0);
-  const promedioEdad = (asociadas.reduce((sum, a) => sum + a.edad, 0) / asociadas.length).toFixed(1);
+  const edadValidas = asociadas.filter((a) => a.edad != null && !isNaN(a.edad));
+  const promedioEdad = edadValidas.length > 0 ? (edadValidas.reduce((sum, a) => sum + a.edad, 0) / edadValidas.length).toFixed(1) : "—";
   const activas = asociadas.filter((a) => a.numVisitas > 0).length;
   const totalBeneficiarios = asociadas.reduce((sum, a) => sum + a.numPersonas, 0);
   const promPersonas = (totalBeneficiarios / asociadas.length).toFixed(1);
-  const edadMin = Math.min(...asociadas.map((a) => a.edad));
-  const edadMax = Math.max(...asociadas.map((a) => a.edad));
+  const totalMenores = asociadas.reduce((sum, a) => sum + (a.menoresHogar || 0), 0);
   const sectorNamesList = Object.keys(stats.sectores);
 
   const alertas = useMemo(() => {
@@ -238,6 +241,29 @@ function AdminDashboard() {
               <p className={`text-2xl font-bold ${totalAlertas > 0 ? "text-amber-600" : "text-emerald-600"}`}>{totalAlertas}</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Sectores</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{sectorNamesList.length}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Beneficiarios</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{totalBeneficiarios}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Prom. Personas/Hogar</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{promPersonas}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Menores De Edad</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{totalMenores}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Productos</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{prodChartData.length}</p>
         </div>
       </div>
 
@@ -350,7 +376,13 @@ function AdminDashboard() {
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} />
                 <YAxis tick={{ fontSize: 11, fill: "#64748b" }} allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={50}>
+                <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={50} cursor="pointer" onClick={(e) => {
+                  const range = e?.payload?.name;
+                  if (!range) return;
+                  const idx = EDAD_RANGES.indexOf(range);
+                  const list = asociadas.filter((a) => a.edad >= RANGE_MIN[idx] && a.edad <= RANGE_MAX[idx]);
+                  setSectorModal({ name: `Edad: ${range}`, list });
+                }}>
                   {edadChartData.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}
                 </Bar>
               </BarChart>
@@ -368,7 +400,12 @@ function AdminDashboard() {
                 <XAxis type="number" tick={{ fontSize: 11, fill: "#64748b" }} allowDecimals={false} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: "#334155" }} width={90} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={16}>
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={16} cursor="pointer" onClick={(e) => {
+                  const prod = e?.payload?.name;
+                  if (!prod) return;
+                  const list = asociadas.filter((a) => (a.productos || "").toLowerCase().includes(prod.toLowerCase()));
+                  setSectorModal({ name: `Producto: ${prod}`, list });
+                }}>
                   {prodChartData.map((_, i) => (<Cell key={i} fill={COLORS[i % COLORS.length]} />))}
                 </Bar>
               </BarChart>
@@ -420,31 +457,6 @@ function AdminDashboard() {
           </table>
         </div>
       </Card>
-
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Sectores</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{sectorNamesList.length}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Beneficiarios</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{totalBeneficiarios}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Prom. Personas/Hogar</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{promPersonas}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Rango de Edad</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{edadMin} - {edadMax}</p>
-        </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Productos</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{prodChartData.length}</p>
-        </div>
-      </div>
-
-
 
       {sectorModal && (
         <SectorDetailModal sectorName={sectorModal.name} asociadas={sectorModal.list} onClose={() => setSectorModal(null)} />

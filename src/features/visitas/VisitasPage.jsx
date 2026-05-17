@@ -7,12 +7,15 @@ import Modal from "../../shared/ui/Modal";
 import { Input, Select } from "../../shared/ui/Input";
 import { useToast } from "../../shared/ui/Toast";
 import { CalendarView, DayDetailModal } from "./CalendarView";
+import { parseLocalDate, getLocalDateString } from "../../shared/lib/dates";
 
 const TIPOS_VISITA = ["visita", "seguimiento", "capacitacion"];
 const typeColors = { visita: "bg-blue-100 text-blue-700", seguimiento: "bg-amber-100 text-amber-700", capacitacion: "bg-emerald-100 text-emerald-700" };
 const typeDots = { visita: "bg-blue-500", seguimiento: "bg-amber-500", capacitacion: "bg-emerald-500" };
 
-const EMPTY_FORM = { asociadaId: "", fecha: new Date().toISOString().split("T")[0], tipo: "visita", observaciones: "", proximaVisita: "" };
+function getEmptyForm() {
+  return { asociadaId: "", fecha: getLocalDateString(), tipo: "visita", observaciones: "", proximaVisita: "" };
+}
 
 function VisitasPage() {
   const { asociadas } = useAsociadas();
@@ -22,7 +25,7 @@ function VisitasPage() {
   const [view, setView] = useState("list");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [formData, setFormData] = useState(getEmptyForm());
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTipo, setFilterTipo] = useState(null);
   const [filterAsociada, setFilterAsociada] = useState(null);
@@ -38,11 +41,8 @@ function VisitasPage() {
   const proximas = useMemo(() => getProximasVisitas(), [getProximasVisitas]);
 
   const stats = useMemo(() => {
-    const now = new Date();
-    const thisMonth = visitas.filter((v) => {
-      const d = new Date(v.fecha);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
+    const now = getLocalDateString().slice(0, 7);
+    const thisMonth = visitas.filter((v) => v.fecha.startsWith(now));
     const uniqueAsociadas = new Set(visitas.map((v) => v.asociadaId)).size;
     const byType = {};
     visitas.forEach((v) => { byType[v.tipo] = (byType[v.tipo] || 0) + 1; });
@@ -65,10 +65,8 @@ function VisitasPage() {
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         matchesQuick = d >= weekAgo;
-      } else if (quickFilter === "month") {
-        const d = new Date(v.fecha);
-        const now = new Date();
-        matchesQuick = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }       else if (quickFilter === "month") {
+        matchesQuick = v.fecha.startsWith(getLocalDateString().slice(0, 7));
       }
       return matchesSearch && matchesTipo && matchesAsociada && matchesQuick;
     });
@@ -87,7 +85,7 @@ function VisitasPage() {
 
   const openAddForm = useCallback(() => {
     setEditingId(null);
-    setFormData(EMPTY_FORM);
+    setFormData(getEmptyForm());
     setShowForm(true);
   }, []);
 
@@ -115,11 +113,12 @@ function VisitasPage() {
         await addVisita(payload);
         showToast("Visita registrada correctamente");
       }
-      setFormData(EMPTY_FORM);
+      setFormData(getEmptyForm());
       setEditingId(null);
       setShowForm(false);
-    } catch {
-      showToast("Error al guardar la visita");
+    } catch (err) {
+      console.error("Error guardando visita:", err);
+      showToast(err?.message || "Error al guardar la visita");
     }
   }, [formData, editingId, addVisita, editVisita, showToast]);
 
@@ -127,8 +126,9 @@ function VisitasPage() {
     try {
       await deleteVisita(id);
       showToast("Visita eliminada");
-    } catch {
-      showToast("Error al eliminar la visita");
+    } catch (err) {
+      console.error("Error eliminando visita:", err);
+      showToast(err?.message || "Error al eliminar la visita");
     }
   }, [deleteVisita, showToast]);
 
@@ -173,7 +173,7 @@ function VisitasPage() {
       {proximas.length > 0 && (
         <Card className="mb-4 !border-blue-200 !bg-blue-50/50">
           <div className="flex items-center gap-2 text-sm font-semibold text-blue-800 mb-2">
-            <CalendarClock className="h-4 w-4" /> Próximas visitas programadas ({proximas.length})
+            <CalendarClock className="h-4 w-4" /> Próximas Visitas Programadas ({proximas.length})
           </div>
           <div className="flex flex-wrap gap-2">
             {proximas.slice(0, 5).map((v) => {
@@ -183,7 +183,7 @@ function VisitasPage() {
                   <span className={`inline-block h-2 w-2 rounded-full ${typeDots[v.tipo]}`} />
                   <span className="font-medium">{a?.nombre || "—"}</span>
                   <span className="text-slate-400">·</span>
-                  <span className="text-blue-600 font-medium">{new Date(v.proximaVisita + "T00:00:00").toLocaleDateString("es-CO")}</span>
+                  <span className="text-blue-600 font-medium">{parseLocalDate(v.proximaVisita).toLocaleDateString("es-CO")}</span>
                 </div>
               );
             })}
@@ -265,7 +265,7 @@ function VisitasPage() {
                 <div key={fecha}>
                   <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
                     <Calendar className="h-3.5 w-3.5" />
-                    {new Date(fecha + "T00:00:00").toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                    {parseLocalDate(fecha).toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
                     <span className="text-slate-300 font-normal">({items.length})</span>
                   </p>
                   <div className="space-y-2">
@@ -294,10 +294,10 @@ function VisitasPage() {
                             {v.observaciones && <p className="text-xs text-slate-500 mt-1">{v.observaciones}</p>}
                           </div>
                           <div className="flex flex-col gap-1 shrink-0">
-                            <button onClick={() => openEditForm(v)} className="cursor-pointer rounded-md p-1 text-slate-300 transition-colors hover:bg-blue-50 hover:text-blue-500" title="Editar visita">
+                            <button onClick={() => openEditForm(v)} className="cursor-pointer rounded-md p-1 text-slate-300 transition-colors hover:bg-blue-50 hover:text-blue-500" title="Editar Visita">
                               <Edit3 className="h-3.5 w-3.5" />
                             </button>
-                            <button onClick={() => handleDelete(v.id)} className="cursor-pointer rounded-md p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Eliminar visita">
+                            <button onClick={() => handleDelete(v.id)} className="cursor-pointer rounded-md p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Eliminar Visita">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -316,11 +316,11 @@ function VisitasPage() {
         <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (visitas.filter((v) => v.fecha === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} />
       )}
 
-      <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? "Editar visita" : "Registrar visita"}>
+      <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? "Editar Visita" : "Registrar Visita"}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Asociada <span className="text-red-400">*</span></label>
-            <Select name="asociadaId" value={formData.asociadaId} onChange={(e) => setFormData({ ...formData, asociadaId: Number(e.target.value) })} required>
+            <Select name="asociadaId" value={formData.asociadaId} onChange={(e) => setFormData({ ...formData, asociadaId: e.target.value ? Number(e.target.value) : "" })} required>
               <option value="">Seleccionar...</option>
               {asociadas.map((a) => (
                 <option key={a.id} value={a.id}>{a.nombre} — {a.sector.replace("Vereda ", "")}</option>

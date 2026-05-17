@@ -33,6 +33,7 @@ function LocationPickerModal({ open, onClose, onConfirm, initialCoords }) {
   const handlePick = useCallback((c) => setCoords(c), []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (open) setCoords(initialCoords || SIBUNDOY);
   }, [open, initialCoords]);
 

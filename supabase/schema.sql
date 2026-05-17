@@ -8,7 +8,7 @@ create extension if not exists "pgcrypto";
 create extension if not exists "pg_trgm";
 
 -- 1. Tipos enumerados
-create type tipo_persona as enum ('madre cabeza de hogar', 'Adulto mayor', 'viuda');
+create type tipo_persona as enum ('Casada', 'Madre Cabeza De Hogar', 'Viuda', 'Separada');
 create type tipo_visita as enum ('visita', 'seguimiento', 'capacitacion');
 
 -- 2. Tabla: sectores (catálogo)
@@ -246,35 +246,9 @@ order by total desc;
 -- ============================================================
 -- 14. Seguridad: Row Level Security (RLS)
 -- ============================================================
-alter table sectores enable row level security;
-alter table asociadas enable row level security;
-alter table visitas enable row level security;
-
--- Políticas públicas de lectura para todos los usuarios autenticados
-create policy "Sectores visible para todos"
-  on sectores for select using (true);
-
-create policy "Asociadas visible para todos"
-  on asociadas for select using (true);
-
-create policy "Visitas visible para todos"
-  on visitas for select using (true);
-
--- Políticas de escritura (ajustar según el nivel de acceso deseado)
-create policy "Asociadas insertable por autenticados"
-  on asociadas for insert with check (auth.role() = 'authenticated');
-
-create policy "Asociadas actualizable por autenticados"
-  on asociadas for update using (auth.role() = 'authenticated');
-
-create policy "Asociadas eliminable por autenticados"
-  on asociadas for delete using (auth.role() = 'authenticated');
-
-create policy "Visitas insertable por autenticados"
-  on visitas for insert with check (auth.role() = 'authenticated');
-
-create policy "Visitas actualizable por autenticados"
-  on visitas for update using (auth.role() = 'authenticated');
-
-create policy "Visitas eliminable por autenticados"
-  on visitas for delete using (auth.role() = 'authenticated');
+-- NOTA: La app usa una anon key (pública), NO tiene autenticación.
+-- Por lo tanto RLS está deshabilitado. Si en el futuro se agrega
+-- autenticación, habilitar RLS y crear políticas con auth.role().
+alter table sectores disable row level security;
+alter table asociadas disable row level security;
+alter table visitas disable row level security;

@@ -21,7 +21,7 @@ const telefonos = [
   "3123456789", "3134567890", "3145678901", "3156789012", "3167890123",
 ];
 
-const tiposPersona = ["madre cabeza de hogar", "Adulto mayor", "viuda"];
+const tiposPersona = ["Casada", "Madre Cabeza De Hogar", "Viuda", "Separada"];
 const tiposVisita = ["visita", "seguimiento", "capacitacion"];
 
 const observaciones = [
@@ -88,7 +88,7 @@ for (let idx = 0; idx < nombres.length; idx++) {
       fecha_siembra: new Date(2025, 2, 21 - (60 + idx * 3)).toISOString().split("T")[0],
       fecha_ultima_visita: new Date(2025, 2, 21 - (5 + (idx % 30))).toISOString().split("T")[0],
       num_visitas: 1 + (idx % 6),
-      tipo_persona: tiposPersona[idx % 3],
+      tipo_persona: tiposPersona[idx % tiposPersona.length],
       observaciones: observaciones[idx % 10],
       lat: latFinal,
       lng: lngFinal,

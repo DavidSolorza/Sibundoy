@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Clock, Calendar } from "lucide-react";
 import Modal from "../../shared/ui/Modal";
+import { parseLocalDate, getLocalDateString } from "../../shared/lib/dates";
 
 const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -10,11 +11,12 @@ const typeBg = { visita: "bg-blue-100 text-blue-700", seguimiento: "bg-amber-100
 const TIPOS = ["visita", "seguimiento", "capacitacion"];
 
 function CalendarView({ visitas, onDayClick }) {
-  const today = useMemo(() => new Date(), []);
   const [baseDate, setBaseDate] = useState(() => new Date());
 
   const year = baseDate.getFullYear();
   const month = baseDate.getMonth();
+  const todayStr = getLocalDateString();
+  const [todayYear, todayMonth] = todayStr.split("-").map(Number);
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
@@ -48,11 +50,11 @@ function CalendarView({ visitas, onDayClick }) {
   const prevYear = useCallback(() => setBaseDate(new Date(year - 1, month, 1)), [year, month]);
   const nextYear = useCallback(() => setBaseDate(new Date(year + 1, month, 1)), [year, month]);
 
-  const isCurrentMonth = month === today.getMonth() && year === today.getFullYear();
-  const monthTotal = useMemo(() => visitas.filter((v) => {
-    const d = new Date(v.fecha);
-    return d.getMonth() === month && d.getFullYear() === year;
-  }).length, [visitas, month, year]);
+  const isCurrentMonth = month === todayMonth - 1 && year === todayYear;
+  const monthTotal = useMemo(() => {
+    const prefix = `${year}-${String(month + 1).padStart(2, "0")}`;
+    return visitas.filter((v) => v.fecha.startsWith(prefix)).length;
+  }, [visitas, year, month]);
 
   return (
     <div>
@@ -106,8 +108,8 @@ function CalendarView({ visitas, onDayClick }) {
         ))}
         {weeks.flat().map((cell, i) => {
           if (!cell) return <div key={`empty-${i}`} className="bg-white min-h-[85px]" />;
-          const isToday = cell.day === today.getDate() && isCurrentMonth;
-          const isFuture = cell.dateStr > today.toISOString().split("T")[0];
+          const isToday = cell.dateStr === todayStr;
+          const isFuture = cell.dateStr > todayStr;
           return (
             <button
               key={cell.dateStr}
@@ -150,7 +152,7 @@ function CalendarView({ visitas, onDayClick }) {
 
 function DayDetailModal({ dateStr, visits, asociadaMap, onClose }) {
   const formatted = dateStr
-    ? new Date(dateStr + "T00:00:00").toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+    ? parseLocalDate(dateStr).toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
     : "";
   return (
     <Modal open={!!dateStr} onClose={onClose} title={<span className="flex items-center gap-2"><Calendar className="h-4 w-4 text-blue-600" />{formatted}</span>}>
@@ -174,7 +176,7 @@ function DayDetailModal({ dateStr, visits, asociadaMap, onClose }) {
                   {v.observaciones && <p className="text-xs text-slate-500 mt-1">{v.observaciones}</p>}
                   {v.proximaVisita && (
                     <p className="text-[10px] text-blue-500 mt-1 flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> Próxima: {new Date(v.proximaVisita + "T00:00:00").toLocaleDateString("es-CO")}
+                      <Clock className="h-3 w-3" /> Próxima: {parseLocalDate(v.proximaVisita).toLocaleDateString("es-CO")}
                     </p>
                   )}
                 </div>

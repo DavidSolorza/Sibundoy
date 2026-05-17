@@ -16,7 +16,7 @@ function MapaPage() {
   const initialRouteDest = location.state?.routeTo || null;
 
   const searchResults = query
-    ? asociadas.filter((a) => a.nombre.toLowerCase().includes(query.toLowerCase()) || a.sector.toLowerCase().includes(query.toLowerCase()))
+    ? asociadas.filter((a) => a.lat != null && a.lng != null && (a.nombre.toLowerCase().includes(query.toLowerCase()) || (a.sector || "").toLowerCase().includes(query.toLowerCase())))
     : [];
 
   const mapItems = selectedId ? asociadas.filter((a) => a.id === selectedId) : undefined;

@@ -1,25 +1,24 @@
 import { useState, useMemo, useCallback } from "react";
-import { Download, FileSpreadsheet, FileText, FileCode, FileDown, Check, X, SlidersHorizontal, MapPin, Loader2 } from "lucide-react";
-import useAsociadas from "../useAsociadas";
+import { Download, FileSpreadsheet, FileText, FileCode, FileDown, Check, X, SlidersHorizontal, MapPin, Loader2, Calendar } from "lucide-react";
+import useAsociadas from "../../asociadas/useAsociadas";
+import useVisitas from "../useVisitas";
 import { Card } from "../../../shared/ui/Card";
 import { useToast } from "../../../shared/ui/Toast";
 
+const MESES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
 const ALL_COLUMNS = [
   { key: "nombre", label: "Nombre", always: true },
-  { key: "edad", label: "Edad" },
-  { key: "telefono", label: "Teléfono" },
-  { key: "tipoPersona", label: "Estado Civil" },
   { key: "sector", label: "Sector" },
-  { key: "areaHuerta", label: "Área Huerta" },
-  { key: "productos", label: "Productos" },
-  { key: "numPersonas", label: "Núm. Personas" },
-  { key: "fechaSiembra", label: "Fecha Siembra" },
-  { key: "fechaUltimaVisita", label: "Última Visita" },
-  { key: "numVisitas", label: "Visitas" },
-  { key: "menoresHogar", label: "Menores Hogar" },
+  { key: "fecha", label: "Fecha" },
+  { key: "mes", label: "Mes" },
+  { key: "anio", label: "Año" },
+  { key: "tipo", label: "Tipo" },
   { key: "observaciones", label: "Observaciones" },
-  { key: "lat", label: "Latitud" },
-  { key: "lng", label: "Longitud" },
+  { key: "proximaVisita", label: "Próxima Visita" },
 ];
 
 const FORMATS = [
@@ -29,20 +28,31 @@ const FORMATS = [
   { id: "json", label: "JSON (.json)", icon: FileText, color: "bg-slate-800 hover:bg-slate-700" },
 ];
 
-const PRESETS = [
-  { id: "all", label: "Todos los campos" },
-  { id: "contact", label: "Contacto básico", cols: ["nombre", "telefono", "sector", "tipoPersona"] },
-  { id: "huerta", label: "Datos de huerta", cols: ["nombre", "sector", "areaHuerta", "productos", "fechaSiembra", "fechaUltimaVisita", "numVisitas"] },
-];
+function getAnos(visitas) {
+  const anos = new Set();
+  visitas.forEach((v) => {
+    if (v.fecha) anos.add(new Date(v.fecha).getFullYear());
+  });
+  return [...anos].sort((a, b) => b - a);
+}
 
-function ExportadorAsociadas() {
+function ExportadorVisitas() {
   const { asociadas } = useAsociadas();
+  const { visitas } = useVisitas();
   const { showToast, ToastDisplay } = useToast();
   const [selectedCols, setSelectedCols] = useState(ALL_COLUMNS.map((c) => c.key));
   const [format, setFormat] = useState("xlsx");
   const [sectorFilter, setSectorFilter] = useState(null);
+  const [mesFilter, setMesFilter] = useState(null);
+  const [anioFilter, setAnioFilter] = useState(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const asociadaMap = useMemo(() => {
+    const map = {};
+    asociadas.forEach((a) => { map[a.id] = a; });
+    return map;
+  }, [asociadas]);
 
   const sectores = useMemo(() => {
     const map = {};
@@ -52,17 +62,44 @@ function ExportadorAsociadas() {
     return map;
   }, [asociadas]);
 
+  const anosDisponibles = useMemo(() => getAnos(visitas), [visitas]);
+
+  const visitasConAsociada = useMemo(() => {
+    return visitas
+      .map((v) => {
+        const a = asociadaMap[v.asociadaId];
+        if (!a) return null;
+        const fecha = v.fecha ? new Date(v.fecha) : null;
+        return {
+          ...v,
+          nombre: a.nombre,
+          sector: a.sector,
+          mes: fecha ? MESES[fecha.getMonth()] : "",
+          anio: fecha ? fecha.getFullYear() : "",
+          fechaStr: fecha ? fecha.toISOString().split("T")[0] : "",
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  }, [visitas, asociadaMap]);
+
   const filteredData = useMemo(() => {
-    if (!sectorFilter) return asociadas;
-    return asociadas.filter((a) => a.sector === sectorFilter);
-  }, [asociadas, sectorFilter]);
+    return visitasConAsociada.filter((v) => {
+      if (sectorFilter && v.sector !== sectorFilter) return false;
+      if (mesFilter && v.mes !== mesFilter) return false;
+      if (anioFilter && v.anio !== anioFilter) return false;
+      return true;
+    });
+  }, [visitasConAsociada, sectorFilter, mesFilter, anioFilter]);
 
   const exportData = useMemo(() => {
     const cols = ALL_COLUMNS.filter((c) => selectedCols.includes(c.key));
-    return filteredData.map((a) => {
+    return filteredData.map((v) => {
       const row = {};
       cols.forEach((c) => {
-        row[c.label] = a[c.key] ?? "";
+        if (c.key === "fecha") row[c.label] = v.fechaStr ?? "";
+        else if (c.key === "proximaVisita") row[c.label] = v.proximaVisita ?? "";
+        else row[c.label] = v[c.key] ?? "";
       });
       return row;
     });
@@ -74,14 +111,7 @@ function ExportadorAsociadas() {
     );
   }, []);
 
-  const applyPreset = useCallback((id) => {
-    if (id === "all") {
-      setSelectedCols(ALL_COLUMNS.map((c) => c.key));
-    } else {
-      const preset = PRESETS.find((p) => p.id === id);
-      if (preset) setSelectedCols(preset.cols);
-    }
-  }, []);
+  const allSelected = selectedCols.length === ALL_COLUMNS.length;
 
   const exportToXLSX = useCallback(async () => {
     setLoading(true);
@@ -89,12 +119,12 @@ function ExportadorAsociadas() {
       const XLSX = await import("xlsx");
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Asociadas");
-      XLSX.writeFile(wb, `asociadas_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, "Visitas");
+      XLSX.writeFile(wb, `visitas_${new Date().toISOString().slice(0, 10)}.xlsx`);
       showToast("Excel descargado correctamente");
     } catch (e) {
+      console.error("Error exportando XLSX:", e);
       showToast("Error al descargar Excel: " + e.message, "error");
-      console.error(e);
     } finally {
       setLoading(false);
     }
@@ -112,18 +142,17 @@ function ExportadorAsociadas() {
           }).join(",")
         ),
       ];
-      const BOM = "\uFEFF";
-      const blob = new Blob([BOM + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `asociadas_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = `visitas_${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
       showToast("CSV descargado correctamente");
     } catch (e) {
+      console.error("Error exportando CSV:", e);
       showToast("Error al descargar CSV", "error");
-      console.error(e);
     }
   }, [exportData, showToast]);
 
@@ -133,13 +162,13 @@ function ExportadorAsociadas() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `asociadas_${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `visitas_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       showToast("JSON descargado correctamente");
     } catch (e) {
+      console.error("Error exportando JSON:", e);
       showToast("Error al descargar JSON", "error");
-      console.error(e);
     }
   }, [exportData, showToast]);
 
@@ -156,8 +185,8 @@ function ExportadorAsociadas() {
       const rows = exportData.map((row) => headers.map((h) => String(row[h] ?? "")));
 
       const dateStr = new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" });
-      const title = "Asociadas - AgroMap";
-      const subtitle = `Sibundoy, Putumayo · ${dateStr} · ${exportData.length} registros${sectorFilter ? ` · Sector: ${sectorFilter}` : ""}`;
+      const title = "Visitas - AgroMap";
+      const subtitle = `Sibundoy, Putumayo · ${dateStr} · ${exportData.length} registros${sectorFilter ? ` · Sector: ${sectorFilter}` : ""}${mesFilter ? ` · Mes: ${mesFilter}` : ""}${anioFilter ? ` · Año: ${anioFilter}` : ""}`;
 
       doc.setFontSize(16);
       doc.text(title, 14, 18);
@@ -176,15 +205,15 @@ function ExportadorAsociadas() {
         tableLineWidth: 0.1,
       });
 
-      doc.save(`asociadas_${new Date().toISOString().slice(0, 10)}.pdf`);
+      doc.save(`visitas_${new Date().toISOString().slice(0, 10)}.pdf`);
       showToast("PDF descargado correctamente");
     } catch (e) {
+      console.error("Error exportando PDF:", e);
       showToast("Error al descargar PDF: " + e.message, "error");
-      console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [exportData, sectorFilter, showToast]);
+  }, [exportData, sectorFilter, mesFilter, anioFilter, showToast]);
 
   const copyJSON = useCallback(() => {
     navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
@@ -199,7 +228,7 @@ function ExportadorAsociadas() {
     else if (format === "json") exportToJSON();
   }, [format, exportToXLSX, exportToCSV, exportToPDF, exportToJSON]);
 
-  const allSelected = selectedCols.length === ALL_COLUMNS.length;
+  const sectoresList = Object.entries(sectores);
 
   return (
     <div className="space-y-4">
@@ -224,17 +253,7 @@ function ExportadorAsociadas() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Campos a incluir</p>
-              <div className="flex gap-1.5">
-                {PRESETS.map((p) => (
-                  <button key={p.id} onClick={() => applyPreset(p.id)}
-                    className="cursor-pointer rounded-md border border-slate-200 px-2 py-1 text-[10px] font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700">
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Campos a incluir</p>
             <div className="flex flex-wrap gap-2">
               <label className="inline-flex items-center gap-1.5 cursor-pointer rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50 has-checked:border-slate-800 has-checked:bg-slate-800 has-checked:text-white">
                 <input type="checkbox" checked={allSelected} onChange={() => setSelectedCols(allSelected ? [] : ALL_COLUMNS.map((c) => c.key))} className="sr-only" />
@@ -251,33 +270,72 @@ function ExportadorAsociadas() {
             </div>
           </div>
 
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">
-              Filtrar por sector {sectorFilter && <span className="text-slate-800 font-bold">· {sectorFilter}</span>}
-            </p>
-            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              <button onClick={() => setSectorFilter(null)}
-                className={`cursor-pointer shrink-0 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-200 ${
-                  !sectorFilter ? "border-slate-800 bg-slate-800 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
-                }`}>
-                <SlidersHorizontal className="h-3 w-3" />
-                Todos
-                <span className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${!sectorFilter ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
-                  {asociadas.length}
-                </span>
-              </button>
-              {Object.entries(sectores).map(([sector, count]) => (
-                <button key={sector} onClick={() => setSectorFilter(sector === sectorFilter ? null : sector)}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Filtrar por sector</p>
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <button onClick={() => setSectorFilter(null)}
                   className={`cursor-pointer shrink-0 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-200 ${
-                    sectorFilter === sector ? "border-slate-800 bg-slate-800 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                    !sectorFilter ? "border-slate-800 bg-slate-800 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
                   }`}>
-                  <MapPin className="h-3 w-3" />
-                  {sector}
-                  <span className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${sectorFilter === sector ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
-                    {count}
+                  <SlidersHorizontal className="h-3 w-3" />
+                  Todos
+                  <span className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${!sectorFilter ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+                    {visitasConAsociada.length}
                   </span>
                 </button>
-              ))}
+                {sectoresList.map(([sector]) => (
+                  <button key={sector} onClick={() => setSectorFilter(sector === sectorFilter ? null : sector)}
+                    className={`cursor-pointer shrink-0 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-200 ${
+                      sectorFilter === sector ? "border-slate-800 bg-slate-800 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                    }`}>
+                    <MapPin className="h-3 w-3" />
+                    {sector}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Filtrar por mes</p>
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <button onClick={() => setMesFilter(null)}
+                  className={`cursor-pointer shrink-0 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-200 ${
+                    !mesFilter ? "border-slate-800 bg-slate-800 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                  }`}>
+                  <Calendar className="h-3 w-3" />
+                  Todos
+                </button>
+                {MESES.map((mes) => (
+                  <button key={mes} onClick={() => setMesFilter(mes === mesFilter ? null : mes)}
+                    className={`cursor-pointer shrink-0 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-200 ${
+                      mesFilter === mes ? "border-slate-800 bg-slate-800 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                    }`}>
+                    {mes.substring(0, 3)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-2">Filtrar por año</p>
+              <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <button onClick={() => setAnioFilter(null)}
+                  className={`cursor-pointer shrink-0 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-200 ${
+                    !anioFilter ? "border-slate-800 bg-slate-800 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                  }`}>
+                  <Calendar className="h-3 w-3" />
+                  Todos
+                </button>
+                {anosDisponibles.map((ano) => (
+                  <button key={ano} onClick={() => setAnioFilter(ano === anioFilter ? null : ano)}
+                    className={`cursor-pointer shrink-0 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-200 ${
+                      anioFilter === ano ? "border-slate-800 bg-slate-800 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400"
+                    }`}>
+                    {ano}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -315,6 +373,8 @@ function ExportadorAsociadas() {
             <p className="text-xs text-slate-400 text-center">
               Se exportarán <span className="font-medium text-slate-600">{exportData.length}</span> registro{exportData.length !== 1 ? "s" : ""} con <span className="font-medium text-slate-600">{selectedCols.length}</span> campo{selectedCols.length !== 1 ? "s" : ""}.
               {sectorFilter && <> Sector: <span className="font-medium text-slate-600">{sectorFilter}</span>.</>}
+              {mesFilter && <> Mes: <span className="font-medium text-slate-600">{mesFilter}</span>.</>}
+              {anioFilter && <> Año: <span className="font-medium text-slate-600">{anioFilter}</span>.</>}
             </p>
           )}
         </div>
@@ -324,4 +384,4 @@ function ExportadorAsociadas() {
   );
 }
 
-export default ExportadorAsociadas;
+export default ExportadorVisitas;
