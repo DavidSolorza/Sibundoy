@@ -168,7 +168,7 @@ const SORTABLE_COLUMNS = [
 ];
 
 function HuertasPage() {
-  const { asociadas, getSectores, addAsociada, updateAsociada, deleteAsociada } = useAsociadas();
+  const { asociadas, loading, getSectores, addAsociada, updateAsociada, deleteAsociada } = useAsociadas();
   const { showToast, ToastDisplay } = useToast();
   const { isViewOnly } = useViewMode();
   const [query, setQuery] = useState("");
@@ -372,7 +372,11 @@ function HuertasPage() {
             </CardTitle>
           </CardHeader>
 
-          {sorted.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-transparent" />
+            </div>
+          ) : sorted.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
                 <Search className="h-6 w-6 text-slate-400" />

@@ -4,6 +4,7 @@ import Button from "../../../shared/ui/Button";
 import { Input, Select } from "../../../shared/ui/Input";
 import { MapPin, Navigation, AlertTriangle } from "lucide-react";
 import LocationPickerModal from "../../../shared/ui/LocationPickerModal";
+import { useToast } from "../../../shared/ui/Toast";
 import useAsociadas from "../useAsociadas";
 
 const SECTORES = [
@@ -35,6 +36,7 @@ const emptyForm = {
 
 function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
   const { asociadas } = useAsociadas();
+  const { showToast, ToastDisplay } = useToast();
   const isEditing = !!initialData;
   const [form, setForm] = useState(initialData ? { ...initialData } : emptyForm);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -76,6 +78,7 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
       onClose();
     } catch (err) {
       console.error("Error al guardar asociada:", err);
+      showToast(err?.message || "Error al guardar asociada", "error");
     }
   };
 
@@ -99,6 +102,7 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
   ];
 
   return (
+    <>
     <Modal open={open} onClose={handleClose} title={isEditing ? "Editar Asociada" : "Nueva Asociada"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isEditing && (
@@ -187,6 +191,8 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
         }}
       />
     </Modal>
+      {ToastDisplay}
+    </>
   );
 }
 

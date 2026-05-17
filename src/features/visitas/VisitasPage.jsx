@@ -4,6 +4,7 @@ import useAsociadas from "../asociadas/useAsociadas";
 import useVisitas from "./useVisitas";
 import { Card } from "../../shared/ui/Card";
 import Modal from "../../shared/ui/Modal";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 import { Input, Select } from "../../shared/ui/Input";
 import { useToast } from "../../shared/ui/Toast";
 import { CalendarView, DayDetailModal } from "./CalendarView";
@@ -19,10 +20,11 @@ function getEmptyForm() {
 
 function VisitasPage() {
   const { asociadas } = useAsociadas();
-  const { visitas, addVisita, editVisita, deleteVisita, getProximasVisitas } = useVisitas();
+  const { visitas, loading, addVisita, editVisita, deleteVisita, getProximasVisitas } = useVisitas();
   const { showToast, ToastDisplay } = useToast();
 
   const [view, setView] = useState("list");
+  const [deletingVisita, setDeletingVisita] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState(getEmptyForm());
@@ -122,15 +124,17 @@ function VisitasPage() {
     }
   }, [formData, editingId, addVisita, editVisita, showToast]);
 
-  const handleDelete = useCallback(async (id) => {
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deletingVisita) return;
     try {
-      await deleteVisita(id);
+      await deleteVisita(deletingVisita.id);
+      setDeletingVisita(null);
       showToast("Visita eliminada");
     } catch (err) {
       console.error("Error eliminando visita:", err);
       showToast(err?.message || "Error al eliminar la visita");
     }
-  }, [deleteVisita, showToast]);
+  }, [deletingVisita, deleteVisita, showToast]);
 
   const clearFilters = useCallback(() => {
     setSearchQuery("");
@@ -223,7 +227,13 @@ function VisitasPage() {
 
       {view === "calendar" ? (
         <Card>
-          <CalendarView visitas={visitas} onDayClick={setSelectedDay} />
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-transparent" />
+            </div>
+          ) : (
+            <CalendarView visitas={visitas} onDayClick={setSelectedDay} />
+          )}
         </Card>
       ) : (
         <Card>
@@ -253,7 +263,11 @@ function VisitasPage() {
             )}
           </div>
 
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-transparent" />
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <ClipboardList className="h-8 w-8 text-slate-300 mb-2" />
               <p className="text-sm font-medium text-slate-600">No hay visitas registradas</p>
@@ -297,7 +311,7 @@ function VisitasPage() {
                             <button onClick={() => openEditForm(v)} className="cursor-pointer rounded-md p-1 text-slate-300 transition-colors hover:bg-blue-50 hover:text-blue-500" title="Editar Visita">
                               <Edit3 className="h-3.5 w-3.5" />
                             </button>
-                            <button onClick={() => handleDelete(v.id)} className="cursor-pointer rounded-md p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Eliminar Visita">
+                            <button onClick={() => setDeletingVisita(v)} className="cursor-pointer rounded-md p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Eliminar Visita">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -367,6 +381,10 @@ function VisitasPage() {
         </form>
       </Modal>
 
+      <ConfirmModal open={!!deletingVisita} title="Eliminar Visita"
+        message={`¿Estás seguro de eliminar esta visita de ${deletingVisita ? (asociadaMap[deletingVisita.asociadaId]?.nombre || "—") : ""}? Esta acción no se puede deshacer.`}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeletingVisita(null)} />
       {ToastDisplay}
     </section>
   );
