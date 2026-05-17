@@ -180,26 +180,22 @@ function AdminDashboard() {
     if (!dashboardRef.current) return;
     setExporting(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
+      const { default: domtoimage } = await import("dom-to-image-more");
       const { default: jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(dashboardRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-        onclone: (doc) => {
-          const all = doc.querySelectorAll("*");
-          all.forEach((el) => {
-            const style = el.getAttribute("style");
-            if (style) el.setAttribute("style", style.replace(/oklch\([^)]+\)/g, "#cbd5e1"));
-          });
-        },
+      const imgData = await domtoimage.toPng(dashboardRef.current, {
+        bgColor: "#ffffff",
+        width: dashboardRef.current.scrollWidth,
+        height: dashboardRef.current.scrollHeight,
+        style: { transform: "none", margin: "0", padding: "0" },
       });
-      const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
+      const img = new Image();
+      img.src = imgData;
+      await new Promise((resolve) => { img.onload = resolve; });
       const imgWidth = pageWidth - 20;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgHeight = (img.height * imgWidth) / img.width;
       let heightLeft = imgHeight;
       let position = 10;
       pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
