@@ -176,151 +176,6 @@ function AdminDashboard() {
   const [exporting, setExporting] = useState(false);
   const dashboardRef = useRef(null);
 
-  const handleExportPDF = useCallback(async () => {
-    setExporting(true);
-    try {
-      const { default: jsPDF } = await import("jspdf");
-      await import("jspdf-autotable");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageW = pdf.internal.pageSize.getWidth();
-      let y = 15;
-
-      const title = (txt, size = 16, gap = 8) => {
-        pdf.setFontSize(size);
-        pdf.text(txt, pageW / 2, y, { align: "center" });
-        y += gap;
-      };
-      const subtitle = (txt, size = 10, gap = 5) => {
-        pdf.setFontSize(size);
-        pdf.setTextColor(100);
-        pdf.text(txt, pageW / 2, y, { align: "center" });
-        y += gap;
-        pdf.setTextColor(0);
-      };
-      const section = (txt) => {
-        if (y > 260) { pdf.addPage(); y = 20; }
-        pdf.setFontSize(13);
-        pdf.setTextColor(30, 41, 59);
-        pdf.text(txt, 14, y);
-        y += 6;
-        pdf.setDrawColor(30, 41, 59);
-        pdf.line(14, y, pageW - 14, y);
-        y += 5;
-        pdf.setTextColor(0);
-      };
-      const text = (txt, size = 9, indent = 14) => {
-        if (y > 275) { pdf.addPage(); y = 20; }
-        pdf.setFontSize(size);
-        const lines = pdf.splitTextToSize(txt, pageW - indent - 14);
-        pdf.text(lines, indent, y);
-        y += lines.length * 4 + 3;
-      };
-      const table = (headers, rows) => {
-        if (rows.length === 0) { text("Sin datos", 9); return; }
-        if (y > 230) { pdf.addPage(); y = 20; }
-        pdf.autoTable({
-          startY: y,
-          head: [headers],
-          body: rows,
-          theme: "grid",
-          headStyles: { fillColor: [30, 41, 59], fontSize: 8, halign: "center" },
-          bodyStyles: { fontSize: 8 },
-          margin: { left: 14, right: 14 },
-          didDrawPage: (data) => { y = data.cursor.y + 6; },
-        });
-        y = pdf.lastAutoTable.finalY + 8;
-      };
-
-      // --- TITLE PAGE ---
-      title("Informe General - AgroMap", 20, 20);
-      subtitle("Panel Administrativo · Asociadas Sibundoy", 11, 15);
-      const today = new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" });
-      subtitle(`Generado el ${today}`, 9, 10);
-      y += 5;
-
-      // --- 1. RESUMEN GENERAL ---
-      section("1. Resumen General");
-      const genData = [
-        ["Total Asociadas", asociadas.length],
-        ["Promedio Edad", promedioEdad],
-        ["Total Visitas", totalVisitas],
-        ["Asociadas Activas (>0 visitas)", activas],
-        ["Total Beneficiarios", totalBeneficiarios],
-        ["Extensión De Tierra", `${totalExtension.toFixed(1)} m²`],
-        ["Menores De Edad", totalMenores],
-        ["Total Sectores", sectorNamesList.length],
-        ["Con Ubicación", `${conUbicacion} / ${asociadas.length} (${asociadas.length > 0 ? ((conUbicacion / asociadas.length) * 100).toFixed(0) : 0}%)`],
-        ["Sin Visitas", sinVisitas],
-        ["Prom. Visitas/Asoc", promVisitas],
-        ["Prom. Productos/Asoc", promProductos],
-        ["Alertas", totalAlertas],
-      ];
-      table(["Indicador", "Valor"], genData);
-
-      // --- 2. SECTORES ---
-      section("2. Distribución por Sector");
-      const secRows = sectorChartData.map((s) => [
-        s.name,
-        s.value,
-        s.beneficiarios,
-        (stats.sectoresVisitas[s.fullName] || 0),
-        (stats.sectoresVisitas[s.fullName] / s.value).toFixed(1),
-      ]);
-      table(["Sector", "Asociadas", "Beneficiarios", "Visitas", "Prom."], secRows);
-
-      // --- 3. TIPO DE POBLACIÓN ---
-      section("3. Tipo de Población");
-      const tipoRows = tipoChartData.map((t) => [t.name, t.value]);
-      table(["Tipo", "Cantidad"], tipoRows);
-
-      // --- 4. RANGOS DE EDAD ---
-      section("4. Rangos de Edad");
-      const edadRows = edadChartData.map((e) => [e.name, e.value]);
-      table(["Rango", "Cantidad"], edadRows);
-
-      // --- 5. PRODUCTOS MÁS CULTIVADOS ---
-      section("5. Productos Más Cultivados");
-      const prodRows = prodChartData.map((p) => [p.name, p.value]);
-      table(["Producto", "Asociadas"], prodRows);
-
-      // --- 6. VISITAS POR MES (últimos 12 meses) ---
-      section("6. Visitas por Mes");
-      const visRows = visitasPorMes.map((v) => [v.completo, v.count]);
-      table(["Mes", "Visitas"], visRows);
-
-      // --- 7. SECTORES CON MENOR PROMEDIO DE VISITAS ---
-      section("7. Sectores con Menor Promedio de Visitas");
-      const alertRows = alertas.sectoresPromVisitas.map((s) => [s.sector.replace("Vereda ", ""), s.total, s.prom]);
-      table(["Sector", "Asociadas", "Prom. Visitas"], alertRows);
-
-      // --- 8. ASOCIADAS SIN VISITA RECIENTE ---
-      section("8. Asociadas Sin Visita Reciente (+30 días)");
-      const sinVRows = alertas.sinVisita.slice(0, 20).map((a) => [a.nombre, a.sector?.replace("Vereda ", ""), a.fechaUltimaVisita || "Nunca"]);
-      pdf.autoTable({
-        startY: y,
-        head: [["Nombre", "Sector", "Última Visita"]],
-        body: sinVRows,
-        theme: "grid",
-        headStyles: { fillColor: [245, 158, 11], fontSize: 8, halign: "center" },
-        bodyStyles: { fontSize: 8 },
-        margin: { left: 14, right: 14 },
-      });
-      y = pdf.lastAutoTable.finalY + 8;
-      if (alertas.sinVisita.length > 20) text(`... y ${alertas.sinVisita.length - 20} más`, 8);
-
-      pdf.save("informe-general.pdf");
-    } catch (err) {
-      console.error("Error exportando PDF:", err);
-    } finally {
-      setExporting(false);
-    }
-  }, [
-    asociadas, stats, totalVisitas, promedioEdad, activas, totalBeneficiarios,
-    totalExtension, totalMenores, sectorNamesList, sectorChartData, tipoChartData,
-    edadChartData, prodChartData, visitasPorMes, alertas, conUbicacion,
-    sinVisitas, promVisitas, promProductos, totalAlertas,
-  ]);
-
   const stats = useMemo(() => {
     const sectores = {};
     const sectoresEdad = {};
@@ -438,6 +293,139 @@ function AdminDashboard() {
   }, [asociadas]);
 
   const totalAlertas = alertas.sinVisita.length + alertas.bajaFrec.length;
+
+  const handleExportPDF = useCallback(async () => {
+    setExporting(true);
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      await import("jspdf-autotable");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageW = pdf.internal.pageSize.getWidth();
+      let y = 15;
+
+      const title = (txt, size = 16, gap = 8) => {
+        pdf.setFontSize(size);
+        pdf.text(txt, pageW / 2, y, { align: "center" });
+        y += gap;
+      };
+      const subtitle = (txt, size = 10, gap = 5) => {
+        pdf.setFontSize(size);
+        pdf.setTextColor(100);
+        pdf.text(txt, pageW / 2, y, { align: "center" });
+        y += gap;
+        pdf.setTextColor(0);
+      };
+      const section = (txt) => {
+        if (y > 260) { pdf.addPage(); y = 20; }
+        pdf.setFontSize(13);
+        pdf.setTextColor(30, 41, 59);
+        pdf.text(txt, 14, y);
+        y += 6;
+        pdf.setDrawColor(30, 41, 59);
+        pdf.line(14, y, pageW - 14, y);
+        y += 5;
+        pdf.setTextColor(0);
+      };
+      const text = (txt, size = 9, indent = 14) => {
+        if (y > 275) { pdf.addPage(); y = 20; }
+        pdf.setFontSize(size);
+        const lines = pdf.splitTextToSize(txt, pageW - indent - 14);
+        pdf.text(lines, indent, y);
+        y += lines.length * 4 + 3;
+      };
+      const table = (headers, rows) => {
+        if (rows.length === 0) { text("Sin datos", 9); return; }
+        if (y > 230) { pdf.addPage(); y = 20; }
+        pdf.autoTable({
+          startY: y,
+          head: [headers],
+          body: rows,
+          theme: "grid",
+          headStyles: { fillColor: [30, 41, 59], fontSize: 8, halign: "center" },
+          bodyStyles: { fontSize: 8 },
+          margin: { left: 14, right: 14 },
+          didDrawPage: (data) => { y = data.cursor.y + 6; },
+        });
+        y = pdf.lastAutoTable.finalY + 8;
+      };
+
+      title("Informe General - AgroMap", 20, 20);
+      subtitle("Panel Administrativo · Asociadas Sibundoy", 11, 15);
+      const today = new Date().toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" });
+      subtitle(`Generado el ${today}`, 9, 10);
+      y += 5;
+
+      section("1. Resumen General");
+      table(["Indicador", "Valor"], [
+        ["Total Asociadas", asociadas.length],
+        ["Promedio Edad", promedioEdad],
+        ["Total Visitas", totalVisitas],
+        ["Asociadas Activas (>0 visitas)", activas],
+        ["Total Beneficiarios", totalBeneficiarios],
+        ["Extensión De Tierra", `${totalExtension.toFixed(1)} m²`],
+        ["Menores De Edad", totalMenores],
+        ["Total Sectores", sectorNamesList.length],
+        ["Con Ubicación", `${conUbicacion} / ${asociadas.length} (${asociadas.length > 0 ? ((conUbicacion / asociadas.length) * 100).toFixed(0) : 0}%)`],
+        ["Sin Visitas", sinVisitas],
+        ["Prom. Visitas/Asoc", promVisitas],
+        ["Prom. Productos/Asoc", promProductos],
+        ["Alertas", totalAlertas],
+      ]);
+
+      section("2. Distribución por Sector");
+      table(
+        ["Sector", "Asociadas", "Beneficiarios", "Visitas", "Prom."],
+        sectorChartData.map((s) => [
+          s.name, s.value, s.beneficiarios,
+          stats.sectoresVisitas[s.fullName] || 0,
+          ((stats.sectoresVisitas[s.fullName] || 0) / s.value).toFixed(1),
+        ])
+      );
+
+      section("3. Tipo de Población");
+      table(["Tipo", "Cantidad"], tipoChartData.map((t) => [t.name, t.value]));
+
+      section("4. Rangos de Edad");
+      table(["Rango", "Cantidad"], edadChartData.map((e) => [e.name, e.value]));
+
+      section("5. Productos Más Cultivados");
+      table(["Producto", "Asociadas"], prodChartData.map((p) => [p.name, p.value]));
+
+      section("6. Visitas por Mes");
+      table(["Mes", "Visitas"], visitasPorMes.map((v) => [v.completo, v.count]));
+
+      section("7. Sectores con Menor Promedio de Visitas");
+      table(
+        ["Sector", "Asociadas", "Prom. Visitas"],
+        alertas.sectoresPromVisitas.map((s) => [s.sector.replace("Vereda ", ""), s.total, s.prom])
+      );
+
+      section("8. Asociadas Sin Visita Reciente (+30 días)");
+      const sinVRows = alertas.sinVisita.slice(0, 20).map((a) => [a.nombre, a.sector?.replace("Vereda ", ""), a.fechaUltimaVisita || "Nunca"]);
+      pdf.autoTable({
+        startY: y,
+        head: [["Nombre", "Sector", "Última Visita"]],
+        body: sinVRows,
+        theme: "grid",
+        headStyles: { fillColor: [245, 158, 11], fontSize: 8, halign: "center" },
+        bodyStyles: { fontSize: 8 },
+        margin: { left: 14, right: 14 },
+      });
+      y = pdf.lastAutoTable.finalY + 8;
+      if (alertas.sinVisita.length > 20) text(`... y ${alertas.sinVisita.length - 20} más`, 8);
+
+      pdf.save("informe-general.pdf");
+    } catch (err) {
+      console.error("Error exportando PDF:", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [
+    asociadas, stats, totalVisitas, promedioEdad, activas, totalBeneficiarios,
+    totalExtension, totalMenores, sectorNamesList, sectorChartData, tipoChartData,
+    edadChartData, prodChartData, visitasPorMes, alertas, conUbicacion,
+    sinVisitas, promVisitas, promProductos, totalAlertas,
+  ]);
 
   return (
     <div className="space-y-6" ref={dashboardRef}>
