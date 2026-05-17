@@ -107,41 +107,57 @@ function CalendarView({ visitas, onDayClick }) {
           </div>
         ))}
         {weeks.flat().map((cell, i) => {
-          if (!cell) return <div key={`empty-${i}`} className="bg-white min-h-[85px]" />;
+          if (!cell) return <div key={`empty-${i}`} className="bg-white min-h-[95px]" />;
           const isToday = cell.dateStr === todayStr;
           const isFuture = cell.dateStr > todayStr;
           return (
             <button
               key={cell.dateStr}
               onClick={() => onDayClick(cell.dateStr)}
-              className={`cursor-pointer bg-white px-1.5 py-1.5 text-left transition-colors hover:bg-slate-50 min-h-[85px] flex flex-col relative
+              className={`cursor-pointer px-1.5 py-1.5 text-left transition-colors min-h-[95px] flex flex-col relative
+                ${cell.visitCount > 0
+                  ? "bg-gradient-to-b from-white to-blue-50/60 hover:to-blue-100/80 shadow-[inset_0_-2px_0_0_rgba(59,130,246,0.3)]"
+                  : "bg-white hover:bg-slate-50"
+                }
                 ${isToday ? "ring-2 ring-inset ring-slate-800" : ""}
                 ${cell.visitCount === 0 && !isToday ? "opacity-60" : ""}`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className={`text-xs font-medium ${isToday ? "text-slate-800" : "text-slate-500"}`}>
-                  {cell.day}
-                </span>
-                {cell.visitCount > 0 && (
-                  <span className="text-[10px] font-bold text-slate-400">{cell.visitCount}</span>
-                )}
-                {isFuture && cell.visitCount === 0 && (
-                  <span className="text-[9px] text-slate-300">—</span>
+                {cell.visitCount > 0 ? (
+                  <span className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-600 text-white text-[11px] font-bold leading-none">
+                    {cell.visitCount}
+                  </span>
+                ) : (
+                  <span className={`text-xs font-medium ${isToday ? "text-slate-800" : "text-slate-500"}`}>
+                    {cell.day}
+                  </span>
                 )}
               </div>
-              <div className="flex flex-col gap-0.5 mt-auto">
-                {cell.visits.slice(0, 3).map((v) => (
-                  <div key={v.id} className="flex items-center gap-1">
-                    <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${typeColors[v.tipo]}`} />
-                    <span className="text-[9px] text-slate-500 truncate leading-none">
-                      {v.tipo === "visita" ? "V" : v.tipo === "seguimiento" ? "S" : "C"}
-                    </span>
+              {cell.visitCount > 0 ? (
+                <div className="flex flex-col gap-1 mt-auto">
+                  <div className="flex flex-wrap gap-1">
+                    {(["visita", "seguimiento", "capacitacion"]).map((tipo) => {
+                      const count = cell.visits.filter((v) => v.tipo === tipo).length;
+                      if (!count) return null;
+                      return (
+                        <span key={tipo} className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-tight ${
+                          tipo === "visita" ? "bg-blue-200 text-blue-800" :
+                          tipo === "seguimiento" ? "bg-amber-200 text-amber-800" :
+                          "bg-emerald-200 text-emerald-800"
+                        }`}>
+                          {tipo === "visita" ? "V" : tipo === "seguimiento" ? "S" : "C"}
+                          <span className="text-[11px] font-bold">{count}</span>
+                        </span>
+                      );
+                    })}
                   </div>
-                ))}
-                {cell.visits.length > 3 && (
-                  <span className="text-[9px] text-slate-400 font-medium">+{cell.visits.length - 3} más</span>
-                )}
-              </div>
+                  {cell.visits.length > 5 && (
+                    <span className="text-[10px] text-slate-400 font-medium mt-0.5">+{cell.visits.length - 5} más</span>
+                  )}
+                </div>
+              ) : isFuture ? (
+                <span className="text-[9px] text-slate-300 mt-auto">—</span>
+              ) : null}
             </button>
           );
         })}
