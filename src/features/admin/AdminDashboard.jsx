@@ -156,7 +156,11 @@ function AdminDashboard() {
   const promedioEdad = edadValidas.length > 0 ? (edadValidas.reduce((sum, a) => sum + a.edad, 0) / edadValidas.length).toFixed(1) : "—";
   const activas = asociadas.filter((a) => a.numVisitas > 0).length;
   const totalBeneficiarios = asociadas.reduce((sum, a) => sum + a.numPersonas, 0);
-  const promPersonas = (totalBeneficiarios / asociadas.length).toFixed(1);
+  const totalExtension = asociadas.reduce((sum, a) => {
+    if (!a.areaHuerta) return sum;
+    const num = parseFloat(a.areaHuerta.toString().replace(/[^0-9.,]/g, "").replace(",", "."));
+    return sum + (isNaN(num) ? 0 : num);
+  }, 0);
   const totalMenores = asociadas.reduce((sum, a) => sum + (a.menoresHogar || 0), 0);
   const sectorNamesList = Object.keys(stats.sectores);
 
@@ -254,8 +258,8 @@ function AdminDashboard() {
           <p className="mt-1 text-2xl font-bold text-slate-900">{totalBeneficiarios}</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Prom. Personas/Hogar</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{promPersonas}</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Extensión De Tierra</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{totalExtension.toFixed(1)} m²</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Menores De Edad</p>
