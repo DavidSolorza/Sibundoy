@@ -224,6 +224,14 @@ function HuertasPage() {
     });
   }, []);
 
+  const handleSelectAll = useCallback(() => {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      paginated.forEach((a) => next.add(a.id));
+      return next;
+    });
+  }, [paginated]);
+
   const handleBulkDelete = useCallback(() => {
     const count = selectedRows.size;
     if (count === 0) return;
@@ -391,7 +399,7 @@ function HuertasPage() {
           ) : (
             <>
               <TablaAsociadas data={paginated} onViewMap={(a) => setMapAsociada(a)} onEdit={(a) => setEditingAsociada(a)} onDelete={(a) => setDeletingAsociada(a)} sortBy={sortBy} onSort={handleSort} columns={SORTABLE_COLUMNS} viewOnly={isViewOnly}
-                selectedRows={selectedRows} onToggleSelect={toggleSelectRow} onBulkDelete={handleBulkDelete} />
+                selectedRows={selectedRows} onToggleSelect={toggleSelectRow} onBulkDelete={handleBulkDelete} onSelectAll={handleSelectAll} />
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
                   <span className="text-xs text-slate-400">

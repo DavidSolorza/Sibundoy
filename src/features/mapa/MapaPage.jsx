@@ -38,7 +38,7 @@ function MapaPage() {
     <section>
       <div className="hidden md:block md:mb-4">
         <h2 className="flex items-center gap-2 text-xl font-semibold text-slate-800 tracking-tight">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 text-white text-sm font-bold">A</span>
+          <img src="/icons/plant.png" alt="" className="h-8 w-8 shrink-0 rounded-lg bg-slate-100 p-1.5 object-contain" />
           AgroMap
         </h2>
       </div>

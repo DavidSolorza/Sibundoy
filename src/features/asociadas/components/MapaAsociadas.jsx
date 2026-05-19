@@ -234,8 +234,15 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
 
   const handleEditAsociada = useCallback((a) => { setEditingAsociada(a); }, []);
   const handleDeleteRequest = useCallback((a) => { setDeletingAsociada(a); }, []);
-  const handleConfirmDelete = useCallback(() => {
-    if (deletingAsociada) { deleteAsociada(deletingAsociada.id); showToast("Asociada Eliminada Correctamente"); setDeletingAsociada(null); }
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deletingAsociada) return;
+    try {
+      await deleteAsociada(deletingAsociada.id);
+      showToast("Asociada Eliminada Correctamente");
+    } catch {
+      showToast("Error al eliminar", "error");
+    }
+    setDeletingAsociada(null);
   }, [deletingAsociada, deleteAsociada, showToast]);
   const handleFormClose = useCallback(() => { setFormCoords(null); setEditingAsociada(null); }, []);
 

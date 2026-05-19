@@ -34,6 +34,7 @@ function Navbar() {
         <button onClick={() => setMobileOpen(true)} className="cursor-pointer rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-slate-100 active:bg-slate-200" aria-label="Abrir menú de navegación" aria-expanded={mobileOpen}>
           <Menu className="h-5 w-5" />
         </button>
+        <img src="/icons/plant.png" alt="" className="h-5 w-5" />
         <span className="text-sm font-semibold text-slate-800">AgroMap</span>
         {notifCount > 0 && (
           <button onClick={() => { setMobileOpen(true); }} className="ml-auto cursor-pointer relative p-1.5 text-amber-600">
@@ -48,9 +49,7 @@ function Navbar() {
       <aside className={`fixed inset-y-0 left-0 z-[1200] flex w-64 flex-col bg-white shadow-xl transition-transform duration-300 ease-out md:static md:z-[1] md:w-56 md:translate-x-0 md:shadow-none md:border-r md:border-slate-200 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} role="navigation" aria-label="Navegación principal" aria-hidden={!mobileOpen}>
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-5">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-white text-sm font-bold" aria-hidden="true">
-              A
-            </span>
+            <img src="/icons/plant.png" alt="" className="h-9 w-9 shrink-0 rounded-lg bg-slate-100 p-1.5 object-contain" />
             <div>
               <h1 className="text-sm font-semibold text-slate-800">AgroMap</h1>
               <p className="text-[11px] text-slate-400">Asociadas · Sibundoy</p>
@@ -84,7 +83,10 @@ function Navbar() {
         </nav>
 
         <div className="border-t border-slate-100 px-4 py-3">
-          <p className="text-[11px] text-slate-400">Sistema Asociadas v1.0</p>
+          <div className="flex items-center gap-2">
+            <img src="/icons/logo.png" alt="" className="h-4 w-4 object-contain" />
+            <p className="text-[11px] text-slate-400">Software desarrollado por WolfEnterprise</p>
+          </div>
         </div>
       </aside>
     </>

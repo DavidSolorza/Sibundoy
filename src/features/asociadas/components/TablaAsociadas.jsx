@@ -65,7 +65,7 @@ const TableRow = memo(function TableRow({ asociada, onDelete, onViewMap, onEdit,
   );
 });
 
-const TablaAsociadas = memo(function TablaAsociadas({ data, onViewMap, onEdit, onDelete, onRowClick, sortBy, onSort, columns, viewOnly, selectedRows, onToggleSelect, onBulkDelete }) {
+const TablaAsociadas = memo(function TablaAsociadas({ data, onViewMap, onEdit, onDelete, onRowClick, sortBy, onSort, columns, viewOnly, selectedRows, onToggleSelect, onBulkDelete, onSelectAll }) {
   const { asociadas: all, deleteAsociada } = useAsociadas();
   const items = data || all;
   const handleDelete = onDelete || deleteAsociada;
@@ -91,7 +91,7 @@ const TablaAsociadas = memo(function TablaAsociadas({ data, onViewMap, onEdit, o
                 <div className="flex items-center gap-1">
                   <input type="checkbox" checked={allSelected} onChange={() => {
                     if (allSelected) onToggleSelect("__all__");
-                    else items.forEach((a) => onToggleSelect(a.id));
+                    else onSelectAll?.();
                   }} className="h-3.5 w-3.5 rounded border-slate-500 bg-white text-slate-800 focus:ring-slate-400 cursor-pointer" />
                   <span className="ml-1">Acciones</span>
                 </div>
