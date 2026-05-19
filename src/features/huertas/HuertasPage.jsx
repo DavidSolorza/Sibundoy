@@ -139,6 +139,7 @@ function HuertasPage() {
   const [creatingCoords, setCreatingCoords] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [deletingAsociada, setDeletingAsociada] = useState(null);
+  const [deletingBulk, setDeletingBulk] = useState(false);
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [sortBy, setSortBy] = useState(null);
   const [page, setPage] = useState(0);
@@ -226,9 +227,14 @@ function HuertasPage() {
   const handleBulkDelete = useCallback(() => {
     const count = selectedRows.size;
     if (count === 0) return;
-    if (!window.confirm(`¿Eliminar ${count} asociada(s)? Esta acción no se puede deshacer.`)) return;
-    selectedRows.forEach((id) => deleteAsociada(id));
+    setDeletingBulk(true);
+  }, [selectedRows]);
+
+  const confirmBulkDelete = useCallback(async () => {
+    const count = selectedRows.size;
+    await Promise.all(Array.from(selectedRows).map((id) => deleteAsociada(id)));
     setSelectedRows(new Set());
+    setDeletingBulk(false);
     showToast(`${count} asociada(s) eliminada(s)`);
   }, [selectedRows, deleteAsociada, showToast]);
 
@@ -415,7 +421,9 @@ function HuertasPage() {
       <MapModal asociada={mapAsociada} onClose={() => setMapAsociada(null)} />
       <ConfirmModal open={!!deletingAsociada} title="Eliminar Asociada" message={`¿Estás seguro de eliminar a ${deletingAsociada?.nombre}? Esta acción no se puede deshacer.`}
         onConfirm={async () => { try { await deleteAsociada(deletingAsociada.id); setDeletingAsociada(null); showToast("Asociada Eliminada Correctamente"); } catch { showToast("Error Al Eliminar"); } }}
-        onCancel={() => setDeletingAsociada(null)} />
+        onCancel={() => setDeletingAsociada(null)} variant="danger" confirmLabel="Eliminar" />
+      <ConfirmModal open={deletingBulk} title="Eliminar Asociadas" message={`¿Eliminar ${selectedRows.size} asociada(s)? Esta acción no se puede deshacer.`}
+        onConfirm={confirmBulkDelete} onCancel={() => setDeletingBulk(false)} variant="warning" confirmLabel={`Eliminar ${selectedRows.size}`} />
       <FormularioAsociada key={editingAsociada?.id || "edit"} open={!!editingAsociada} onClose={() => setEditingAsociada(null)}
         onSave={async (data) => { try { await updateAsociada(editingAsociada.id, data); setEditingAsociada(null); showToast("Asociada Actualizada Correctamente"); } catch { showToast("Error Al Actualizar"); } }}
         coords={{ lat: 0, lng: 0 }} initialData={editingAsociada} />

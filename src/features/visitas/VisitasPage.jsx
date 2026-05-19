@@ -457,7 +457,7 @@ function VisitasPage() {
       <ConfirmModal open={!!deletingVisita} title="Eliminar Visita"
         message={`¿Estás seguro de eliminar esta visita de ${deletingVisita ? (asociadaMap[deletingVisita.asociadaId]?.nombre || "—") : ""}? Esta acción no se puede deshacer.`}
         onConfirm={handleDeleteConfirm}
-        onCancel={() => setDeletingVisita(null)} />
+        onCancel={() => setDeletingVisita(null)} variant="danger" confirmLabel="Eliminar" />
 
       <Modal open={!!sectorModalVisitas} onClose={() => setSectorModalVisitas(null)}
         title={sectorModalVisitas ? `Visitas — ${sectorModalVisitas.sector}` : ""}>
