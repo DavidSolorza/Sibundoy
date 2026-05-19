@@ -12,6 +12,7 @@ function toFrontend(row) {
     tipo: row.tipo,
     observaciones: row.observaciones || "",
     proximaVisita: row.proxima_visita || null,
+    realizada: row.realizada ?? false,
   };
 }
 
@@ -22,6 +23,7 @@ function toDB(data) {
     tipo: data.tipo,
     observaciones: data.observaciones || null,
     proxima_visita: data.proximaVisita || null,
+    realizada: data.realizada ?? false,
   };
 }
 
@@ -146,6 +148,18 @@ export function VisitasProvider({ children }) {
     setVisitas((prev) => prev.map((v) => (v.id === id ? { ...v, ...data } : v)));
   }, []);
 
+  const marcarRealizada = useCallback(async (id) => {
+    const { error } = await supabase
+      .from("visitas")
+      .update({ realizada: true })
+      .eq("id", id);
+    if (error) {
+      console.error("Supabase update error:", error);
+      throw new Error(error.message);
+    }
+    setVisitas((prev) => prev.map((v) => (v.id === id ? { ...v, realizada: true } : v)));
+  }, []);
+
   const deleteVisita = useCallback(async (id) => {
     const { error } = await supabase.from("visitas").delete().eq("id", id);
     if (error) {
@@ -164,12 +178,12 @@ export function VisitasProvider({ children }) {
   const getProximasVisitas = useCallback(() => {
     const today = new Date().toISOString().split("T")[0];
     return visitas
-      .filter((v) => v.proximaVisita && v.proximaVisita >= today)
+      .filter((v) => v.proximaVisita && v.proximaVisita >= today && !v.realizada)
       .sort((a, b) => new Date(a.proximaVisita) - new Date(b.proximaVisita));
   }, [visitas]);
 
   return (
-    <VisitasContext.Provider value={{ visitas, loading, addVisita, editVisita, deleteVisita, getVisitasByAsociada, getProximasVisitas, refresh, lastUpdated }}>
+    <VisitasContext.Provider value={{ visitas, loading, addVisita, editVisita, deleteVisita, marcarRealizada, getVisitasByAsociada, getProximasVisitas, refresh, lastUpdated }}>
       {children}
     </VisitasContext.Provider>
   );

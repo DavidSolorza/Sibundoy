@@ -72,8 +72,8 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
     try {
       await onSave({
         ...form,
-        lat: isEditing ? (form.lat ?? null) : (coords?.lat ?? null),
-        lng: isEditing ? (form.lng ?? null) : (coords?.lng ?? null),
+        lat: isEditing ? (form.lat ?? 5.0573) : (coords?.lat ?? 5.0573),
+        lng: isEditing ? (form.lng ?? -75.4878) : (coords?.lng ?? -75.4878),
       });
       setForm(emptyForm);
       onClose();

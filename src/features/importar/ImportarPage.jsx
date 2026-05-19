@@ -1,7 +1,9 @@
 import { useState, useMemo, useCallback, useRef } from "react";
-import { Upload, FileSpreadsheet, FileCode, FileText, Check, X, Loader2, AlertTriangle, Table2, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { Upload, FileSpreadsheet, FileCode, FileText, Check, X, Loader2, AlertTriangle, Table2, ArrowRight, ChevronDown, ChevronUp, Pencil, Eye, EyeOff, Save } from "lucide-react";
 import { supabase } from "../../services/supabase";
 import { Card } from "../../shared/ui/Card";
+import Modal from "../../shared/ui/Modal";
+import { Input, Select } from "../../shared/ui/Input";
 import { useToast } from "../../shared/ui/Toast";
 
 const DB_FIELDS = [
@@ -125,6 +127,11 @@ function ImportarPage() {
   const [duplicates, setDuplicates] = useState(null);
   const [checkingDupes, setCheckingDupes] = useState(false);
   const [importPhase, setImportPhase] = useState("idle");
+  const [conflictRow, setConflictRow] = useState(null);
+  const [conflictEditData, setConflictEditData] = useState(null);
+  const [discardedRows, setDiscardedRows] = useState(new Set());
+  const [selectedRows, setSelectedRows] = useState(new Set());
+  const existingNormRef = useRef([]);
 
   const handleFile = useCallback(async (f) => {
     const type = detectFileType(f);
@@ -199,6 +206,7 @@ function ImportarPage() {
     setDuplicates(null);
     setCheckingDupes(false);
     setImportPhase("idle");
+    setSelectedRows(new Set());
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
@@ -231,6 +239,7 @@ function ImportarPage() {
         for (const [dbKey, colName] of Object.entries(columnMap)) {
           let val = row[colName]?.toString().trim() ?? "";
           if (dbKey === "nombre") {
+            val = val.replace(/\d+/g, "").trim();
             if (!val) { valid = false; break; }
             record.nombre = val;
           } else if (dbKey === "edad" || dbKey === "num_personas" || dbKey === "menores_hogar") {
@@ -257,6 +266,9 @@ function ImportarPage() {
         }
 
         if (!valid) { errors++; errorRows.push(i + 1); continue; }
+
+        if (record.lat == null) record.lat = 5.0573;
+        if (record.lng == null) record.lng = -75.4878;
 
         const { error } = await supabase.from("asociadas").insert(record);
         if (error) { errors++; errorRows.push(i + 1); }
@@ -299,6 +311,7 @@ function ImportarPage() {
       const { sectores, ...rest } = r;
       return { ...rest, sector: sectores?.nombre || "" };
     });
+    existingNormRef.current = existingNorm;
 
     const dupRows = [];
     const allRows = [];
@@ -310,13 +323,18 @@ function ImportarPage() {
       for (const [dbKey, colName] of Object.entries(columnMap)) {
         let val = row[colName]?.toString().trim() ?? "";
         if (dbKey === "nombre") {
+          val = val.replace(/\d+/g, "").trim();
           record.nombre = val;
-          const match = existingNorm.find((e) => {
-            const en = e.nombre?.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            const vn = val.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            return en === vn;
-          });
-          if (match) record.reasons.push({ type: "nombre", existing: match.nombre, id: match.id });
+          if (!val) {
+            record.reasons.push({ type: "sin_nombre", existing: "", id: null });
+          } else {
+            const match = existingNorm.find((e) => {
+              const en = e.nombre?.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\d+/g, "");
+              const vn = val.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+              return en === vn;
+            });
+            if (match) record.reasons.push({ type: "nombre", existing: match.nombre, id: match.id });
+          }
         } else if (dbKey === "telefono" && val) {
           const match = existingNorm.find((e) => e.telefono === val);
           if (match && !record.reasons.some((r) => r.type === "nombre" && r.id === match.id)) {
@@ -367,10 +385,120 @@ function ImportarPage() {
       showToast("Todos los registros son duplicados. Nada que importar.", "warning");
       setImportPhase("idle");
       setDuplicates(null);
+      setSelectedRows(new Set());
       return;
     }
     runImport(cleanRows.map((raw, i) => ({ raw, rowIndex: i, nombre: "", reasons: [] })));
   }, [duplicates, parsedData, runImport, showToast]);
+
+  const openConflictEditor = useCallback((row, index) => {
+    setConflictRow({ row, index });
+    const editData = {};
+    for (const [dbKey, colName] of Object.entries(columnMap)) {
+      editData[dbKey] = row[colName]?.toString() ?? "";
+    }
+    editData._lat = editData.lat ? parseFloat(editData.lat.replace(",", ".")) : null;
+    editData._lng = editData.lng ? parseFloat(editData.lng.replace(",", ".")) : null;
+    setConflictEditData(editData);
+  }, [columnMap]);
+
+  const saveConflictEdit = useCallback(() => {
+    if (!conflictRow) return;
+    const { index } = conflictRow;
+    const editData = conflictEditData;
+    const rawRow = {};
+    for (const [dbKey, colName] of Object.entries(columnMap)) {
+      let val = editData[dbKey] ?? "";
+      if (dbKey === "nombre") val = val.replace(/\d+/g, "").trim();
+      rawRow[colName] = val;
+    }
+    setParsedData((prev) => {
+      const next = [...prev];
+      next[index] = rawRow;
+      return next;
+    });
+    // Re-check against existing data
+    const existing = existingNormRef.current;
+    const newReasons = [];
+    const newNombre = editData["nombre"]?.replace(/\d+/g, "").trim() || "";
+    if (!newNombre) {
+      newReasons.push({ type: "sin_nombre", existing: "", id: null });
+    } else {
+      const match = existing.find((e) => {
+        const en = e.nombre?.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\d+/g, "");
+        const vn = newNombre.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return en === vn;
+      });
+      if (match) newReasons.push({ type: "nombre", existing: match.nombre, id: match.id });
+    }
+    const rawTelefono = editData["telefono"]?.toString().trim() ?? "";
+    if (rawTelefono) {
+      const match = existing.find((e) => e.telefono === rawTelefono);
+      if (match && !newReasons.some((r) => r.id === match.id)) {
+        newReasons.push({ type: "telefono", existing: match.nombre, id: match.id });
+      }
+    }
+    if (newReasons.length > 0) {
+      setDuplicates((prev) => {
+        if (!prev) return prev;
+        const exists = prev.some((d) => d.rowIndex === index);
+        if (exists) return prev.map((d) => d.rowIndex === index ? { ...d, nombre: newNombre, reasons: newReasons } : d);
+        return [...prev, { rowIndex: index, nombre: newNombre, reasons: newReasons }];
+      });
+    } else {
+      setDuplicates((prev) => prev ? prev.filter((d) => d.rowIndex !== index) : prev);
+    }
+    setConflictRow(null);
+    setConflictEditData(null);
+    showToast("Registro actualizado");
+  }, [conflictRow, conflictEditData, columnMap, showToast]);
+
+  const discardRow = useCallback((index) => {
+    setDiscardedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectRow = useCallback((index) => {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelectedRows((prev) => {
+      if (prev.size === duplicates?.length) return new Set();
+      return new Set(duplicates.map((d) => d.rowIndex));
+    });
+  }, [duplicates]);
+
+  const discardSelected = useCallback(() => {
+    setDiscardedRows((prev) => {
+      const next = new Set(prev);
+      selectedRows.forEach((i) => next.add(i));
+      return next;
+    });
+    setSelectedRows(new Set());
+    showToast(`${selectedRows.size} registro(s) descartados`);
+  }, [selectedRows, showToast]);
+
+  const importResolved = useCallback(async () => {
+    const keepRows = parsedData.filter((_, i) => !discardedRows.has(i));
+    if (keepRows.length === 0) {
+      showToast("No hay registros para importar", "warning");
+      return;
+    }
+    setDuplicates(null);
+    setImportPhase("idle");
+    setSelectedRows(new Set());
+    await runImport(keepRows.map((raw, i) => ({ raw, rowIndex: i, nombre: "", reasons: [] })));
+  }, [parsedData, discardedRows, showToast, runImport]);
 
   const fileIcon = fileType === "xlsx" ? FileSpreadsheet : fileType === "csv" ? FileCode : fileType === "json" ? FileText : Table2;
 
@@ -556,36 +684,69 @@ function ImportarPage() {
                     <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
                     <div>
                       <p className="text-sm font-medium text-amber-800">
-                        {duplicates.length} posible(s) duplicado(s) encontrado(s)
+                        {duplicates.length} registro(s) con problemas encontrados
                       </p>
-                      <p className="text-xs text-amber-600">Revisa los registros que podrían ya existir en la base de datos.</p>
+                      <p className="text-xs text-amber-600">Revisa y edita los registros antes de importar.</p>
                     </div>
                   </div>
-                  <div className="px-4 py-2 max-h-48 overflow-auto space-y-1.5">
-                    {duplicates.map((dup, i) => (
-                      <div key={i} className="flex items-start gap-2 rounded bg-white/60 px-3 py-2 text-xs">
-                        <span className="font-medium text-slate-500 shrink-0">#{dup.rowIndex + 1}</span>
-                        <span className="font-medium text-slate-800 shrink-0">{dup.nombre}</span>
-                        <div className="flex flex-wrap gap-1">
-                          {dup.reasons.map((r, ri) => (
-                            <span key={ri} className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
-                              {r.type === "nombre" ? "📛" : r.type === "telefono" ? "📞" : "📍"} {r.type === "nombre" ? "Nombre" : r.type === "telefono" ? "Teléfono" : "Ubicación"}
-                              <span className="text-amber-500">→</span>
-                              {r.existing}
-                            </span>
-                          ))}
+                  <div className="px-4 py-2 max-h-60 overflow-auto space-y-1.5">
+                    <label className="flex items-center gap-2 px-1 py-1 text-xs text-slate-500 cursor-pointer hover:text-slate-700">
+                      <input type="checkbox" checked={selectedRows.size === duplicates.length && duplicates.length > 0}
+                        onChange={toggleSelectAll} className="h-3.5 w-3.5 rounded border-slate-300 text-slate-800 focus:ring-slate-400 cursor-pointer" />
+                      Seleccionar todos ({selectedRows.size} de {duplicates.length})
+                    </label>
+                    {duplicates.map((dup, i) => {
+                      const isDiscarded = discardedRows.has(dup.rowIndex);
+                      const isSelected = selectedRows.has(dup.rowIndex);
+                      return (
+                        <div key={i} className={`flex items-start gap-2 rounded px-3 py-2 text-xs ${isDiscarded ? "bg-red-50 line-through opacity-60" : isSelected ? "bg-blue-50 ring-1 ring-blue-200" : "bg-white/60"}`}>
+                          <input type="checkbox" checked={isSelected} onChange={() => toggleSelectRow(dup.rowIndex)}
+                            className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-slate-800 focus:ring-slate-400 cursor-pointer shrink-0" />
+                          <span className="font-medium text-slate-500 shrink-0">#{dup.rowIndex + 1}</span>
+                          <span className="font-medium text-slate-800 shrink-0">{dup.nombre}</span>
+                          <div className="flex flex-wrap gap-1">
+                            {dup.reasons.map((r, ri) => (
+                              <span key={ri} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                r.type === "sin_nombre" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                              }`}>
+                                {r.type === "sin_nombre" ? "⚠️" : r.type === "nombre" ? "📛" : r.type === "telefono" ? "📞" : "📍"} 
+                                {r.type === "sin_nombre" ? "Sin nombre" : r.type === "nombre" ? "Nombre duplicado" : r.type === "telefono" ? "Teléfono" : "Ubicación"}
+                                {r.existing && <><span className="opacity-60">→</span> {r.existing}</>}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex gap-1 ml-auto shrink-0">
+                            <button onClick={() => openConflictEditor(parsedData[dup.rowIndex], dup.rowIndex)}
+                              className="cursor-pointer rounded-md p-1 text-blue-500 hover:bg-blue-100 transition-colors" title="Editar registro">
+                              <Pencil className="h-3 w-3" />
+                            </button>
+                            <button onClick={() => discardRow(dup.rowIndex)}
+                              className="cursor-pointer rounded-md p-1 text-red-400 hover:bg-red-100 transition-colors" title={isDiscarded ? "Incluir" : "Descartar"}>
+                              {isDiscarded ? <EyeOff className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div className="flex items-center gap-2 px-4 py-3">
+                    {selectedRows.size > 0 && (
+                      <button onClick={discardSelected}
+                        className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-700 transition-colors">
+                        <X className="h-3.5 w-3.5" /> Descartar {selectedRows.size} seleccionados
+                      </button>
+                    )}
                     <button onClick={importWithoutDupes} disabled={importing}
                       className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 active:bg-amber-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                      <Upload className="h-3.5 w-3.5" /> Importar {parsedData.length - duplicates.length} registros (saltar duplicados)
+                      <Upload className="h-3.5 w-3.5" /> Importar {parsedData.length - duplicates.filter(d => discardedRows.has(d.rowIndex)).length} (saltar descartados)
                     </button>
-                    <button onClick={() => { setDuplicates(null); setImportPhase("idle"); }}
+                    <button onClick={importResolved} disabled={importing}
+                      className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-40">
+                      <Check className="h-3.5 w-3.5" /> Importar seleccionados
+                    </button>
+                    <button onClick={() => { setDuplicates(null); setImportPhase("idle"); setDiscardedRows(new Set()); setSelectedRows(new Set()); }}
                       className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-                      Revisar
+                      Revisar después
                     </button>
                   </div>
                 </div>
@@ -641,6 +802,44 @@ function ImportarPage() {
           </Card>
         </>
       )}
+      <Modal open={!!conflictRow} onClose={() => { setConflictRow(null); setConflictEditData(null); }}
+        title={`Editar registro #${(conflictRow?.index ?? 0) + 1}`}>
+        {conflictEditData && (
+          <div className="space-y-3">
+            <p className="text-xs text-slate-500 mb-2">Corrige los datos del registro y guarda los cambios.</p>
+            <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto">
+              {Object.entries(columnMap).map(([dbKey, colName]) => {
+                const field = DB_FIELDS.find((f) => f.key === dbKey);
+                if (!field) return null;
+                return (
+                  <div key={dbKey} className={field.type === "textarea" ? "col-span-2" : ""}>
+                    <label className="mb-0.5 block text-[10px] font-medium text-slate-500">
+                      {field.label}
+                      {field.required && <span className="text-red-400">*</span>}
+                    </label>
+                    <input type={field.type === "number" ? "text" : "text"}
+                      value={conflictEditData[dbKey] ?? ""}
+                      onChange={(e) => setConflictEditData((prev) => ({ ...prev, [dbKey]: dbKey === "nombre" ? e.target.value.replace(/\d+/g, "") : e.target.value }))}
+                      className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-xs text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-200"
+                      placeholder={colName}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => { setConflictRow(null); setConflictEditData(null); }}
+                className="cursor-pointer rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                Cancelar
+              </button>
+              <button onClick={saveConflictEdit}
+                className="cursor-pointer inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors">
+                <Save className="h-3 w-3" /> Guardar cambios
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
       {ToastDisplay}
     </section>
   );

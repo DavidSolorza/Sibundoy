@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Clock, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Clock, Calendar, Edit3, Trash2, CheckCircle } from "lucide-react";
 import Modal from "../../shared/ui/Modal";
 import { parseLocalDate, getLocalDateString } from "../../shared/lib/dates";
 
@@ -110,13 +110,16 @@ function CalendarView({ visitas, onDayClick }) {
           if (!cell) return <div key={`empty-${i}`} className="bg-white min-h-[95px]" />;
           const isToday = cell.dateStr === todayStr;
           const isFuture = cell.dateStr > todayStr;
+          const allPastOrCompleted = cell.visits.length > 0 && cell.visits.every(v => v.realizada || cell.dateStr < todayStr);
           return (
             <button
               key={cell.dateStr}
               onClick={() => onDayClick(cell.dateStr)}
               className={`cursor-pointer px-1.5 py-1.5 text-left transition-colors min-h-[95px] flex flex-col relative
                 ${cell.visitCount > 0
-                  ? "bg-gradient-to-b from-white to-blue-50/60 hover:to-blue-100/80 shadow-[inset_0_-2px_0_0_rgba(59,130,246,0.3)]"
+                  ? allPastOrCompleted
+                    ? "bg-gradient-to-b from-white to-slate-100/60 hover:to-slate-200/80 shadow-[inset_0_-2px_0_0_rgba(148,163,184,0.3)]"
+                    : "bg-gradient-to-b from-white to-blue-50/60 hover:to-blue-100/80 shadow-[inset_0_-2px_0_0_rgba(59,130,246,0.3)]"
                   : "bg-white hover:bg-slate-50"
                 }
                 ${isToday ? "ring-2 ring-inset ring-slate-800" : ""}
@@ -124,7 +127,9 @@ function CalendarView({ visitas, onDayClick }) {
             >
               <div className="flex items-center justify-between mb-1">
                 {cell.visitCount > 0 ? (
-                  <span className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-600 text-white text-[11px] font-bold leading-none">
+                  <span className={`flex items-center justify-center h-6 w-6 rounded-full text-white text-[11px] font-bold leading-none ${
+                    allPastOrCompleted ? "bg-slate-400" : "bg-blue-600"
+                  }`}>
                     {cell.visitCount}
                   </span>
                 ) : (
@@ -139,11 +144,14 @@ function CalendarView({ visitas, onDayClick }) {
                     {(["visita", "seguimiento", "capacitacion"]).map((tipo) => {
                       const count = cell.visits.filter((v) => v.tipo === tipo).length;
                       if (!count) return null;
+                      const muted = allPastOrCompleted;
                       return (
                         <span key={tipo} className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-tight ${
-                          tipo === "visita" ? "bg-blue-200 text-blue-800" :
-                          tipo === "seguimiento" ? "bg-amber-200 text-amber-800" :
-                          "bg-emerald-200 text-emerald-800"
+                          muted
+                            ? "bg-slate-200 text-slate-500"
+                            : tipo === "visita" ? "bg-blue-200 text-blue-800" :
+                              tipo === "seguimiento" ? "bg-amber-200 text-amber-800" :
+                              "bg-emerald-200 text-emerald-800"
                         }`}>
                           {tipo === "visita" ? "V" : tipo === "seguimiento" ? "S" : "C"}
                           <span className="text-[11px] font-bold">{count}</span>
@@ -166,7 +174,7 @@ function CalendarView({ visitas, onDayClick }) {
   );
 }
 
-function DayDetailModal({ dateStr, visits, asociadaMap, onClose }) {
+function DayDetailModal({ dateStr, visits, asociadaMap, onClose, onEdit, onDelete, onMarcarRealizada }) {
   const formatted = dateStr
     ? parseLocalDate(dateStr).toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
     : "";
@@ -179,13 +187,14 @@ function DayDetailModal({ dateStr, visits, asociadaMap, onClose }) {
           {visits.map((v) => {
             const a = asociadaMap[v.asociadaId];
             return (
-              <div key={v.id} className="flex items-start gap-3 rounded-lg border border-slate-100 px-3 py-2.5">
-                <div className={`mt-0.5 shrink-0 rounded-full p-1.5 ${v.tipo === "visita" ? "bg-blue-50" : v.tipo === "seguimiento" ? "bg-amber-50" : "bg-emerald-50"}`}>
-                  <Clock className={`h-3 w-3 ${v.tipo === "visita" ? "text-blue-500" : v.tipo === "seguimiento" ? "text-amber-500" : "text-emerald-500"}`} />
+              <div key={v.id} className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 ${v.realizada ? "border-slate-200 bg-slate-50 opacity-70" : "border-slate-100"}`}>
+                <div className={`mt-0.5 shrink-0 rounded-full p-1.5 ${v.realizada ? "bg-slate-100" : v.tipo === "visita" ? "bg-blue-50" : v.tipo === "seguimiento" ? "bg-amber-50" : "bg-emerald-50"}`}>
+                  <Clock className={`h-3 w-3 ${v.realizada ? "text-slate-400" : v.tipo === "visita" ? "text-blue-500" : v.tipo === "seguimiento" ? "text-amber-500" : "text-emerald-500"}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${typeBg[v.tipo]}`}>{v.tipo}</span>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${v.realizada ? "bg-slate-200 text-slate-500" : typeBg[v.tipo]}`}>{v.tipo}</span>
+                    {v.realizada && <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-slate-300 text-slate-600">Realizada</span>}
                     <span className="text-xs font-medium text-slate-800 truncate">{a?.nombre || "—"}</span>
                     <span className="text-[10px] text-slate-400 shrink-0">{a?.sector?.replace("Vereda ", "")}</span>
                   </div>
@@ -195,6 +204,22 @@ function DayDetailModal({ dateStr, visits, asociadaMap, onClose }) {
                       <Clock className="h-3 w-3" /> Próxima: {parseLocalDate(v.proximaVisita).toLocaleDateString("es-CO")}
                     </p>
                   )}
+                </div>
+                <div className="flex flex-col gap-1 shrink-0 ml-auto">
+                  {!v.realizada && (
+                    <button onClick={() => { onMarcarRealizada(v.id); onClose(); }}
+                      className="cursor-pointer rounded-md p-1.5 text-emerald-500 hover:bg-emerald-50 transition-colors" title="Marcar como realizada">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  <button onClick={() => { onEdit(v); onClose(); }}
+                    className="cursor-pointer rounded-md p-1.5 text-blue-500 hover:bg-blue-50 transition-colors" title="Editar">
+                    <Edit3 className="h-3.5 w-3.5" />
+                  </button>
+                  <button onClick={() => { onDelete(v); onClose(); }}
+                    className="cursor-pointer rounded-md p-1.5 text-red-400 hover:bg-red-50 transition-colors" title="Eliminar">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             );

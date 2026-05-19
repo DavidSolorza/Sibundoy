@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { Calendar, ClipboardList, Plus, X, Search, Clock, Trash2, Filter, LayoutList, Edit3, CalendarClock, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, ClipboardList, Plus, X, Search, Clock, Trash2, Filter, LayoutList, Edit3, CalendarClock, RefreshCw, ChevronLeft, ChevronRight, MapPin, CheckCircle } from "lucide-react";
 import useDebounce from "../../shared/lib/useDebounce";
 import { formatTimeAgo } from "../../shared/lib/dates";
 import useAsociadas from "../asociadas/useAsociadas";
@@ -23,7 +23,7 @@ function getEmptyForm() {
 
 function VisitasPage() {
   const { asociadas } = useAsociadas();
-  const { visitas, loading, addVisita, editVisita, deleteVisita, getProximasVisitas, refresh, lastUpdated } = useVisitas();
+  const { visitas, loading, addVisita, editVisita, deleteVisita, marcarRealizada, getProximasVisitas, refresh, lastUpdated } = useVisitas();
   const { showToast, ToastDisplay } = useToast();
 
   const searchRef = useRef(null);
@@ -40,6 +40,7 @@ function VisitasPage() {
   const [filterAsociada, setFilterAsociada] = useState(null);
   const [quickFilter, setQuickFilter] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [sectorModalVisitas, setSectorModalVisitas] = useState(null);
 
   const asociadaMap = useMemo(() => {
     const m = {};
@@ -48,6 +49,10 @@ function VisitasPage() {
   }, [asociadas]);
 
   const proximas = useMemo(() => getProximasVisitas(), [getProximasVisitas]);
+
+  const calendarVisitas = useMemo(() => {
+    return visitas.map((v) => ({ ...v, fecha: v.proximaVisita || v.fecha }));
+  }, [visitas]);
 
   const stats = useMemo(() => {
     const now = getLocalDateString().slice(0, 7);
@@ -77,18 +82,23 @@ function VisitasPage() {
       }       else if (quickFilter === "month") {
         matchesQuick = v.fecha.startsWith(getLocalDateString().slice(0, 7));
       }
-      return matchesSearch && matchesTipo && matchesAsociada && matchesQuick;
+      return matchesSearch && matchesTipo && matchesAsociada && matchesQuick && !v.realizada;
     });
   }, [visitas, debouncedSearch, filterTipo, filterAsociada, quickFilter, asociadaMap]);
 
   const grouped = useMemo(() => {
     const groups = {};
     filtered.forEach((v) => {
-      if (!groups[v.fecha]) groups[v.fecha] = [];
-      groups[v.fecha].push(v);
+      const sector = asociadaMap[v.asociadaId]?.sector?.replace("Vereda ", "") || "Sin sector";
+      if (!groups[sector]) groups[sector] = [];
+      groups[sector].push(v);
     });
-    return Object.entries(groups).sort((a, b) => new Date(b[0]) - new Date(a[0]));
-  }, [filtered]);
+    return Object.entries(groups).sort(([, visitsA], [, visitsB]) => {
+      const maxA = Math.max(...visitsA.map((v) => new Date(v.fecha || v.proximaVisita).getTime()));
+      const maxB = Math.max(...visitsB.map((v) => new Date(v.fecha || v.proximaVisita).getTime()));
+      return maxB - maxA;
+    });
+  }, [filtered, asociadaMap]);
 
   const totalPages = Math.ceil(grouped.length / PER_PAGE);
   const paginatedGroups = grouped.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
@@ -264,7 +274,7 @@ function VisitasPage() {
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-transparent" />
             </div>
           ) : (
-            <CalendarView visitas={visitas} onDayClick={setSelectedDay} />
+            <CalendarView visitas={calendarVisitas} onDayClick={setSelectedDay} />
           )}
         </Card>
       ) : (
@@ -306,59 +316,61 @@ function VisitasPage() {
               <p className="text-xs text-slate-400 mt-1">Programa la primera visita para empezar el seguimiento.</p>
             </div>
           ) : (
-            <div className="space-y-4 pr-1">
-              {paginatedGroups.map(([fecha, items]) => (
-                <div key={fecha}>
-                  <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {parseLocalDate(fecha).toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-                    <span className="text-slate-300 font-normal">({items.length})</span>
-                  </p>
-                  <div className="space-y-2">
-                    {items.map((v) => {
-                      const a = asociadaMap[v.asociadaId];
-                      return (
-                        <div key={v.id} className="flex items-start gap-3 rounded-lg border border-slate-100 bg-white px-3 py-2.5 hover:border-slate-200 transition-colors">
-                          <div className={`mt-0.5 shrink-0 rounded-full p-1.5 ${v.tipo === "visita" ? "bg-blue-50" : v.tipo === "seguimiento" ? "bg-amber-50" : "bg-emerald-50"}`}>
-                            <Clock className={`h-3 w-3 ${v.tipo === "visita" ? "text-blue-500" : v.tipo === "seguimiento" ? "text-amber-500" : "text-emerald-500"}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className={`cursor-pointer inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${typeColors[v.tipo]}`}
-                                onClick={() => setFilterTipo(filterTipo === v.tipo ? null : v.tipo)}>
-                                {v.tipo}
-                              </span>
-                              <span className="text-xs font-medium text-slate-800 truncate">{a?.nombre || "—"}</span>
-                              <span className="text-[10px] text-slate-400 shrink-0">{a?.sector?.replace("Vereda ", "")}</span>
-                              {v.proximaVisita && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] text-blue-500 font-medium ml-auto">
-                                  <CalendarClock className="h-3 w-3" />
-                                  {new Date(v.proximaVisita + "T00:00:00").toLocaleDateString("es-CO")}
-                                </span>
-                              )}
-                            </div>
-                            {v.observaciones && <p className="text-xs text-slate-500 mt-1">{v.observaciones}</p>}
-                          </div>
-                          <div className="flex flex-col gap-1 shrink-0">
-                            <button onClick={() => openEditForm(v)} className="cursor-pointer rounded-md p-1 text-slate-300 transition-colors hover:bg-blue-50 hover:text-blue-500" title="Editar Visita">
-                              <Edit3 className="h-3.5 w-3.5" />
-                            </button>
-                            <button onClick={() => setDeletingVisita(v)} className="cursor-pointer rounded-md p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Eliminar Visita">
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {paginatedGroups.map(([sector, items]) => {
+                const realizadas = items.filter((v) => v.realizada).length;
+                const pendientes = items.length - realizadas;
+                const total = items.length;
+                return (
+                  <button key={sector} onClick={() => setSectorModalVisitas({ sector, items })}
+                    className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-300 active:bg-blue-50/50 group">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors">
+                          <MapPin className="h-5 w-5" />
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{sector}</p>
+                          <p className="text-[11px] text-slate-400">{total} visita{total !== 1 ? "s" : ""}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {pendientes > 0 && (
+                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                            {pendientes} pend.
+                          </span>
+                        )}
+                        {realizadas > 0 && (
+                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                            {realizadas} hechas
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {(["visita", "seguimiento", "capacitacion"]).map((tipo) => {
+                        const count = items.filter((v) => v.tipo === tipo).length;
+                        if (!count) return null;
+                        return (
+                          <span key={tipo} className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+                            tipo === "visita" ? "bg-blue-100 text-blue-700" :
+                            tipo === "seguimiento" ? "bg-amber-100 text-amber-700" :
+                            "bg-emerald-100 text-emerald-700"
+                          }`}>
+                            {tipo === "visita" ? "V" : tipo === "seguimiento" ? "S" : "C"} {count}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
           {!loading && filtered.length > 0 && totalPages > 1 && (
             <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
               <span className="text-xs text-slate-400">
-                {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, grouped.length)} de {grouped.length} fechas
+                {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, grouped.length)} de {grouped.length} sectores
               </span>
               <div className="flex items-center gap-3">
                 <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
@@ -382,7 +394,7 @@ function VisitasPage() {
       )}
 
       {view === "calendar" && (
-        <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (visitas.filter((v) => v.fecha === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} />
+        <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (calendarVisitas.filter((v) => v.fecha === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} onEdit={openEditForm} onDelete={(v) => setDeletingVisita(v)} onMarcarRealizada={marcarRealizada} />
       )}
 
       <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? "Editar Visita" : "Registrar Visita"}>
@@ -400,18 +412,21 @@ function VisitasPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Fecha de la visita</label>
-            <Input type="date" value={formData.fecha} onChange={(e) => setFormData({ ...formData, fecha: e.target.value })} />
-          </div>
-          <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Tipo</label>
             <div className="flex gap-2">
-              {TIPOS_VISITA.map((t) => (
-                <label key={t} className={`cursor-pointer flex-1 rounded-lg border px-3 py-2 text-xs font-medium text-center transition-colors ${formData.tipo === t ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"}`}>
-                  <input type="radio" name="tipo" value={t} checked={formData.tipo === t} onChange={(e) => setFormData({ ...formData, tipo: e.target.value })} className="sr-only" />
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
-                </label>
-              ))}
+              {TIPOS_VISITA.map((t) => {
+                const colorClasses = t === "visita"
+                  ? { active: "bg-blue-600 text-white border-blue-600", inactive: "bg-white text-blue-600 border-blue-200 hover:border-blue-400 hover:bg-blue-50" }
+                  : t === "seguimiento"
+                  ? { active: "bg-amber-500 text-white border-amber-500", inactive: "bg-white text-amber-600 border-amber-200 hover:border-amber-400 hover:bg-amber-50" }
+                  : { active: "bg-emerald-600 text-white border-emerald-600", inactive: "bg-white text-emerald-600 border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50" };
+                return (
+                  <label key={t} className={`cursor-pointer flex-1 rounded-lg border px-3 py-2 text-xs font-medium text-center transition-colors ${formData.tipo === t ? colorClasses.active : colorClasses.inactive}`}>
+                    <input type="radio" name="tipo" value={t} checked={formData.tipo === t} onChange={(e) => setFormData({ ...formData, tipo: e.target.value })} className="sr-only" />
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </label>
+                );
+              })}
             </div>
           </div>
           <div>
@@ -426,7 +441,7 @@ function VisitasPage() {
               Programar próxima visita <span className="text-slate-400 font-normal">(opcional)</span>
             </label>
             <Input type="date" value={formData.proximaVisita} onChange={(e) => setFormData({ ...formData, proximaVisita: e.target.value })}
-              min={formData.fecha} />
+              min={getLocalDateString()} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
@@ -443,6 +458,61 @@ function VisitasPage() {
         message={`¿Estás seguro de eliminar esta visita de ${deletingVisita ? (asociadaMap[deletingVisita.asociadaId]?.nombre || "—") : ""}? Esta acción no se puede deshacer.`}
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeletingVisita(null)} />
+
+      <Modal open={!!sectorModalVisitas} onClose={() => setSectorModalVisitas(null)}
+        title={sectorModalVisitas ? `Visitas — ${sectorModalVisitas.sector}` : ""}>
+        {sectorModalVisitas && (
+          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+            {[...sectorModalVisitas.items]
+              .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+              .map((v) => {
+              const a = asociadaMap[v.asociadaId];
+              const esRealizada = v.realizada;
+              return (
+                <div key={v.id} className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors ${esRealizada ? "bg-slate-100 border-slate-300" : "bg-white border-slate-100"}`}>
+                  <div className={`mt-0.5 shrink-0 rounded-full p-1.5 ${v.tipo === "visita" ? "bg-blue-50" : v.tipo === "seguimiento" ? "bg-amber-50" : "bg-emerald-50"}`}>
+                    <Clock className={`h-3 w-3 ${v.tipo === "visita" ? "text-blue-500" : v.tipo === "seguimiento" ? "text-amber-500" : "text-emerald-500"}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                        v.tipo === "visita" ? "bg-blue-100 text-blue-700" :
+                        v.tipo === "seguimiento" ? "bg-amber-100 text-amber-700" :
+                        "bg-emerald-100 text-emerald-700"
+                      }`}>{v.tipo}</span>
+                      {esRealizada && (
+                        <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                          <CheckCircle className="h-3 w-3" /> Realizada
+                        </span>
+                      )}
+                      <span className={`text-xs font-medium ${esRealizada ? "text-slate-500" : "text-slate-800"}`}>{a?.nombre || "—"}</span>
+                      <span className="text-[10px] text-slate-400">{parseLocalDate(v.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</span>
+                    </div>
+                    {v.observaciones && <p className={`text-xs mt-1 ${esRealizada ? "text-slate-400" : "text-slate-500"}`}>{v.observaciones}</p>}
+                  </div>
+                  <div className="flex flex-col gap-1 shrink-0">
+                    {!esRealizada && (
+                      <button onClick={async (e) => { e.stopPropagation(); try { await marcarRealizada(v.id); showToast("Visita marcada como realizada"); } catch { showToast("Error", "error"); } }}
+                        className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 transition-colors" title="Marcar como realizada">
+                        <CheckCircle className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button onClick={(e) => { e.stopPropagation(); openEditForm(v); }}
+                      className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-blue-50 hover:text-blue-500 transition-colors" title="Editar">
+                      <Edit3 className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); setDeletingVisita(v); }}
+                      className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors" title="Eliminar">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Modal>
+
       {ToastDisplay}
     </section>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Sprout, MapPin, User, Phone, Wheat, Heart, Users, Calendar, FileText, ClipboardList, Tag, Navigation, Plus, X, SlidersHorizontal, Crosshair, Check, Eye, RefreshCw } from "lucide-react";
+import { Search, Sprout, MapPin, User, Phone, Wheat, Users, Calendar, FileText, ClipboardList, Tag, Navigation, Plus, X, SlidersHorizontal, Crosshair, Check, RefreshCw } from "lucide-react";
 import useDebounce from "../../shared/lib/useDebounce";
 import { formatTimeAgo } from "../../shared/lib/dates";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
@@ -17,7 +17,7 @@ import ConfirmModal from "../../shared/ui/ConfirmModal";
 import { useToast } from "../../shared/ui/Toast";
 import useViewMode from "../../shared/lib/useViewMode";
 
-const SIBUNDOY = { lat: 1.2035, lng: -76.9201 };
+const DEFAULT_COORDS = { lat: 5.0573, lng: -75.4878 };
 
 function FitBounds({ puntos }) {
   const map = useMap();
@@ -31,7 +31,7 @@ function MapModal({ asociada, onClose }) {
   useEffect(() => { if (mapRef.current) { setTimeout(() => mapRef.current.invalidateSize(), 100); } }, []);
 
   return (
-    <Modal open={!!asociada} onClose={onClose} title={asociada?.nombre || ""}>
+    <Modal open={!!asociada} onClose={onClose} title={asociada?.nombre || ""} large>
       {asociada && (
         <div className="space-y-3">
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
@@ -42,57 +42,14 @@ function MapModal({ asociada, onClose }) {
           <button onClick={() => { onClose(); navigate("/", { state: { routeTo: [asociada.lat, asociada.lng] } }); }} className="w-full cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-blue-700 active:bg-blue-800">
             <Navigation className="h-3.5 w-3.5" /> Cómo llegar
           </button>
-          <div className="h-[300px] w-full overflow-hidden rounded-lg border border-slate-200">
-            <MapContainer ref={mapRef} center={[asociada.lat, asociada.lng]} zoom={16} className="h-full w-full" zoomControl={false}>
+          <div className="h-[400px] w-full overflow-hidden rounded-lg border border-slate-200">
+            <MapContainer ref={mapRef} center={[asociada.lat, asociada.lng]} zoom={13} className="h-full w-full" zoomControl={false}>
               <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               <Marker position={[asociada.lat, asociada.lng]} icon={markerIcon}>
                 <Popup><p className="text-sm font-semibold">{asociada.nombre}</p><p className="text-xs text-slate-500">{asociada.sector}</p></Popup>
               </Marker>
               <FitBounds puntos={[[asociada.lat, asociada.lng]]} />
             </MapContainer>
-          </div>
-        </div>
-      )}
-    </Modal>
-  );
-}
-
-const detailFields = [
-  { label: "Estado Civil", key: "tipoPersona", icon: Heart }, { label: "Edad", key: "edad", icon: Tag },
-  { label: "Teléfono", key: "telefono", icon: Phone },   { label: "Núm. Personas", key: "numPersonas", icon: Users },
-  { label: "Menores Hogar", key: "menoresHogar", icon: Users },
-  { label: "Sector", key: "sector", icon: MapPin }, { label: "Área Huerta", key: "areaHuerta", icon: Sprout },
-  { label: "Productos", key: "productos", icon: Wheat }, { label: "Fecha Siembra", key: "fechaSiembra", icon: Calendar },
-  { label: "Última Visita", key: "fechaUltimaVisita", icon: Calendar }, { label: "Núm. Visitas", key: "numVisitas", icon: ClipboardList },
-  { label: "Observaciones", key: "observaciones", icon: FileText },
-];
-
-function DetailModal({ asociada, onClose }) {
-  const navigate = useNavigate();
-  return (
-    <Modal open={!!asociada} onClose={onClose} title="Detalle De Asociada">
-      {asociada && (
-        <div className="space-y-3">
-          <p className="text-lg font-semibold text-slate-900 flex items-center gap-2"><User className="h-5 w-5 text-blue-600" />{asociada.nombre}</p>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-            {detailFields.map(({ label, key, icon: Icon }) => (
-              <div key={key} className={key === "productos" || key === "observaciones" ? "col-span-2" : ""}>
-                <p className="text-xs font-medium text-slate-400 flex items-center gap-1 mb-0.5"><Icon className="h-3 w-3" />{label}</p>
-                <p className="text-sm text-slate-800">
-                  {key === "sector" ? <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">{asociada[key]}</span>
-                    : key === "tipoPersona" ? <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">{asociada[key]}</span>
-                    : asociada[key]}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2 mt-2">
-            <button onClick={() => { onClose(); navigate(`/asociada/${asociada.id}`); }} className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-700 active:bg-slate-900">
-              <User className="h-4 w-4" /> Ver Perfil
-            </button>
-            <button onClick={() => { onClose(); navigate("/", { state: { routeTo: [asociada.lat, asociada.lng] } }); }} className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 active:bg-blue-800">
-              <Navigation className="h-4 w-4" /> Cómo llegar
-            </button>
           </div>
         </div>
       )}
@@ -108,7 +65,7 @@ function ClickPicker({ onPick }) {
 }
 
 function MapLocationPicker({ open, onClose, onConfirm }) {
-  const [coords, setCoords] = useState(SIBUNDOY);
+  const [coords, setCoords] = useState(DEFAULT_COORDS);
   const mapRef = useRef(null);
 
   const handlePick = useCallback((c) => setCoords(c), []);
@@ -116,7 +73,7 @@ function MapLocationPicker({ open, onClose, onConfirm }) {
   useEffect(() => {
     if (open)
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCoords(SIBUNDOY);
+      setCoords(DEFAULT_COORDS);
   }, [open]);
 
   useEffect(() => {
@@ -131,7 +88,7 @@ function MapLocationPicker({ open, onClose, onConfirm }) {
           Haz clic en el mapa para colocar la ubicación de la nueva asociada.
         </p>
         <div className="h-[350px] w-full overflow-hidden rounded-lg border border-slate-200">
-          <MapContainer ref={mapRef} center={[SIBUNDOY.lat, SIBUNDOY.lng]} zoom={14} className="h-full w-full" doubleClickZoom={false}>
+          <MapContainer ref={mapRef} center={[DEFAULT_COORDS.lat, DEFAULT_COORDS.lng]} zoom={14} className="h-full w-full" doubleClickZoom={false}>
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <ClickPicker onPick={handlePick} />
             {coords && (
@@ -164,9 +121,9 @@ function MapLocationPicker({ open, onClose, onConfirm }) {
 const SORTABLE_COLUMNS = [
   { key: "nombre", label: "Nombre" },
   { key: "tipoPersona", label: "Estado Civil" },
-  { key: "menoresHogar", label: "Menores Hogar" },
+  { key: "numPersonas", label: "Núm. Personas" },
   { key: "sector", label: "Sector" },
-  { key: "fechaUltimaVisita", label: "Última Visita" },
+  { key: "productos", label: "Productos" },
 ];
 
 function HuertasPage() {
@@ -178,15 +135,15 @@ function HuertasPage() {
   const [activeSector, setActiveSector] = useState(null);
   const [mapAsociada, setMapAsociada] = useState(null);
   const [editingAsociada, setEditingAsociada] = useState(null);
-  const [detailAsociada, setDetailAsociada] = useState(null);
   const [creatingNew, setCreatingNew] = useState(false);
   const [creatingCoords, setCreatingCoords] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [deletingAsociada, setDeletingAsociada] = useState(null);
+  const [selectedRows, setSelectedRows] = useState(new Set());
   const [sortBy, setSortBy] = useState(null);
   const [page, setPage] = useState(0);
   const searchRef = useRef(null);
-  const PER_PAGE = 10;
+  const PER_PAGE = 15;
   const sectores = getSectores();
   const sectorNames = Object.keys(sectores);
 
@@ -256,9 +213,24 @@ function HuertasPage() {
     searchRef.current?.focus();
   }, []);
 
-  const handleRowClick = useCallback((a) => {
-    setDetailAsociada(a);
+  const toggleSelectRow = useCallback((id) => {
+    if (id === "__all__") { setSelectedRows(new Set()); return; }
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }, []);
+
+  const handleBulkDelete = useCallback(() => {
+    const count = selectedRows.size;
+    if (count === 0) return;
+    if (!window.confirm(`¿Eliminar ${count} asociada(s)? Esta acción no se puede deshacer.`)) return;
+    selectedRows.forEach((id) => deleteAsociada(id));
+    setSelectedRows(new Set());
+    showToast(`${count} asociada(s) eliminada(s)`);
+  }, [selectedRows, deleteAsociada, showToast]);
 
   const handleStartAdd = useCallback(() => {
     setPickerOpen(true);
@@ -296,7 +268,7 @@ function HuertasPage() {
         </div>
         {isViewOnly && (
           <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-1">
-            <Eye className="h-3.5 w-3.5" /> Solo vista — no se pueden hacer cambios
+            Solo vista — no se pueden hacer cambios
           </div>
         )}
       </div>
@@ -412,7 +384,8 @@ function HuertasPage() {
             </div>
           ) : (
             <>
-              <TablaAsociadas data={paginated} onViewMap={(a) => setMapAsociada(a)} onEdit={(a) => setEditingAsociada(a)} onViewDetails={(a) => setDetailAsociada(a)} onDelete={(a) => setDeletingAsociada(a)} onRowClick={handleRowClick} sortBy={sortBy} onSort={handleSort} columns={SORTABLE_COLUMNS} viewOnly={isViewOnly} />
+              <TablaAsociadas data={paginated} onViewMap={(a) => setMapAsociada(a)} onEdit={(a) => setEditingAsociada(a)} onDelete={(a) => setDeletingAsociada(a)} sortBy={sortBy} onSort={handleSort} columns={SORTABLE_COLUMNS} viewOnly={isViewOnly}
+                selectedRows={selectedRows} onToggleSelect={toggleSelectRow} onBulkDelete={handleBulkDelete} />
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
                   <span className="text-xs text-slate-400">
@@ -440,7 +413,6 @@ function HuertasPage() {
 
       <MapLocationPicker open={pickerOpen} onClose={() => setPickerOpen(false)} onConfirm={handlePickerConfirm} />
       <MapModal asociada={mapAsociada} onClose={() => setMapAsociada(null)} />
-      <DetailModal asociada={detailAsociada} onClose={() => setDetailAsociada(null)} />
       <ConfirmModal open={!!deletingAsociada} title="Eliminar Asociada" message={`¿Estás seguro de eliminar a ${deletingAsociada?.nombre}? Esta acción no se puede deshacer.`}
         onConfirm={async () => { try { await deleteAsociada(deletingAsociada.id); setDeletingAsociada(null); showToast("Asociada Eliminada Correctamente"); } catch { showToast("Error Al Eliminar"); } }}
         onCancel={() => setDeletingAsociada(null)} />
@@ -449,7 +421,7 @@ function HuertasPage() {
         coords={{ lat: 0, lng: 0 }} initialData={editingAsociada} />
       <FormularioAsociada key="create" open={creatingNew} onClose={handleFormClose}
         onSave={async (data) => { try { await addAsociada(data); setCreatingNew(false); setCreatingCoords(null); showToast("Asociada Creada Correctamente"); } catch { showToast("Error Al Crear"); } }}
-        coords={creatingCoords || SIBUNDOY} />
+        coords={creatingCoords || DEFAULT_COORDS} />
       {ToastDisplay}
     </section>
   );

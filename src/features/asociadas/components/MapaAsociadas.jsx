@@ -33,7 +33,14 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 
 function FitBounds({ puntos }) {
   const map = useMap();
-  useEffect(() => { if (puntos.length > 0) { const bounds = L.latLngBounds(puntos); map.fitBounds(bounds, { padding: [60, 60] }); } }, [puntos, map]);
+  const fitted = useRef(false);
+  useEffect(() => {
+    if (puntos.length > 0 && !fitted.current) {
+      const bounds = L.latLngBounds(puntos);
+      map.fitBounds(bounds, { padding: [60, 60] });
+      fitted.current = true;
+    }
+  }, [puntos, map]);
   return null;
 }
 
@@ -159,7 +166,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   const items = (filteredAsociadas || all).filter((a) => a.lat != null && a.lng != null);
   const [routeDest, setRouteDest] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
-  const [origin, setOrigin] = useState({ lat: 1.2035, lng: -76.9201 });
+  const [origin, setOrigin] = useState({ lat: 5.0573, lng: -75.4878 });
   const [accuracy, setAccuracy] = useState(null);
   const [formCoords, setFormCoords] = useState(null);
   const [editingAsociada, setEditingAsociada] = useState(null);
@@ -273,7 +280,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
           <Eye className="h-3.5 w-3.5" /> Solo vista
         </div>
       )}
-      <MapContainer center={[1.2035, -76.9201]} zoom={14} className="h-full w-full" doubleClickZoom={false} ref={mapRef}>
+      <MapContainer center={[5.0573, -75.4878]} zoom={14} className="h-full w-full" doubleClickZoom={false} ref={mapRef}>
         <LayersControl position="bottomright">
           <LayersControl.BaseLayer checked name="Mapa Normal">
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />

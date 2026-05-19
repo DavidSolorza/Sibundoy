@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, BarChart3, ClipboardList, CheckCircle, User, Navigation, AlertTriangle, Clock, TrendingUp, Layers, Download } from "lucide-react";
+import { Users, BarChart3, ClipboardList, CheckCircle, User, Navigation, AlertTriangle, Clock, TrendingUp, Layers, Download, MapPin, Wheat, Heart, Baby, XCircle, UserCheck } from "lucide-react";
 import useAsociadas from "../asociadas/useAsociadas";
 import useVisitas from "../visitas/useVisitas";
 import StatCard from "../../shared/ui/StatCard";
@@ -198,6 +198,8 @@ function AdminDashboard() {
   }, [asociadas]);
 
   const totalVisitas = asociadas.reduce((sum, a) => sum + a.numVisitas, 0);
+  const visitasRealizadas = visitas.filter((v) => v.realizada).length;
+  const visitasPendientes = visitas.length - visitasRealizadas;
   const edadValidas = asociadas.filter((a) => a.edad != null && !isNaN(a.edad));
   const promedioEdad = edadValidas.length > 0 ? (edadValidas.reduce((sum, a) => sum + a.edad, 0) / edadValidas.length).toFixed(1) : "—";
   const activas = asociadas.filter((a) => a.numVisitas > 0).length;
@@ -443,8 +445,24 @@ function AdminDashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="Total Asociadas" value={asociadas.length} icon={Users} onClick={() => setListModal({ title: "Todas las Asociadas", items: asociadas.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) })} />
         <StatCard label="Promedio Edad" value={`${promedioEdad} años`} icon={BarChart3} onClick={() => setListModal({ title: "Promedio de Edad", items: [...asociadas].sort((a, b) => b.edad - a.edad).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) })} />
+        <StatCard label="Total Sectores" value={sectorNamesList.length} icon={Layers} onClick={() => setBreakdownModal({ title: "Total Sectores", items: Object.entries(stats.sectores).map(([name, value]) => ({ name: name.replace("Vereda ", ""), value })).sort((a, b) => b.value - a.value) })} />
+        <StatCard label="Extensión De Tierra" value={`${totalExtension.toFixed(1)} m²`} icon={MapPin} onClick={() => setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta).sort((a, b) => parseFloat(b.areaHuerta) - parseFloat(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.areaHuerta} m²` })) })} />
+        <StatCard label="Productos" value={prodChartData.length} icon={Wheat} onClick={() => setBreakdownModal({ title: "Productos", items: prodChartData, valueLabel: "asoc" })} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} onClick={() => setListModal({ title: "Total Visitas", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
-        <StatCard label="Asociadas Activas" value={activas} icon={CheckCircle} onClick={() => setListModal({ title: "Asociadas Activas", items: asociadas.filter(a => a.numVisitas > 0).sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
+        <StatCard label="Visitas Realizadas" value={visitasRealizadas} icon={CheckCircle} onClick={() => setListModal({ title: "Visitas Realizadas", items: visitas.filter(v => v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) })} />
+        <StatCard label="Visitas Pendientes" value={visitasPendientes} icon={Clock} onClick={() => setListModal({ title: "Visitas Pendientes", items: visitas.filter(v => !v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) })} />
+        <StatCard label="Asociadas Activas" value={activas} icon={UserCheck} onClick={() => setListModal({ title: "Asociadas Activas", items: asociadas.filter(a => a.numVisitas > 0).sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
+        <StatCard label="Prom. Visitas/Asoc" value={promVisitas} icon={BarChart3} onClick={() => setListModal({ title: "Prom. Visitas/Asoc", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <StatCard label="Con Ubicación" value={`${conUbicacion} / ${asociadas.length}`} icon={MapPin} onClick={() => setListModal({ title: "Con Ubicación", items: asociadas.filter(a => a.lat != null && a.lng != null).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Con ubicación" })) })} />
+        <StatCard label="Total Beneficiarios" value={totalBeneficiarios} icon={Heart} onClick={() => setListModal({ title: "Total Beneficiarios", items: [...asociadas].sort((a, b) => (b.numPersonas || 1) - (a.numPersonas || 1)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numPersonas || 1} personas` })) })} />
+        <StatCard label="Menores De Edad" value={totalMenores} icon={Baby} onClick={() => setListModal({ title: "Menores De Edad", items: asociadas.filter(a => a.menoresHogar > 0).sort((a, b) => (b.menoresHogar || 0) - (a.menoresHogar || 0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.menoresHogar} menores` })) })} />
+        <StatCard label="Sin Visitas" value={sinVisitas} icon={XCircle} onClick={() => setListModal({ title: "Sin Visitas", items: asociadas.filter(a => !a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Sin visitas" })) })} />
         <button onClick={() => document.getElementById('alertas-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-amber-200 active:bg-amber-50/50">
           <div className="flex items-center gap-4">
@@ -456,62 +474,6 @@ function AdminDashboard() {
               <p className={`text-2xl font-bold ${totalAlertas > 0 ? "text-amber-600" : "text-emerald-600"}`}>{totalAlertas}</p>
             </div>
           </div>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
-        <button onClick={() => setBreakdownModal({ title: "Total Sectores", items: Object.entries(stats.sectores).map(([name, value]) => ({ name: name.replace("Vereda ", ""), value })).sort((a, b) => b.value - a.value) })}
-          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Sectores</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{sectorNamesList.length}</p>
-        </button>
-        <button onClick={() => setListModal({ title: "Total Beneficiarios", items: [...asociadas].sort((a, b) => (b.numPersonas || 1) - (a.numPersonas || 1)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numPersonas || 1} personas` })) })}
-          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Beneficiarios</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{totalBeneficiarios}</p>
-        </button>
-        <button onClick={() => setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta).sort((a, b) => parseFloat(b.areaHuerta) - parseFloat(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.areaHuerta} m²` })) })}
-          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Extensión De Tierra</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{totalExtension.toFixed(1)} m²</p>
-        </button>
-        <button onClick={() => setListModal({ title: "Menores De Edad", items: asociadas.filter(a => a.menoresHogar > 0).sort((a, b) => (b.menoresHogar || 0) - (a.menoresHogar || 0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.menoresHogar} menores` })) })}
-          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Menores De Edad</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{totalMenores}</p>
-        </button>
-        <button onClick={() => setBreakdownModal({ title: "Productos", items: prodChartData, valueLabel: "asoc" })}
-          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Productos</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{prodChartData.length}</p>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
-        <button onClick={() => setListModal({ title: "Con Ubicación", items: asociadas.filter(a => a.lat != null && a.lng != null).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Con ubicación" })) })}
-          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Con Ubicación</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{conUbicacion} <span className="text-sm font-normal text-slate-400">/ {asociadas.length}</span></p>
-        </button>
-        <button onClick={() => setListModal({ title: "Prom. Visitas/Asoc", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })}
-          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Prom. Visitas/Asoc</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{promVisitas}</p>
-        </button>
-        <button onClick={() => setListModal({ title: "Prom. Productos/Asoc", items: [...asociadas].sort((a, b) => (b.productos || "").split(",").filter(Boolean).length - (a.productos || "").split(",").filter(Boolean).length).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${(a.productos || "").split(",").filter(Boolean).length} productos` })) })}
-          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Prom. Productos/Asoc</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{promProductos}</p>
-        </button>
-        <button onClick={() => setListModal({ title: "Sin Visitas", items: asociadas.filter(a => !a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Sin visitas" })) })}
-          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Sin Visitas</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{sinVisitas}</p>
-        </button>
-        <button onClick={() => setBreakdownModal({ title: "% Cobertura", items: [{ name: "Con ubicación", value: conUbicacion }, { name: "Sin ubicación", value: asociadas.length - conUbicacion }], valueLabel: "asoc" })}
-          className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-blue-200 active:bg-blue-50/50">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">% Cobertura</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{asociadas.length > 0 ? ((conUbicacion / asociadas.length) * 100).toFixed(0) : 0}%</p>
         </button>
       </div>
 
