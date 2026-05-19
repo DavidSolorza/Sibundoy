@@ -1,0 +1,730 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{listings}
+
+\geometry{a4paper, margin=2.5cm}
+
+% Colores institucionales
+\definecolor{primary}{HTML}{1e293b}
+\definecolor{blueaccent}{HTML}{3b82f6}
+\definecolor{amberaccent}{HTML}{f59e0b}
+\definecolor{greenaccent}{HTML}{10b981}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=primary,
+  urlcolor=blueaccent,
+}
+
+\titleformat{\section}{\Large\bfseries\color{primary}}{}{0em}{}[\vspace{-0.3em}\rule{\textwidth}{1pt}]
+\titleformat{\subsection}{\large\bfseries\color{primary!80}}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{primary!60}}{}{0em}{}
+
+\newtcolorbox{infobox}{
+  colback=blue!5,
+  colframe=blueaccent,
+  arc=6pt,
+  boxrule=1pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt,
+}
+
+\newtcolorbox{tipbox}{
+  colback=green!5,
+  colframe=greenaccent,
+  arc=6pt,
+  boxrule=1pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt,
+}
+
+\newtcolorbox{warnbox}{
+  colback=orange!5,
+  colframe=amberaccent,
+  arc=6pt,
+  boxrule=1pt,
+  left=8pt, right=8pt, top=6pt, bottom=6pt,
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\small\textcolor{gray}{AgroMap --- Manual de Usuario}}
+\fancyfoot[C]{\thepage}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{4cm}
+  {\Huge\bfseries\color{primary} AgroMap \\[0.5em]}
+  {\LARGE\color{gray} Sistema de Gestión de Asociadas \\[1.5em]}
+  {\large\color{gray} Manual de Usuario \\[0.5em]}
+  \vspace{2cm}
+  \begin{tcolorbox}[colback=primary!90, colframe=primary, arc=10pt, width=0.7\textwidth, center]
+    \centering\textcolor{white}{\large\textbf{Software desarrollado por WolfEnterprise}}
+  \end{tcolorbox}
+  \vspace{1.5cm}
+  {\large © 2026 WolfEnterprise. Todos los derechos reservados.\\[0.3em]}
+  {\large Versión 1.0 --- Mayo 2026}
+  \vfill
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Introducción}
+\label{sec:introduccion}
+
+\subsection{¿Qué es AgroMap?}
+\label{subsec:que-es}
+
+AgroMap es un sistema web diseñado para la \textbf{gestión integral de asociadas agrícolas} en el municipio de Sibundoy, Putumayo. Su propósito es centralizar la información de las productoras, sus huertas, las visitas técnicas realizadas por el equipo de campo, y proporcionar herramientas de análisis para la toma de decisiones.
+
+\begin{infobox}
+  \textbf{Propósito principal:} Reemplazar los registros en papel y las hojas de cálculo dispersas por una plataforma unificada, accesible desde cualquier dispositivo con conexión a internet.
+\end{infobox}
+
+\subsection{¿A quién está dirigido?}
+
+\begin{itemize}[nosep]
+  \item \textbf{Equipo de campo:} Técnicos y extensionistas que realizan visitas a las asociadas.
+  \item \textbf{Coordinadores:} Personas encargadas de programar y dar seguimiento a las visitas.
+  \item \textbf{Administradores:} Personal que gestiona la información y genera reportes.
+  \item \textbf{Dirigentes:} Usuarios con permisos de solo lectura que necesitan consultar la información sin modificarla.
+\end{itemize}
+
+\subsection{Beneficios clave}
+
+\begin{itemize}[nosep]
+  \item \textbf{Información centralizada:} Todos los datos de las asociadas en un solo lugar, actualizados en tiempo real.
+  \item \textbf{Geolocalización:} Cada asociada tiene una ubicación en el mapa, facilitando la planificación de rutas de visita.
+  \item \textbf{Seguimiento de visitas:} Calendario interactivo que muestra el historial completo de visitas y las próximas programadas.
+  \item \textbf{Alertas inteligentes:} Detecta asociadas sin visitas recientes o con baja frecuencia de seguimiento.
+  \item \textbf{Importación y exportación:} Carga masiva de datos desde archivos Excel, CSV o JSON, y exportación a múltiples formatos.
+  \item \textbf{Reportes automáticos:} Generación de informes PDF con estadísticas detalladas.
+\end{itemize}
+
+% =============================================================================
+\section{Primeros pasos}
+\label{sec:primeros-pasos}
+
+\subsection{Acceso al sistema}
+\label{subsec:acceso}
+
+AgroMap es una aplicación web. Para acceder:
+
+\begin{enumerate}[nosep]
+  \item Abra su navegador web (Google Chrome, Mozilla Firefox, Microsoft Edge, Safari).
+  \item Ingrese la URL proporcionada por el administrador del sistema.
+  \item La aplicación cargará automáticamente la vista principal del mapa.
+\end{enumerate}
+
+\begin{infobox}
+  \textbf{Nota:} AgroMap funciona en computadores de escritorio, tablets y teléfonos móviles. La interfaz se adapta automáticamente al tamaño de la pantalla.
+\end{infobox}
+
+\subsection{Navegación principal}
+\label{subsec:navegacion}
+
+El sistema cuenta con una \textbf{barra lateral} (en pantallas grandes) o un \textbf{menú desplegable} (en dispositivos móviles) que permite acceder a las diferentes secciones:
+
+\begin{itemize}[nosep]
+  \item \textbf{Mapa:} Vista geográfica con todas las asociadas ubicadas en el mapa.
+  \item \textbf{Huertas:} Tabla con todos los registros de las asociadas, filtros y opciones de gestión.
+  \item \textbf{Visitas:} Calendario y lista de visitas realizadas y programadas.
+  \item \textbf{Exportar:} Herramientas para descargar datos en Excel, CSV, JSON o PDF.
+  \item \textbf{Importar:} Carga masiva de datos desde archivos externos.
+  \item \textbf{Admin:} Panel administrativo con gráficos, estadísticas y alertas.
+\end{itemize}
+
+\subsection{Modo de solo vista}
+\label{subsec:solo-vista}
+
+Si la URL contiene el parámetro \texttt{?view}, el sistema se bloquea en modo de solo lectura. En este modo:
+
+\begin{itemize}[nosep]
+  \item Los botones de agregar, editar y eliminar se ocultan.
+  \item Las opciones de importación y administración no están disponibles.
+  \item El usuario puede consultar toda la información sin riesgo de modificarla accidentalmente.
+\end{itemize}
+
+% =============================================================================
+\section{Mapa interactivo}
+\label{sec:mapa}
+
+\subsection{Descripción}
+\label{subsec:mapa-descripcion}
+
+La vista del mapa es la pantalla principal del sistema. Muestra un \textbf{mapa interactivo} con marcadores que representan la ubicación de cada asociada. Los marcadores se agrupan en clusters cuando hay varias asociadas cercanas, y se separan al acercar el zoom.
+
+\begin{infobox}
+  \textbf{¿Para qué sirve?} Visualizar la distribución geográfica de las asociadas, planificar rutas de visita, y encontrar rápidamente la ubicación de una productora específica.
+\end{infobox}
+
+\subsection{Funcionalidades}
+
+\subsubsection{Búsqueda de asociadas}
+En la parte superior hay un campo de búsqueda. Escriba el nombre de una asociada o el nombre de una vereda para filtrar los resultados. Los resultados aparecen en un menú desplegable; al seleccionar uno, el mapa se centra en esa ubicación.
+
+\begin{tipbox}
+  \textbf{Consejo:} Presione la tecla \texttt{/} (barra inclinada) en cualquier momento para enfocar el campo de búsqueda sin necesidad de usar el mouse.
+\end{tipbox}
+
+\subsubsection{Capas del mapa}
+En la esquina inferior derecha del mapa hay un control de capas que permite cambiar entre:
+\begin{itemize}[nosep]
+  \item \textbf{Mapa normal:} Vista predeterminada con calles y nombres de lugares.
+  \item \textbf{Satélite:} Imágenes satelitales para una vista más real del terreno.
+  \item \textbf{Topográfico:} Mapa con curvas de nivel y detalles del relieve.
+\end{itemize}
+
+\subsubsection{Información de la asociada}
+Al hacer clic en un marcador, se abre una ventana emergente con:
+\begin{itemize}[nosep]
+  \item Nombre de la asociada.
+  \item Estado civil.
+  \item Sector o vereda.
+  \item Teléfono de contacto.
+  \item Área de la huerta.
+  \item Número de menores en el hogar.
+  \item Fecha de la última visita.
+  \item Botón \textbf{``Ruta''} para trazar una ruta desde su ubicación actual.
+  \item Botones de \textbf{Editar} y \textbf{Eliminar} (si no está en modo solo vista).
+\end{itemize}
+
+\subsubsection{Ruta hacia una asociada}
+Al hacer clic en \textbf{``Ruta''}, el sistema traza una línea en el mapa desde su ubicación actual (detectada automáticamente) hasta la asociada seleccionada. Muestra:
+\begin{itemize}[nosep]
+  \item Distancia en kilómetros.
+  \item Tiempo estimado de viaje.
+  \item La ruta se optimiza automáticamente usando la red de carreteras cuando es posible.
+\end{itemize}
+
+\begin{tipbox}
+  \textbf{Mejor forma de uso:} Use la función de ruta antes de salir a campo para planificar el orden de las visitas y optimizar el tiempo de desplazamiento entre veredas.
+\end{tipbox}
+
+\subsubsection{Añadir una nueva asociada desde el mapa}
+En dispositivos táctiles, mantenga presionado (unos 600 ms) en un lugar vacío del mapa. En computadores de escritorio, use los botones flotantes en la parte superior derecha:
+\begin{itemize}[nosep]
+  \item \textbf{Centrar aquí:} Vuelve a su ubicación actual.
+  \item \textbf{Añadir aquí:} Abre el formulario de nueva asociada con las coordenadas del centro del mapa.
+\end{itemize}
+
+\subsubsection{Pantalla completa}
+Use el botón de pantalla completa para expandir el mapa a toda la pantalla. Ideal para presentaciones o cuando necesita ver el área completa.
+
+% =============================================================================
+\section{Huertas (Registro de asociadas)}
+\label{sec:huertas}
+
+\subsection{Descripción}
+\label{subsec:huertas-descripcion}
+
+La vista \textbf{Huertas} presenta una tabla con todos los registros de las asociadas. Es el centro de gestión de la información demográfica y productiva de cada productora.
+
+\begin{infobox}
+  \textbf{¿Para qué sirve?} Consultar, agregar, editar y eliminar registros de asociadas. Filtrar por sector, buscar por nombre o teléfono, y ordenar los datos por cualquier columna.
+\end{infobox}
+
+\subsection{Funcionalidades}
+
+\subsubsection{Barra de búsqueda}
+El campo de búsqueda permite filtrar los registros por:
+\begin{itemize}[nosep]
+  \item Nombre de la asociada.
+  \item Sector o vereda.
+  \item Teléfono.
+  \item Estado civil.
+  \item Productos cultivados.
+\end{itemize}
+
+\subsubsection{Filtros por sector}
+Debajo de la barra de búsqueda hay botones para filtrar por sector. Cada botón muestra el nombre del sector y la cantidad de asociadas que pertenecen a él. Al seleccionar un sector, la tabla se filtra para mostrar solo las asociadas de ese sector.
+
+\subsubsection{Ordenamiento}
+Haga clic en los encabezados de las columnas (Nombre, Estado Civil, Núm. Personas, Sector, Productos) para ordenar los datos de forma ascendente o descendente.
+
+\subsubsection{Agregar una asociada}
+Haga clic en el botón \textbf{``Agregar''} en la parte superior derecha. Se abrirá primero el mapa para seleccionar la ubicación, y luego un formulario con los siguientes campos:
+
+\begin{description}[nosep]
+  \item[Nombre (requerido)] Nombre completo de la asociada.
+  \item[Edad] Edad en años.
+  \item[Teléfono] Número de contacto.
+  \item[Núm. Personas] Cantidad de personas en el hogar.
+  \item[Menores Hogar] Número de menores de edad.
+  \item[Estado Civil] Casada, Madre Cabeza de Hogar, Viuda o Separada.
+  \item[Sector (requerido)] Vereda o sector al que pertenece.
+  \item[Área Huerta] Tamaño del terreno.
+  \item[Productos] Lista separada por comas de los productos que cultiva.
+  \item[Fecha Siembra] Fecha de siembra.
+  \item[Observaciones] Notas adicionales.
+\end{description}
+
+\begin{warnbox}
+  \textbf{Precaución:} Si el nombre que ingresa coincide con uno existente, el sistema mostrará una advertencia de posible duplicado. Revise cuidadosamente antes de guardar.
+\end{warnbox}
+
+\subsubsection{Editar una asociada}
+Haga clic en el ícono de lápiz (azul) en la fila correspondiente. Se abrirá el formulario con los datos actuales para modificarlos. También puede editar la ubicación en el mapa desde el formulario de edición.
+
+\subsubsection{Eliminar una asociada}
+Haga clic en el ícono de basura (rojo). Aparecerá un modal de confirmación. Si confirma, la asociada y todos sus datos se eliminarán permanentemente.
+
+\begin{warnbox}
+  \textbf{Advertencia:} La eliminación es irreversible. También se perderán todas las visitas asociadas a esa persona.
+\end{warnbox}
+
+\subsubsection{Eliminación masiva}
+Puede seleccionar múltiples asociadas marcando las casillas de verificación en la primera columna. Luego haga clic en \textbf{``Eliminar seleccionados''} para eliminarlas en lote. El sistema pedirá confirmación antes de proceder.
+
+\subsubsection{Ver perfil completo}
+Haga clic en el ícono de usuario (fondo oscuro) para ir al perfil completo de la asociada, donde encontrará información detallada, gráficos de visitas y su ubicación en el mapa.
+
+\subsubsection{Ver en el mapa}
+Haga clic en el ícono de ubicación (verde) para ver la asociada en un mapa modal con zoom ampliado.
+
+\subsubsection{Paginación}
+La tabla muestra 15 registros por página. Use los indicadores de paginación en la parte inferior para navegar entre páginas.
+
+\begin{tipbox}
+  \textbf{Mejor forma de uso:} Para una revisión rápida, use los filtros por sector combinados con la búsqueda por nombre. Para trabajos de campo, use la vista de mapa. Para análisis de datos, use los filtros y la exportación.
+\end{tipbox}
+
+% =============================================================================
+\section{Visitas}
+\label{sec:visitas}
+
+\subsection{Descripción}
+\label{subsec:visitas-descripcion}
+
+La vista \textbf{Visitas} permite gestionar todo el ciclo de visitas técnicas a las asociadas: registro, programación, seguimiento y finalización.
+
+\begin{infobox}
+  \textbf{¿Para qué sirve?} Llevar un control cronológico de todas las visitas realizadas a cada asociada, programar próximas visitas, y dar seguimiento al cumplimiento del plan de trabajo.
+\end{infobox}
+
+\subsection{Alternar entre lista y calendario}
+En la parte superior hay dos botones para cambiar la vista:
+
+\begin{itemize}[nosep]
+  \item \textbf{Lista:} Muestra las visitas agrupadas por sector en tarjetas ordenadas por fecha más reciente.
+  \item \textbf{Calendario:} Muestra un calendario mensual interactivo con todas las visitas.
+\end{itemize}
+
+\subsection{Vista de lista}
+
+\subsubsection{Tarjetas por sector}
+Cada sector se muestra como una tarjeta que contiene:
+\begin{itemize}[nosep]
+  \item Nombre del sector y cantidad total de visitas.
+  \item Indicador de visitas pendientes (ámbar) y realizadas (verde).
+  \item Resumen de tipos de visita (V = Visita, S = Seguimiento, C = Capacitación) con sus respectivos conteos.
+\end{itemize}
+
+Al hacer clic en una tarjeta, se abre un modal con el listado detallado de todas las visitas de ese sector.
+
+\subsubsection{Filtros rápidos}
+Use los botones de filtro rápido para ver:
+\begin{itemize}[nosep]
+  \item \textbf{Hoy:} Solo las visitas de hoy.
+  \item \textbf{7 días:} Visitas de los últimos 7 días.
+  \item \textbf{Este mes:} Visitas del mes actual.
+\end{itemize}
+
+\subsubsection{Barra de búsqueda}
+Filtra las visitas por nombre de la asociada o por sector.
+
+\subsubsection{Próximas visitas programadas}
+En la parte superior se muestra una sección destacada con las próximas visitas programadas (hasta 5), con la fecha y el tipo de cada una.
+
+\subsection{Vista de calendario}
+
+\subsubsection{Navegación mensual}
+Use las flechas para cambiar de mes o de año. El botón \textbf{``Ir a hoy''} vuelve al mes actual.
+
+\subsubsection{Interpretación de las celdas}
+\begin{itemize}[nosep]
+  \item \textbf{Celdas con borde azul:} Días con visitas activas (pendientes o no realizadas).
+  \item \textbf{Celdas con borde gris:} Días donde todas las visitas están completadas o son pasadas.
+  \item \textbf{Círculo azul:} Número total de visitas en ese día.
+  \item \textbf{Círculo gris:} Visitas pasadas o completadas.
+  \item \textbf{Pills (V, S, C):} Indicadores de tipo de visita con el conteo.
+\end{itemize}
+
+\begin{tipbox}
+  \textbf{Mejor forma de uso:} Use el calendario para tener una visión mensual de la carga de trabajo. Use la lista para ver el detalle por sector y planificar las rutas de campo.
+\end{tipbox}
+
+\subsubsection{Modal del día}
+Al hacer clic en un día del calendario, se abre un modal con:
+\begin{itemize}[nosep]
+  \item Lista de todas las visitas de ese día.
+  \item Para cada visita: tipo, nombre de la asociada, sector, observaciones y próxima visita programada.
+  \item Botones de acción: \textbf{Marcar como realizada} (verde), \textbf{Editar} (azul), \textbf{Eliminar} (rojo).
+\end{itemize}
+
+\subsection{Registrar una nueva visita}
+Haga clic en \textbf{``Nueva Visita''}. Complete el formulario:
+\begin{description}[nosep]
+  \item[Asociada (requerido)] Seleccione la asociada del menú de búsqueda.
+  \item[Tipo] Visita, Seguimiento o Capacitación.
+  \item[Observaciones] Notas sobre la visita.
+  \item[Programar próxima visita (opcional)] Fecha tentativa para la siguiente visita.
+\end{description}
+
+\subsection{Marcar una visita como realizada}
+Cuando una visita se complete, puede marcarla como realizada desde:
+\begin{itemize}[nosep]
+  \item El modal del calendario (ícono de check verde).
+  \item El modal de detalle del sector (ícono de check verde junto a cada visita no realizada).
+\end{itemize}
+
+Al marcar como realizada, la visita:
+\begin{itemize}[nosep]
+  \item Se muestra en gris en el calendario y en las listas.
+  \item Se excluye de los filtros de la vista de lista (solo muestra pendientes).
+  \item Se descuenta del contador de próximas visitas.
+\end{itemize}
+
+% =============================================================================
+\section{Perfil de asociada}
+\label{sec:perfil}
+
+\subsection{Descripción}
+\label{subsec:perfil-descripcion}
+
+La página de perfil muestra \textbf{toda la información} de una asociada en una vista detallada y organizada.
+
+\begin{infobox}
+  \textbf{¿Para qué sirve?} Consultar el historial completo de una asociada: datos personales, información de la huerta, visitas realizadas, productos cultivados, y su ubicación en el mapa.
+\end{infobox}
+
+\subsection{Secciones del perfil}
+
+\subsubsection{Encabezado}
+Muestra:
+\begin{itemize}[nosep]
+  \item Inicial del nombre en un círculo.
+  \item Nombre completo y estado civil (con etiqueta de color).
+  \item Sector de pertenencia.
+  \item Botón \textbf{``Cómo llegar''} para trazar ruta desde su ubicación.
+\end{itemize}
+
+\subsubsection{Tarjetas de resumen}
+Cinco indicadores numéricos: Edad, Visitas, Beneficiarios, Área de Huerta y Menores en el Hogar.
+
+\subsubsection{Información personal}
+Detalle completo: teléfono, número de personas en el hogar, menores, estado civil y edad.
+
+\subsubsection{Información de la huerta}
+Sector, área, fecha de siembra, última visita, total de visitas, observaciones.
+
+\subsubsection{Gráficos de visitas}
+\begin{itemize}[nosep]
+  \item \textbf{Línea de tiempo:} Evolución de las visitas en los últimos 12 meses.
+  \item \textbf{Tipo de visitas:} Gráfico de pastel con la distribución por tipo (Visita, Seguimiento, Capacitación).
+\end{itemize}
+
+\subsubsection{Productos cultivados}
+Lista de productos como etiquetas de color verde.
+
+\subsubsection{Mapa de ubicación}
+Mapa estático centrado en la ubicación de la asociada.
+
+\subsubsection{Historial de visitas}
+Lista completa de todas las visitas realizadas, ordenadas de la más reciente a la más antigua, mostrando tipo, fecha, observaciones y próxima visita programada.
+
+\begin{tipbox}
+  \textbf{Mejor forma de uso:} Use esta vista cuando necesite preparar un informe individual, antes de realizar una visita para repasar los antecedentes, o durante una reunión con la asociada para revisar su progreso.
+\end{tipbox}
+
+% =============================================================================
+\section{Panel administrativo}
+\label{sec:admin}
+
+\subsection{Descripción}
+\label{subsec:admin-descripcion}
+
+El panel administrativo proporciona una vista general del programa con \textbf{indicadores clave, gráficos interactivos y alertas inteligentes}.
+
+\begin{infobox}
+  \textbf{¿Para qué sirve?} Monitorear el estado general del programa, identificar problemas (asociadas sin visitas, sectores con baja cobertura), y generar reportes para la toma de decisiones.
+\end{infobox}
+
+\subsection{Tarjetas de indicadores}
+
+\subsubsection{Primera fila --- Datos demográficos}
+\begin{itemize}[nosep]
+  \item \textbf{Total Asociadas:} Número total de productoras registradas.
+  \item \textbf{Promedio Edad:} Edad promedio de las asociadas.
+  \item \textbf{Total Sectores:} Cantidad de veredas o sectores cubiertos.
+  \item \textbf{Extensión de Tierra:} Suma total del área de huertas en metros cuadrados.
+  \item \textbf{Productos:} Cantidad de productos diferentes cultivados.
+\end{itemize}
+
+\subsubsection{Segunda fila --- Seguimiento}
+\begin{itemize}[nosep]
+  \item \textbf{Total Visitas:} Suma de todas las visitas registradas.
+  \item \textbf{Visitas Realizadas:} Visitas marcadas como completadas.
+  \item \textbf{Visitas Pendientes:} Visitas aún no realizadas.
+  \item \textbf{Asociadas Activas:} Productoras que han recibido al menos una visita.
+  \item \textbf{Prom. Visitas/Asoc:} Promedio de visitas por asociada.
+\end{itemize}
+
+\subsubsection{Tercera fila --- Cobertura}
+\begin{itemize}[nosep]
+  \item \textbf{Con Ubicación:} Asociadas que tienen coordenadas registradas en el mapa.
+  \item \textbf{Total Beneficiarios:} Suma de personas en todos los hogares.
+  \item \textbf{Menores de Edad:} Total de niños y niñas en los hogares.
+  \item \textbf{Sin Visitas:} Asociadas que nunca han recibido una visita.
+  \item \textbf{Alertas:} Indicador compuesto de problemas detectados.
+\end{itemize}
+
+\subsubsection{Interacción con tarjetas}
+Haga clic en cualquier tarjeta para abrir un modal con el listado detallado de los registros que componen ese indicador.
+
+\subsection{Alertas inteligentes}
+El sistema detecta automáticamente:
+\begin{itemize}[nosep]
+  \item \textbf{Sin visita reciente:} Asociadas que no han recibido visita en más de 30 días.
+  \item \textbf{Baja frecuencia:} Asociadas con menos de 2 visitas en total.
+  \item \textbf{Sectores con menor cobertura:} Veredas donde el promedio de visitas por asociada es más bajo.
+\end{itemize}
+
+\begin{tipbox}
+  \textbf{Mejor forma de uso:} Revise las alertas semanalmente para priorizar las visitas a las asociadas que más tiempo llevan sin seguimiento.
+\end{tipbox}
+
+\subsection{Gráficos interactivos}
+
+\subsubsection{Asociadas por sector}
+Gráfico de barras horizontal que muestra la cantidad de asociadas en cada vereda. Haga clic en una barra para ver el detalle.
+
+\subsubsection{Tipo de población}
+Gráfico de pastel con la distribución por estado civil. Haga clic en una sección para ver las asociadas de ese tipo.
+
+\subsubsection{Distribución por edad}
+Gráfico de barras con rangos etarios (18--25, 26--35, 36--45, 46--55, 56--65, 66+).
+
+\subsubsection{Top productos cultivados}
+Los 12 productos más cultivados ordenados por frecuencia.
+
+\subsubsection{Visitas por mes}
+Línea de tiempo con el número de visitas en los últimos 12 meses.
+
+\subsubsection{Detalle por sector}
+Tabla con el desglose por sector: número de asociadas, beneficiarios, visitas y menores. Haga clic en una fila para ver el detalle.
+
+\subsection{Exportar informe PDF}
+Haga clic en \textbf{``Exportar PDF''} para generar un informe completo que incluye:
+\begin{itemize}[nosep]
+  \item Resumen general con todos los indicadores clave.
+  \item Distribución por sector con beneficiarios y visitas.
+  \item Tipo de población y rangos de edad.
+  \item Top de productos cultivados.
+  \item Visitas por mes.
+  \item Sectores con menor promedio de visitas.
+  \item Lista de asociadas sin visita reciente.
+\end{itemize}
+
+% =============================================================================
+\section{Importación de datos}
+\label{sec:importar}
+
+\subsection{Descripción}
+\label{subsec:importar-descripcion}
+
+La herramienta de importación permite \textbf{cargar datos masivamente} desde archivos Excel (.xlsx), CSV (.csv) o JSON (.json).
+
+\begin{infobox}
+  \textbf{¿Para qué sirve?} Migrar datos desde sistemas anteriores, hojas de cálculo o bases de datos externas sin tener que ingresar registro por registro manualmente.
+\end{infobox}
+
+\subsection{Paso a paso}
+
+\subsubsection{Paso 1: Seleccionar archivo}
+Arrastre el archivo al área punteada o haga clic para seleccionarlo. El sistema acepta formatos Excel, CSV y JSON.
+
+\subsubsection{Paso 2: Vista previa}
+El sistema muestra las primeras 5 filas del archivo para que verifique que los datos se leyeron correctamente.
+
+\subsubsection{Paso 3: Mapeo de columnas}
+Para cada campo de la base de datos, seleccione qué columna del archivo le corresponde. El sistema intenta reconocer automáticamente las columnas por el nombre (ej: ``Nombre'' se asigna a ``nombre'', ``Tel'' a ``teléfono'').
+
+\begin{itemize}[nosep]
+  \item Los campos marcados con \texttt{*} son obligatorios (Nombre y Sector).
+  \item Dos columnas no pueden asignarse al mismo campo.
+  \item Las columnas sin asignar aparecen destacadas en una sección de advertencia.
+\end{itemize}
+
+\subsubsection{Paso 4: Importar}
+Haga clic en \textbf{``Importar N registros''}. El sistema:
+
+\begin{enumerate}[nosep]
+  \item Verifica duplicados comparando nombre, teléfono y ubicación.
+  \item Si encuentra posibles duplicados, los muestra para revisión.
+  \item Si no hay duplicados, importa directamente.
+\end{enumerate}
+
+\subsection{Manejo de duplicados}
+Cuando se detectan posibles duplicados, puede:
+
+\begin{itemize}[nosep]
+  \item \textbf{Editar:} Corregir los datos del registro conflictivo.
+  \item \textbf{Descartar:} Excluir ese registro de la importación.
+  \item \textbf{Seleccionar múltiples:} Use las casillas de verificación para descartar varios registros a la vez.
+  \item \textbf{Importar seleccionados:} Importa solo los registros no descartados.
+  \item \textbf{Revisar después:} Cancela la importación para revisar los datos más tarde.
+\end{itemize}
+
+\begin{tipbox}
+  \textbf{Mejor forma de uso:} Antes de importar, limpie los datos en Excel: asegúrese de que los nombres no contengan números, que los teléfonos tengan formato consistente, y que los sectores coincidan exactamente con los nombres de veredas del sistema.
+\end{tipbox}
+
+% =============================================================================
+\section{Exportación de datos}
+\label{sec:exportar}
+
+\subsection{Descripción}
+\label{subsec:exportar-descripcion}
+
+La vista de exportación permite \textbf{descargar los datos} del sistema en múltiples formatos para su análisis externo o generación de reportes personalizados.
+
+\begin{infobox}
+  \textbf{¿Para qué sirve?} Compartir información con entidades externas, hacer análisis en Excel o herramientas estadísticas, generar respaldos de seguridad.
+\end{infobox}
+
+\subsection{Exportar asociadas}
+Seleccione los campos que desea incluir, filtre por sector si lo desea, y elija el formato:
+
+\begin{itemize}[nosep]
+  \item \textbf{Excel (.xlsx):} Formato tabular con los datos completos.
+  \item \textbf{CSV (.csv):} Datos separados por comas, compatible con cualquier herramienta.
+  \item \textbf{JSON (.json):} Formato estructurado para intercambio de datos.
+  \item \textbf{PDF (.pdf):} Informe con tabla de datos y fecha de generación.
+\end{itemize}
+
+\subsection{Exportar visitas}
+Similar a la exportación de asociadas, pero con filtros adicionales por tipo de visita, sector, mes y año.
+
+% =============================================================================
+\section{Confirmaciones y notificaciones}
+\label{sec:notificaciones}
+
+\subsection{Descripción}
+\label{subsec:notificaciones-descripcion}
+
+El sistema cuenta con un sistema integrado de confirmaciones y notificaciones para guiar al usuario y prevenir errores.
+
+\subsection{Modal de confirmación}
+Antes de realizar acciones destructivas (como eliminar un registro), aparece un modal que:
+
+\begin{itemize}[nosep]
+  \item Muestra un ícono representativo del tipo de acción (rojo para eliminar, ámbar para advertencia, azul para información).
+  \item Pregunta explícitamente si desea continuar.
+  \item Ofrece los botones \textbf{Cancelar} y \textbf{Confirmar}.
+  \item Muestra un indicador de carga mientras se procesa la acción.
+\end{itemize}
+
+\subsection{Toast de notificación}
+Después de cada acción, aparece una notificación temporal en la esquina superior derecha:
+
+\begin{itemize}[nosep]
+  \item \textbf{Verde:} Operación exitosa.
+  \item \textbf{Rojo:} Error en la operación.
+  \item \textbf{Ámbar:} Advertencia o información importante.
+  \item \textbf{Azul:} Notificación informativa.
+\end{itemize}
+
+Las notificaciones desaparecen automáticamente después de 3 segundos o al hacer clic en la X.
+
+% =============================================================================
+\section{Consejos generales}
+\label{sec:consejos}
+
+\begin{tcolorbox}[colback=green!5, colframe=greenaccent, arc=6pt, title={\large\textbf{Mejores prácticas}}]
+
+\begin{enumerate}
+  \item \textbf{Mantenga los datos limpios:} Antes de importar, verifique que los nombres no contengan números ni caracteres extraños. El sistema limpia automáticamente los números de los nombres durante la importación.
+
+  \item \textbf{Use el mapa para planificar rutas:} Antes de salir a campo, revise el mapa para identificar las asociadas que visitará y trace las rutas para optimizar el desplazamiento.
+
+  \item \textbf{Revise las alertas semanalmente:} El panel administrativo detecta automáticamente las asociadas que necesitan atención. Priorice las visitas a quienes llevan más de 30 días sin seguimiento.
+
+  \item \textbf{Programe la próxima visita al registrar:} Cuando registre una visita, aproveche para programar la siguiente. Esto ayuda a mantener la continuidad del seguimiento.
+
+  \item \textbf{Use filtros combinados:} En la tabla de huertas, combine la búsqueda por nombre con los filtros por sector para encontrar rápidamente lo que necesita.
+
+  \item \textbf{Exporte periódicamente:} Genere respaldos periódicos exportando los datos a Excel o CSV. Aunque los datos están en la nube, tener una copia local es una buena práctica.
+
+  \item \textbf{Marque las visitas como realizadas:} Inmediatamente después de completar una visita, márquela como realizada en el sistema. Esto mantiene los indicadores actualizados y evita confusiones.
+
+  \item \textbf{Use el perfil individual:} Antes de cada visita, revise el perfil completo de la asociada para conocer sus antecedentes, productos cultivados y el historial de visitas anteriores.
+\end{enumerate}
+
+\end{tcolorbox}
+
+% =============================================================================
+\section{Solución de problemas comunes}
+\label{sec:problemas}
+
+\subsection{No aparecen datos en el mapa}
+\begin{itemize}[nosep]
+  \item Verifique que la asociada tenga coordenadas registradas (latitud y longitud).
+  \item Las asociadas sin ubicación no aparecen en el mapa.
+\end{itemize}
+
+\subsection{Error al importar un archivo}
+\begin{itemize}[nosep]
+  \item Asegúrese de que el archivo tenga al menos un encabezado y una fila de datos.
+  \item Verifique que el campo ``Nombre'' esté presente y tenga valores no vacíos.
+  \item Para CSV, asegúrese de que los datos estén separados por comas y que los textos con comas estén entre comillas dobles.
+\end{itemize}
+
+\subsection{Error ``columna realizada does not exist''}
+\begin{itemize}[nosep]
+  \item Ejecute el siguiente comando SQL en Supabase:
+  \begin{verbatim}
+  ALTER TABLE visitas 
+  ADD COLUMN IF NOT EXISTS realizada 
+  BOOLEAN DEFAULT false;
+  \end{verbatim}
+\end{itemize}
+
+\subsection{La página no carga correctamente}
+\begin{itemize}[nosep]
+  \item Verifique su conexión a internet.
+  \item Intente recargar la página (F5).
+  \item Borre la caché del navegador.
+  \item Si el problema persiste, contacte al administrador del sistema.
+\end{itemize}
+
+\subsection{No puedo editar o eliminar registros}
+\begin{itemize}[nosep]
+  \item Verifique si la URL contiene el parámetro \texttt{?view}. Si es así, está en modo de solo lectura.
+  \item Contacte al administrador para obtener permisos de edición.
+\end{itemize}
+
+\vfill
+\begin{center}
+\begin{tcolorbox}[colback=primary!90, colframe=primary, arc=8pt, width=0.6\textwidth, center]
+  \centering\textcolor{white}{\large\textbf{Software desarrollado por WolfEnterprise}}
+\end{tcolorbox}
+\vspace{0.5cm}
+{\small AgroMap --- Sistema de Gestión de Asociadas --- Versión 1.0}
+\end{center}
+
+\end{document}
