@@ -15,7 +15,14 @@
 \usepackage{multirow}
 \usepackage{longtable}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows, positioning, calc}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, babel}
+
+\tikzset{
+  box/.style={rectangle, rounded corners, minimum width=3.5cm, minimum height=1.2cm, text centered, font=\small, draw, thick},
+  arrow/.style={thick, ->, >=stealth},
+  darrow/.style={thick, <->, >=stealth},
+  comp/.style={rectangle, rounded corners, minimum width=6cm, minimum height=0.8cm, text centered, font=\small, draw, thick},
+}
 
 \geometry{a4paper, margin=2.5cm}
 
@@ -35,7 +42,6 @@
 \titleformat{\subsection}{\large\bfseries\color{primary!80}}{}{0em}{}
 \titleformat{\subsubsection}{\normalsize\bfseries\color{primary!60}}{}{0em}{}
 
-% Estilo para código SQL
 \lstdefinestyle{sqlstyle}{
   backgroundcolor=\color{codebg},
   basicstyle=\ttfamily\small,
@@ -51,16 +57,6 @@
   commentstyle=\color{gray},
 }
 
-\lstdefinestyle{jsonstyle}{
-  backgroundcolor=\color{codebg},
-  basicstyle=\ttfamily\small,
-  breaklines=true,
-  frame=single,
-  rulecolor=\color{gray!30},
-  numbers=left,
-  numberstyle=\tiny\color{gray},
-}
-
 \lstdefinestyle{bashstyle}{
   backgroundcolor=\color{codebg},
   basicstyle=\ttfamily\small,
@@ -72,32 +68,28 @@
 \newtcolorbox{infobox}{
   colback=blue!5,
   colframe=blueaccent,
-  arc=6pt,
-  boxrule=1pt,
+  arc=6pt, boxrule=1pt,
   left=8pt, right=8pt, top=6pt, bottom=6pt,
 }
 
 \newtcolorbox{tipbox}{
   colback=green!5,
   colframe=greenaccent,
-  arc=6pt,
-  boxrule=1pt,
+  arc=6pt, boxrule=1pt,
   left=8pt, right=8pt, top=6pt, bottom=6pt,
 }
 
 \newtcolorbox{warnbox}{
   colback=orange!5,
   colframe=amberaccent,
-  arc=6pt,
-  boxrule=1pt,
+  arc=6pt, boxrule=1pt,
   left=8pt, right=8pt, top=6pt, bottom=6pt,
 }
 
 \newtcolorbox{credbox}{
   colback=primary!5,
   colframe=primary,
-  arc=6pt,
-  boxrule=1pt,
+  arc=6pt, boxrule=1pt,
   left=8pt, right=8pt, top=6pt, bottom=6pt,
 }
 
@@ -112,23 +104,21 @@
   \centering
   \vspace*{3cm}
   {\Huge\bfseries\color{primary} AgroMap \\[0.5em]}
-  {\LARGE\color{gray} Sistema de Gestión de Asociadas \\[1.5em]}
-  {\large\color{gray} Documentación Completa \\[0.5em]}
+  {\LARGE\color{gray} Sistema de Gesti\'on de Asociadas \\[1.5em]}
+  {\large\color{gray} Documentaci\'on Completa \\[0.5em]}
   \vspace{1.5cm}
   \begin{tcolorbox}[colback=primary!90, colframe=primary, arc=10pt, width=0.7\textwidth, center]
     \centering\textcolor{white}{\large\textbf{Software desarrollado por WolfEnterprise}}
   \end{tcolorbox}
   \vspace{1cm}
-  \begin{tabular}[t]{c}
-    \hline
-    \textbf{Versión} & 1.0 \\ 
+  \begin{tabular}{ll}
+    \textbf{Versi\'on} & 1.0 \\
     \textbf{Fecha} & Mayo 2026 \\
     \textbf{Repositorio} & \url{https://github.com/DavidSolorza/Sibundoy.git} \\
     \textbf{Correo} & agromapsibundoy@gmail.com \\
-    \hline
   \end{tabular}
   \vfill
-  \small{\textbf{© 2026 WolfEnterprise. Todos los derechos reservados.}\\ Prohibida la reproducción total o parcial sin autorización.}
+  \small{\textbf{\copyright{} 2026 WolfEnterprise. Todos los derechos reservados.}\\ Prohibida la reproducci\'on total o parcial sin autorizaci\'on.}
 \end{titlepage}
 
 \newpage
@@ -136,8 +126,7 @@
 \newpage
 
 % =============================================================================
-\section{Información general del proyecto}
-\label{sec:info-general}
+\section{Informaci\'on general del proyecto}
 
 \subsection{Datos de acceso}
 
@@ -154,16 +143,15 @@ pnpm dev
 \end{credbox}
 
 \begin{credbox}
-  \textbf{Correo electrónico del proyecto}\\[0.3em]
+  \textbf{Correo electr\'onico del proyecto}\\[0.3em]
   Correo: agromapsibundoy@gmail.com\\[0.3em]
-  Contraseña: 210910624Dj
+  Contrase\~na: 210910624Dj
 \end{credbox}
 
 \begin{credbox}
   \textbf{Supabase (Base de datos y backend)}\\[0.3em]
   URL del panel: \url{https://supabase.com/dashboard/org/zzcjrdewctrxsgkgxofd}\\[0.3em]
-  \textbf{Nota:} El acceso a Supabase se realiza mediante las credenciales de la organización.\\
-  Las claves de API (\texttt{VITE\_SUPABASE\_URL} y \texttt{VITE\_SUPABASE\_ANON\_KEY}) están configuradas en el archivo \texttt{.env} del proyecto.
+  Las claves de API (\texttt{VITE\_SUPABASE\_URL} y \texttt{VITE\_SUPABASE\_ANON\_KEY}) est\'an configuradas en el archivo \texttt{.env} del proyecto.
 \end{credbox}
 
 \subsection{Requisitos del sistema}
@@ -176,426 +164,217 @@ pnpm dev
 
 % =============================================================================
 \section{Manual de usuario}
-\label{sec:manual-usuario}
 
 \subsection{¿Qué es AgroMap?}
-
-AgroMap es un sistema web diseñado para la \textbf{gestión integral de asociadas agrícolas} en el municipio de Sibundoy, Putumayo. Centraliza la información de las productoras, sus huertas, las visitas técnicas realizadas y proporciona herramientas de análisis para la toma de decisiones.
-
-\subsection{¿A quién está dirigido?}
-
-\begin{itemize}[nosep]
-  \item \textbf{Equipo de campo:} Técnicos que realizan visitas a las asociadas.
-  \item \textbf{Coordinadores:} Encargados de programar y dar seguimiento a visitas.
-  \item \textbf{Administradores:} Personal que gestiona la información y genera reportes.
-  \item \textbf{Dirigentes:} Usuarios con permisos de solo lectura.
-\end{itemize}
+AgroMap es un sistema web dise\~nado para la \textbf{gesti\'on integral de asociadas agr\'icolas} en el municipio de Sibundoy, Putumayo. Centraliza la informaci\'on de las productoras, sus huertas, las visitas t\'ecnicas realizadas y proporciona herramientas de an\'alisis para la toma de decisiones.
 
 \subsection{Beneficios clave}
 \begin{itemize}[nosep]
-  \item Información centralizada y actualizada en tiempo real.
-  \item Geolocalización de cada asociada en el mapa.
+  \item Informaci\'on centralizada y actualizada en tiempo real.
+  \item Geolocalizaci\'on de cada asociada en el mapa.
   \item Calendario interactivo con historial de visitas.
   \item Alertas inteligentes (asociadas sin visita reciente).
-  \item Importación masiva desde Excel, CSV y JSON.
-  \item Exportación a Excel, CSV, JSON y PDF.
-  \item Reportes PDF automáticos con estadísticas.
+  \item Importaci\'on masiva desde Excel, CSV y JSON.
+  \item Exportaci\'on a Excel, CSV, JSON y PDF.
+  \item Reportes PDF autom\'aticos con estad\'isticas.
 \end{itemize}
 
-\subsection{Navegación principal}
-
-El sistema tiene una barra lateral (escritorio) o menú desplegable (móvil) con las siguientes secciones:
+\subsection{Navegaci\'on principal}
+El sistema tiene una barra lateral (escritorio) o men\'u desplegable (m\'ovil) con las siguientes secciones:
 
 \begin{longtable}{@{}llp{8cm}@{}}
   \toprule
-  \textbf{Ruta} & \textbf{Sección} & \textbf{Descripción} \\
+  \textbf{Ruta} & \textbf{Secci\'on} & \textbf{Descripci\'on} \\
   \midrule
   \endhead
   \bottomrule
   \endfoot
-  \texttt{/} & Mapa & Vista geográfica con marcadores de todas las asociadas. \\
+  \texttt{/} & Mapa & Vista geogr\'afica con marcadores de todas las asociadas. \\
   \texttt{/huertas} & Huertas & Tabla CRUD de registros de asociadas. \\
   \texttt{/visitas} & Visitas & Calendario y lista de visitas. \\
   \texttt{/asociada/:id} & Perfil & Perfil detallado de una asociada. \\
-  \texttt{/admin} & Admin & Panel con gráficos, estadísticas y alertas. \\
-  \texttt{/exportacion} & Exportar & Descarga de datos en múltiples formatos. \\
+  \texttt{/admin} & Admin & Panel con gr\'aficos, estad\'isticas y alertas. \\
+  \texttt{/exportacion} & Exportar & Descarga de datos en m\'ultiples formatos. \\
   \texttt{/importar} & Importar & Carga masiva de datos. \\
 \end{longtable}
 
-\newpage
 \subsection{Vista de mapa (\texttt{/})}
-\label{subsec:mapa}
-
-\textbf{Propósito:} Visualizar la distribución geográfica de las asociadas y planificar rutas.
+\textbf{Prop\'osito:} Visualizar la distribuci\'on geogr\'afica de las asociadas y planificar rutas.
 
 \textbf{Elementos:}
 \begin{itemize}[nosep]
   \item Buscador de asociadas (presione \texttt{/} para enfocar).
-  \item Capas: Normal, Satélite, Topográfico.
+  \item Capas: Normal, Sat\'elite, Topogr\'afico.
   \item Marcadores agrupados en clusters.
   \item Popup con datos al hacer clic en un marcador.
-  \item Trazado de rutas desde la ubicación actual.
-  \item Botón para añadir asociadas desde el mapa.
+  \item Trazado de rutas desde la ubicaci\'on actual.
 \end{itemize}
 
-\textbf{Mejor forma de uso:} Antes de salir a campo, revise el mapa para identificar las asociadas que visitará y trace las rutas para optimizar el desplazamiento.
-
 \subsection{Huertas (\texttt{/huertas})}
-\label{subsec:huertas}
-
-\textbf{Propósito:} Centro de gestión de la información demográfica y productiva.
+\textbf{Prop\'osito:} Centro de gesti\'on de la informaci\'on demogr\'afica y productiva.
 
 \textbf{Elementos:}
 \begin{itemize}[nosep]
-  \item Tabla paginada (15 registros por página).
-  \item Búsqueda por nombre, sector, teléfono, estado civil, productos.
+  \item Tabla paginada (15 registros por p\'agina).
+  \item B\'usqueda por nombre, sector, tel\'efono, estado civil, productos.
   \item Filtros por sector con conteo de asociadas.
   \item Ordenamiento por columnas.
   \item CRUD completo: agregar, editar, eliminar.
-  \item Eliminación masiva con selección múltiple.
-  \item Enlace al perfil completo de cada asociada.
+  \item Eliminaci\'on masiva con selecci\'on m\'ultiple.
   \item Mapa modal por asociada.
 \end{itemize}
 
-\textbf{Mejor forma de uso:} Combine la búsqueda por nombre con filtros por sector para encontrar rápidamente registros específicos.
-
 \subsection{Visitas (\texttt{/visitas})}
-\label{subsec:visitas}
+\textbf{Prop\'osito:} Control cronol\'ogico de visitas t\'ecnicas.
 
-\textbf{Propósito:} Control cronológico de visitas técnicas: registro, programación y seguimiento.
-
-\textbf{Dos modos de visualización:}
+\textbf{Dos modos de visualizaci\'on:}
 \begin{itemize}[nosep]
-  \item \textbf{Lista:} Tarjetas agrupadas por sector, ordenadas por fecha más reciente.
+  \item \textbf{Lista:} Tarjetas agrupadas por sector, ordenadas por fecha m\'as reciente.
   \item \textbf{Calendario:} Calendario mensual interactivo con todas las visitas.
 \end{itemize}
-
-\textbf{Acciones:}
-\begin{itemize}[nosep]
-  \item Registrar nueva visita (asociada, tipo, observaciones, próxima visita).
-  \item Editar y eliminar visitas.
-  \item Marcar como realizada (la visita se oculta de la lista activa pero permanece en el calendario con estilo gris).
-  \item Filtros rápidos: Hoy, 7 días, Este mes.
-\end{itemize}
-
-\textbf{Mejor forma de uso:} Use el calendario para visión mensual; use la lista para detalle por sector.
-
-\subsection{Perfil de asociada (\texttt{/asociada/:id})}
-\label{subsec:perfil}
-
-\textbf{Propósito:} Consultar la información completa de una asociada.
-
-\textbf{Secciones:}
-\begin{itemize}[nosep]
-  \item Datos personales y de la huerta.
-  \item Tarjetas de indicadores (edad, visitas, beneficiarios, área, menores).
-  \item Gráficos: visitas por mes (línea) y tipo de visitas (pastel).
-  \item Productos cultivados.
-  \item Mapa de ubicación.
-  \item Historial completo de visitas.
-\end{itemize}
+\textbf{Acciones:} Registrar, editar, eliminar visitas y marcarlas como realizadas.
 
 \subsection{Panel administrativo (\texttt{/admin})}
-\label{subsec:admin}
+\textbf{Prop\'osito:} Monitoreo general con indicadores, gr\'aficos y alertas inteligentes.
 
-\textbf{Propósito:} Monitoreo general con indicadores, gráficos y alertas inteligentes.
+\textbf{Tarjetas:} Datos demogr\'aficos, seguimiento, cobertura.
 
-\textbf{Tarjetas:}
-\begin{itemize}[nosep]
-  \item Datos demográficos: total asociadas, edad promedio, sectores, extensión, productos.
-  \item Seguimiento: visitas totales, realizadas, pendientes, activas, promedio.
-  \item Cobertura: con ubicación, beneficiarios, menores, sin visitas, alertas.
-\end{itemize}
+\textbf{Gr\'aficos interactivos:} Asociadas por sector, tipo de poblaci\'on, distribuci\'on por edad, top productos, visitas por mes.
 
-\textbf{Gráficos interactivos:}
-\begin{itemize}[nosep]
-  \item Asociadas por sector (barras).
-  \item Tipo de población (pastel).
-  \item Distribución por edad (barras).
-  \item Top productos cultivados (barras).
-  \item Visitas por mes (línea).
-  \item Tabla detalle por sector.
-\end{itemize}
+\textbf{Alertas inteligentes:} Asociadas sin visita en m\'as de 30 d\'ias, baja frecuencia, sectores con menor cobertura.
 
-\textbf{Alertas inteligentes:}
-\begin{itemize}[nosep]
-  \item Asociadas sin visita en más de 30 días.
-  \item Baja frecuencia de visitas ($<$ 2).
-  \item Sectores con menor promedio de visitas.
-\end{itemize}
+\subsection{Exportaci\'on (\texttt{/exportacion})}
+Formatos: Excel (.xlsx), CSV (.csv), JSON (.json), PDF (.pdf).
 
-\subsection{Exportación (\texttt{/exportacion})}
-\label{subsec:exportar}
+\subsection{Importaci\'on (\texttt{/importar})}
+Pasos: Seleccionar archivo, vista previa, mapeo de columnas, verificaci\'on de duplicados, importaci\'on final.
 
-\textbf{Propósito:} Descargar datos para análisis externo.
-
-\textbf{Formatos:}
-\begin{itemize}[nosep]
-  \item \textbf{Excel (.xlsx):} Formato tabular.
-  \item \textbf{CSV (.csv):} Datos separados por comas.
-  \item \textbf{JSON (.json):} Formato estructurado.
-  \item \textbf{PDF (.pdf):} Informe con tabla de datos.
-\end{itemize}
-
-\subsection{Importación (\texttt{/importar})}
-\label{subsec:importar}
-
-\textbf{Propósito:} Carga masiva de datos desde archivos externos.
-
-\textbf{Pasos:}
-\begin{enumerate}[nosep]
-  \item Seleccionar archivo (Excel, CSV o JSON).
-  \item Vista previa de datos.
-  \item Mapeo de columnas (asignación automática por nombre de columna).
-  \item Verificación de duplicados (nombre, teléfono, ubicación).
-  \item Revisión y edición de conflictos si existen.
-  \item Importación final.
-\end{enumerate}
-
-\newpage
 % =============================================================================
-\section{Manual técnico}
-\label{sec:manual-tecnico}
+\section{Manual t\'ecnico}
 
 \subsection{Arquitectura del sistema}
-
 AgroMap sigue una arquitectura de \textbf{Single Page Application (SPA)} con React en el frontend y Supabase como backend-as-a-service.
-
-\begin{infobox}
+\begin{center}
   \textbf{Modelo:} Frontend React $\leftrightarrow$ Supabase REST API $\leftrightarrow$ PostgreSQL
-\end{infobox}
+\end{center}
 
 \subsubsection{Diagrama de arquitectura}
-
 \begin{center}
-\begin{tikzpicture}[
-  node distance=2.5cm,
-  box/.style={rectangle, rounded corners, minimum width=3.5cm, minimum height=1.2cm, text centered, font=\small, draw, thick},
-  arrow/.style={thick, ->, >=stealth},
-]
-
-% Capa usuario
+\begin{tikzpicture}[node distance=2.5cm]
 \node[box, fill=blue!10, draw=blueaccent] (browser) {Navegador Web\\ (React SPA)};
-
-% Capa frontend
 \node[box, fill=primary!10, draw=primary, below of=browser] (react) {React 19\\ + Vite};
-
 \node[box, fill=primary!10, draw=primary, left of=react, xshift=-3cm] (components) {Componentes\\ React};
-
 \node[box, fill=primary!10, draw=primary, right of=react, xshift=3cm] (context) {Contextos\\ (Estado Global)};
-
-% Capa servicios
 \node[box, fill=green!10, draw=greenaccent, below of=react, yshift=-1cm] (supabase) {Supabase Client\\ (\texttt{@supabase/supabase-js})};
-
-% Capa backend
-\node[box, fill=amber!10, draw=amberaccent, below of=supabase, yshift=-1cm] (api) {Supabase REST API\\ + Realtime};
-
-\node[box, fill=amber!10, draw=amberaccent, left of=api, xshift=-3cm] (auth) {Autenticación\\ (opcional)};
-
-\node[box, fill=amber!10, draw=amberaccent, right of=api, xshift=3cm] (storage) {Storage\\ (archivos)};
-
-% Capa base de datos
+\node[box, fill=amberaccent!10, draw=amberaccent, below of=supabase, yshift=-1cm] (api) {Supabase REST API\\ + Realtime};
+\node[box, fill=amberaccent!10, draw=amberaccent, left of=api, xshift=-3cm] (auth) {Autenticaci\'on\\ (opcional)};
+\node[box, fill=amberaccent!10, draw=amberaccent, right of=api, xshift=3cm] (storage) {Storage\\ (archivos)};
 \node[box, fill=red!10, draw=red!80, below of=api, yshift=-1cm] (db) {PostgreSQL\\ (Supabase)};
 
-% Flechas
-\draw[arrow] (browser) -> (react);
-\draw[arrow] (react) -> (components);
-\draw[arrow] (react) -> (context);
-\draw[arrow] (components) -> (supabase);
-\draw[arrow] (context) -> (supabase);
-\draw[arrow] (supabase) -> (api);
-\draw[arrow] (api) -> (auth);
-\draw[arrow] (api) -> (storage);
-\draw[arrow] (api) -> (db);
-
+\draw[arrow] (browser) -- (react);
+\draw[arrow] (react) -- (components);
+\draw[arrow] (react) -- (context);
+\draw[arrow] (components) -- (supabase);
+\draw[arrow] (context) -- (supabase);
+\draw[arrow] (supabase) -- (api);
+\draw[arrow] (api) -- (auth);
+\draw[arrow] (api) -- (storage);
+\draw[arrow] (api) -- (db);
 \end{tikzpicture}
 \end{center}
 
 \subsubsection{Flujo de datos}
 \begin{enumerate}[nosep]
-  \item El navegador carga la SPA desde Vite (servidor de desarrollo o build estático).
-  \item Los componentes React se comunican con Supabase a través del cliente \texttt{@supabase/supabase-js}.
+  \item El navegador carga la SPA desde Vite.
+  \item Los componentes React se comunican con Supabase a trav\'es del cliente \texttt{@supabase/supabase-js}.
   \item Supabase expone una API REST que traduce las peticiones a consultas PostgreSQL.
-  \item Las suscripciones Realtime mantienen los datos sincronizados en todos los clientes conectados.
-  \item Los contextos de React (AsociadasContext, VisitasContext) gestionan el estado global y evitan re-fetchs innecesarios.
+  \item Las suscripciones Realtime mantienen los datos sincronizados.
+  \item Los contextos de React gestionan el estado global.
 \end{enumerate}
 
 \subsection{Estructura del proyecto}
-
 \begin{lstlisting}[style=bashstyle]
 Sibundoy/
   index.html              # Punto de entrada HTML
   package.json            # Dependencias y scripts
-  vite.config.js          # Configuracion de Vite
-  tailwind.config.js      # Configuracion de Tailwind CSS
-
-  public/
-    icons/                # Iconos de la aplicacion
-      plant.png           # Icono principal (favicon)
-      logo.png            # Logo de WolfEnterprise
-    favicon.svg           # Favicon SVG (respaldo)
-
+  public/icons/           # Iconos (plant.png, logo.png)
   src/
-    app/
-      App.jsx             # Componente raiz con rutas
-      main.jsx            # Punto de entrada de React
-      index.css           # Estilos globales + Tailwind
-
-    shared/               # Componentes y utilidades compartidas
-      ui/
-        Badge.jsx         # Etiquetas de estado
-        Button.jsx        # Botones reutilizables
-        Card.jsx          # Tarjetas con header/title
-        ConfirmModal.jsx  # Modal de confirmacion
-        Input.jsx         # Campos de entrada
-        LocationPickerModal.jsx  # Selector de ubicacion en mapa
-        Modal.jsx         # Modal generico
-        Navbar.jsx        # Barra de navegacion
-        SearchableSelect.jsx  # Select con busqueda
-        StatCard.jsx      # Tarjeta de estadistica
-        Toast.jsx         # Notificaciones toast
-      lib/
-        dates.js          # Utilidades de fecha
-        useDebounce.js    # Hook de debounce
-        useViewMode.js    # Hook de modo solo vista
-
-    features/             # Modulos funcionales
-      mapa/
-        MapaPage.jsx      # Pagina del mapa interactivo
-      asociadas/
-        AsociadasContext.jsx  # Contexto global de asociadas
-        useAsociadas.js       # Hook para acceder al contexto
-        components/
-          FormularioAsociada.jsx  # Formulario CRUD
-          MapaAsociadas.jsx       # Componente de mapa Leaflet
-          markerIcons.js          # Iconos personalizados
-          TablaAsociadas.jsx      # Tabla de asociadas
-          ExportadorAsociadas.jsx # Exportacion de asociadas
-      huertas/
-        HuertasPage.jsx   # Pagina de gestion de asociadas
-      visitas/
-        VisitasContext.jsx # Contexto global de visitas
-        useVisitas.js      # Hook para acceder al contexto
-        VisitasPage.jsx    # Pagina de visitas
-        CalendarView.jsx   # Calendario de visitas
-        ExportadorVisitas.jsx  # Exportacion de visitas
-      importar/
-        ImportarPage.jsx  # Pagina de importacion
-      admin/
-        AdminDashboard.jsx # Panel administrativo
-        AdminPage.jsx      # Pagina admin (wrapper)
-      perfil/
-        PerfilAsociadaPage.jsx # Perfil de asociada
-
-    services/
-      supabase.js         # Cliente de Supabase (singleton)
-
-  supabase/
-    schema.sql            # Esquema completo de la base de datos
-    seed.sql              # Datos de ejemplo
-    migrate_*.sql         # Migraciones varias
-    fix_rls.sql           # Correcciones de RLS
-
-  docs/
-    manual-usuario.tex    # Manual de usuario (LaTeX)
-    documentacion-completa.tex  # Este documento
-
-  resources/              # Recursos de referencia
-    ZONA_RURAL_MUNICIPIO DE SIBUNDOY 2026.pdf
-    Ubicacion-Veredas__Sibundoy Putumayo 2026.pdf
+    app/                  # App.jsx, main.jsx, index.css
+    shared/ui/            # Componentes reutilizables
+      Badge, Button, Card, ConfirmModal, Input, Modal,
+      Navbar, SearchableSelect, StatCard, Toast
+    shared/lib/           # Utilidades (dates, useDebounce, useViewMode)
+    features/
+      mapa/               # MapaPage.jsx
+      asociadas/          # AsociadasContext, Formulario, Tabla, etc.
+      huertas/            # HuertasPage.jsx
+      visitas/            # VisitasContext, VisitasPage, CalendarView
+      importar/           # ImportarPage.jsx
+      admin/              # AdminDashboard.jsx
+      perfil/             # PerfilAsociadaPage.jsx
+    services/supabase.js  # Cliente Supabase
+  supabase/               # SQL schema, seed, migraciones
+  docs/                   # Documentacion (LaTeX)
 \end{lstlisting}
 
 \subsection{Componentes y flujo de datos}
 
-\subsubsection{Contextos globales}
-La aplicación utiliza dos contextos de React para el estado global:
-
+\textbf{Contextos globales:}
 \begin{itemize}[nosep]
-  \item \textbf{AsociadasContext}: Gestiona el listado de asociadas, operaciones CRUD y la caché de datos. Se refresca automáticamente cada 15 segundos y mediante suscripción Realtime.
-  \item \textbf{VisitasContext}: Gestiona el listado de visitas, operaciones CRUD, y función \texttt{marcarRealizada}. Misma estrategia de actualización.
+  \item \textbf{AsociadasContext}: CRUD de asociadas, refresco cada 15s + Realtime.
+  \item \textbf{VisitasContext}: CRUD de visitas, \texttt{marcarRealizada}, mismo esquema de actualizaci\'on.
 \end{itemize}
 
-\subsubsection{Sincronización en tiempo real}
-Ambos contextos implementan:
-
-\begin{enumerate}[nosep]
-  \item \textbf{Polling:} Cada 15 segundos se re-fetch de datos.
-  \item \textbf{Realtime:} Suscripción a cambios en la base de datos mediante \texttt{supabase.channel()}. Al recibir un INSERT, UPDATE o DELETE, actualiza el estado local sin re-fetch completo.
-\end{enumerate}
+\textbf{Sincronizaci\'on:} Polling (15s) + suscripci\'on Realtime a cambios en la BD.
 
 \subsection{Principales dependencias}
-
-\begin{longtable}{@{}llp{7cm}@{}}
+\begin{longtable}{@{}lll@{}}
   \toprule
-  \textbf{Dependencia} & \textbf{Versión} & \textbf{Propósito} \\
+  \textbf{Dependencia} & \textbf{Versi\'on} & \textbf{Prop\'osito} \\
   \midrule
   \endhead
   \bottomrule
   \endfoot
   react & 19.2.6 & Framework de UI \\
-  react-dom & 19.2.6 & Renderizado DOM \\
   react-router-dom & 7.15.0 & Enrutamiento SPA \\
   vite & 8.0.12 & Bundler y servidor de desarrollo \\
   tailwindcss & 4.3.0 & Framework CSS utilitario \\
   @supabase/supabase-js & 2.105.4 & Cliente de Supabase \\
   leaflet & 1.9.4 & Mapas interactivos \\
-  react-leaflet & 5.0.0 & Integración React + Leaflet \\
-  react-leaflet-cluster & 4.1.3 & Agrupación de marcadores \\
-  recharts & 3.8.1 & Gráficos interactivos \\
+  recharts & 3.8.1 & Gr\'aficos interactivos \\
   lucide-react & 1.14.0 & Iconos SVG \\
   xlsx & 0.18.5 & Lectura/escritura de Excel \\
-  jspdf & 4.2.1 & Generación de PDF \\
-  jspdf-autotable & 5.0.7 & Tablas en PDF \\
-  html2canvas & 1.4.1 & Captura de pantalla para PDF \\
+  jspdf & 4.2.1 & Generaci\'on de PDF \\
 \end{longtable}
 
-\subsection{Decisiones técnicas clave}
-
+\subsection{Decisiones t\'ecnicas clave}
 \begin{itemize}[nosep]
-  \item \textbf{Sin autenticación:} La aplicación usa una \texttt{anon key} pública de Supabase. RLS está deshabilitado. Si se requiere autenticación en el futuro, se debe habilitar RLS y crear políticas.
-  \item \textbf{Modo solo vista:} Controlado por el parámetro \texttt{?view} en la URL. Los componentes verifican \texttt{useViewMode()} para ocultar botones de edición.
-  \item \textbf{Números en nombres:} Durante la importación y edición, los dígitos se eliminan automáticamente del campo \texttt{nombre} para evitar datos inconsistentes.
-  \item \textbf{Actualización optimista:} Las operaciones CRUD actualizan el estado local inmediatamente después de la respuesta de Supabase, sin esperar el próximo polling.
-  \item \textbf{Calendario unificado:} La vista de calendario usa \texttt{v.proximaVisita || v.fecha} como fecha de cada visita, mostrando tanto las pasadas como las futuras.
+  \item Sin autenticaci\'on (anon key p\'ublica). RLS deshabilitado.
+  \item Modo solo vista con par\'ametro \texttt{?view}.
+  \item Los n\'umeros se eliminan del campo \texttt{nombre} al importar/editar.
+  \item Actualizaci\'on optimista del estado local despu\'es de cada operaci\'on CRUD.
+  \item Calendario unificado: usa \texttt{v.proximaVisita || v.fecha} como fecha de referencia.
 \end{itemize}
 
-\newpage
 % =============================================================================
 \section{Diagrama de arquitectura detallado}
-\label{sec:arquitectura}
 
 \subsection{Diagrama de componentes}
-
 \begin{center}
-\begin{tikzpicture}[
-  node distance=1.8cm,
-  comp/.style={rectangle, rounded corners, minimum width=6cm, minimum height=0.8cm, text centered, font=\small, draw, thick},
-  arrow/.style={thick, ->, >=stealth},
-  darrow/.style={thick, <->, >=stealth},
-]
-
-% Capa presentacion
+\begin{tikzpicture}[node distance=1.8cm]
 \node[comp, fill=blue!10, draw=blueaccent] (app) {App.jsx --- Enrutador y Layout};
-\node[comp, fill=blue!5, draw=blueaccent, below of=app, yshift=-0.3cm] (navbar) {Navbar.jsx --- Navegación};
+\node[comp, fill=blue!5, draw=blueaccent, below of=app, yshift=-0.3cm] (navbar) {Navbar.jsx --- Navegaci\'on};
 \node[comp, fill=blue!5, draw=blueaccent, right of=navbar, xshift=4cm] (toast) {Toast.jsx --- Notificaciones};
-
-% Capa contextos
 \node[comp, fill=primary!10, draw=primary, below of=navbar, yshift=-0.8cm] (actx) {AsociadasContext.jsx};
 \node[comp, fill=primary!10, draw=primary, right of=actx, xshift=4cm] (vctx) {VisitasContext.jsx};
-
-% Capa paginas
 \node[comp, fill=green!10, draw=greenaccent, below of=actx, yshift=-0.8cm] (mapa) {MapaPage.jsx};
 \node[comp, fill=green!10, draw=greenaccent, right of=mapa, xshift=3cm] (huertas) {HuertasPage.jsx};
 \node[comp, fill=green!10, draw=greenaccent, right of=huertas, xshift=3cm] (visitas) {VisitasPage.jsx};
-
 \node[comp, fill=green!5, draw=greenaccent, below of=mapa, yshift=-0.5cm] (perfil) {PerfilAsociadaPage.jsx};
 \node[comp, fill=green!5, draw=greenaccent, right of=perfil, xshift=3cm] (importar) {ImportarPage.jsx};
 \node[comp, fill=green!5, draw=greenaccent, right of=importar, xshift=3cm] (admin) {AdminPage.jsx};
+\node[comp, fill=amberaccent!10, draw=amberaccent, below of=perfil, yshift=-0.8cm] (supa) {supabase.js --- Cliente Supabase};
 
-% Capa servicios
-\node[comp, fill=amber!10, draw=amberaccent, below of=perfil, yshift=-0.8cm] (supa) {supabase.js --- Cliente Supabase};
-
-% Flechas
 \draw[arrow] (app) -- (navbar);
 \draw[arrow] (app) -- (actx);
 \draw[arrow] (app) -- (vctx);
@@ -613,134 +392,84 @@ Ambos contextos implementan:
 \draw[arrow] (admin) -- (supa);
 \draw[darrow] (actx) -- (vctx);
 \draw[arrow] (navbar) -- (toast);
-
 \end{tikzpicture}
 \end{center}
 
-\subsection{Diagrama entidad-relación (base de datos)}
-
+\subsection{Diagrama entidad-relaci\'on (base de datos)}
 \begin{center}
-\begin{tikzpicture}[
-  ent/.style={rectangle, rounded corners, minimum width=4cm, minimum height=1cm, text centered, font=\small\bfseries, draw=primary, fill=primary!5},
-  rel/.style={diamond, aspect=2, minimum width=2.5cm, text centered, font=\small, draw=blueaccent, fill=blue!5},
-  attr/.style={ellipse, minimum width=2cm, text centered, font=\tiny, draw=gray},
-  arrow/.style={thick, ->, >=stealth},
-  darrow/.style={thick, <->, >=stealth},
-]
+\begin{tikzpicture}[node distance=3cm]
+\node[draw, rectangle, rounded corners, minimum width=3.5cm, minimum height=1cm, text centered, font=\small\bfseries, fill=primary!5, thick] (sectores) {Sectores};
+\node[draw, rectangle, rounded corners, minimum width=3.5cm, minimum height=1cm, text centered, font=\small\bfseries, fill=primary!5, thick, right of=sectores, xshift=5cm] (asociadas) {Asociadas};
+\node[draw, rectangle, rounded corners, minimum width=3.5cm, minimum height=1cm, text centered, font=\small\bfseries, fill=primary!5, thick, below of=asociadas, yshift=-1cm] (visitas) {Visitas};
 
-% Entidades
-\node[ent] (sectores) {Sectores};
-\node[ent, right of=sectores, xshift=5cm] (asociadas) {Asociadas};
-\node[ent, below of=asociadas, yshift=-1cm] (visitas) {Visitas};
+\node[draw, diamond, aspect=2, minimum width=2.5cm, text centered, font=\small, fill=blue!5, thick, above of=asociadas, yshift=-0.5cm] (pertenece) {Pertenece};
+\node[draw, diamond, aspect=2, minimum width=2.5cm, text centered, font=\small, fill=blue!5, thick, right of=visitas, xshift=2.5cm] (tiene) {Tiene};
 
-% Relaciones
-\node[rel, above of=asociadas, yshift=-0.5cm] (pertenece) {Pertenece};
-\node[rel, right of=visitas, xshift=2.5cm] (tiene) {Tiene};
-
-% Flechas
 \draw[darrow] (sectores) -- node[above, font=\tiny]{1} (pertenece);
 \draw[darrow] (pertenece) -- node[above, font=\tiny]{N} (asociadas);
 \draw[darrow] (asociadas) -- node[above, font=\tiny]{1} (tiene);
 \draw[darrow] (tiene) -- node[above, font=\tiny]{N} (visitas);
-
 \end{tikzpicture}
 \end{center}
 
 \subsection{Tablas de la base de datos}
 
-\subsubsection{Tabla: sectores}
-Catálogo de veredas y sectores con coordenadas base.
-
-\begin{longtable}{@{}lll@{}}
+\subsubsection{sectores}
+\begin{tabular}{lll}
   \toprule
-  \textbf{Columna} & \textbf{Tipo} & \textbf{Descripción} \\
+  \textbf{Columna} & \textbf{Tipo} & \textbf{Descripci\'on} \\
   \midrule
-  \endhead
+  id & bigint (PK) & Identificador \'unico \\
+  nombre & text (unique) & Nombre del sector \\
+  lat\_base & double precision & Latitud base \\
+  lng\_base & double precision & Longitud base \\
   \bottomrule
-  \endfoot
-  id & bigint (PK) & Identificador único \\
-  nombre & text (unique) & Nombre del sector/vereda \\
-  lat\_base & double precision & Latitud base del sector \\
-  lng\_base & double precision & Longitud base del sector \\
-\end{longtable}
+\end{tabular}
 
-\subsubsection{Tabla: asociadas}
-Registro principal de productoras/es.
-
-\begin{longtable}{@{}lll@{}}
+\subsubsection{asociadas}
+\begin{tabular}{lll}
   \toprule
-  \textbf{Columna} & \textbf{Tipo} & \textbf{Descripción} \\
+  \textbf{Columna} & \textbf{Tipo} & \textbf{Descripci\'on} \\
   \midrule
-  \endhead
-  \bottomrule
-  \endfoot
-  id & bigint (PK) & Identificador único \\
+  id & bigint (PK) & Identificador \'unico \\
   nombre & text (not null) & Nombre completo \\
-  edad & integer (check 0--120) & Edad en años \\
-  telefono & text & Número de contacto \\
+  edad & integer (0--120) & Edad en a\~nos \\
+  telefono & text & N\'umero de contacto \\
   num\_personas & integer (default 1) & Personas en el hogar \\
-  sector\_id & bigint (FK $\to$ sectores) & Sector de pertenencia \\
-  area\_huerta & text & Tamaño de la huerta \\
-  productos & text & Lista de productos (separados por coma) \\
+  sector\_id & bigint (FK) & Sector de pertenencia \\
+  area\_huerta & text & Tama\~no de la huerta \\
+  productos & text & Productos (separados por coma) \\
   fecha\_siembra & date & Fecha de siembra \\
-  fecha\_ultima\_visita & date & Última visita registrada \\
-  num\_visitas & integer (default 0) & Conteo total de visitas \\
+  fecha\_ultima\_visita & date & \'Ultima visita \\
+  num\_visitas & integer (default 0) & Conteo de visitas \\
   tipo\_persona & enum & Estado civil \\
-  observaciones & text & Notas adicionales \\
-  lat & double precision & Latitud \\
-  lng & double precision & Longitud \\
-  creado\_en & timestamptz & Fecha de creación \\
-  actualizado\_en & timestamptz & Fecha de última modificación \\
-\end{longtable}
-
-\subsubsection{Tabla: visitas}
-Registro de visitas, seguimientos y capacitaciones.
-
-\begin{longtable}{@{}lll@{}}
-  \toprule
-  \textbf{Columna} & \textbf{Tipo} & \textbf{Descripción} \\
-  \midrule
-  \endhead
+  lat/lng & double precision & Coordenadas \\
+  creado\_en / actualizado\_en & timestamptz & Fechas de control \\
   \bottomrule
-  \endfoot
-  id & bigint (PK) & Identificador único \\
-  asociada\_id & bigint (FK $\to$ asociadas, ON DELETE CASCADE) & Asociada visitada \\
-  fecha & date (default current\_date) & Fecha de la visita \\
-  tipo & enum (visita, seguimiento, capacitacion) & Tipo de visita \\
-  observaciones & text & Notas de la visita \\
-  proxima\_visita & date & Próxima visita programada \\
-  realizada & boolean (default false) & Indica si se completó \\
-  creado\_en & timestamptz & Fecha de creación \\
-  actualizado\_en & timestamptz & Fecha de modificación \\
-\end{longtable}
+\end{tabular}
 
-\subsection{Triggers y vistas del sistema}
+\subsubsection{visitas}
+\begin{tabular}{lll}
+  \toprule
+  \textbf{Columna} & \textbf{Tipo} & \textbf{Descripci\'on} \\
+  \midrule
+  id & bigint (PK) & Identificador \'unico \\
+  asociada\_id & bigint (FK, cascade) & Asociada visitada \\
+  fecha & date (default now) & Fecha de la visita \\
+  tipo & enum & Visita, seguimiento, capacitaci\'on \\
+  observaciones & text & Notas \\
+  proxima\_visita & date & Pr\'oxima visita programada \\
+  realizada & boolean (default false) & Completada o no \\
+  \bottomrule
+\end{tabular}
 
-\textbf{Triggers:}
-\begin{itemize}[nosep]
-  \item \texttt{trg\_asociadas\_updated\_at}: Actualiza \texttt{actualizado\_en} automáticamente.
-  \item \texttt{trg\_visitas\_updated\_at}: Actualiza \texttt{actualizado\_en} en visitas.
-  \item \texttt{trg\_visitas\_sync\_asociada}: Al insertar o eliminar una visita, actualiza \texttt{num\_visitas} y \texttt{fecha\_ultima\_visita} en la asociada correspondiente.
-\end{itemize}
+\subsection{Triggers y vistas}
+\textbf{Triggers:} \texttt{trg\_asociadas\_updated\_at}, \texttt{trg\_visitas\_updated\_at}, \texttt{trg\_visitas\_sync\_asociada} (actualiza num\_visitas al insert/delete).
 
-\textbf{Vistas:}
-\begin{itemize}[nosep]
-  \item \texttt{alertas\_asociadas}: Asociadas con alertas (sin visita $>$ 30 días, baja frecuencia).
-  \item \texttt{stats\_dashboard}: Indicadores agregados para el panel admin.
-  \item \texttt{proximas\_visitas}: Próximas visitas programadas.
-  \item \texttt{stats\_sectores}: Resumen por sector.
-  \item \texttt{distribucion\_edad}: Distribución por rangos etarios.
-  \item \texttt{stats\_tipos\_visita}: Tipos de visita más frecuentes.
-\end{itemize}
+\textbf{Vistas:} \texttt{alertas\_asociadas}, \texttt{stats\_dashboard}, \texttt{proximas\_visitas}, \texttt{stats\_sectores}, \texttt{distribucion\_edad}, \texttt{stats\_tipos\_visita}.
 
-\newpage
 \subsection{Esquema SQL completo}
-
-\begin{lstlisting}[style=sqlstyle, caption=Esquema completo de la base de datos]
--- ============================================================
--- AgroMap — Esquema completo para Supabase (PostgreSQL)
--- ============================================================
-
+\begin{lstlisting}[style=sqlstyle]
 -- Extensiones
 create extension if not exists "pgcrypto";
 create extension if not exists "pg_trgm";
@@ -749,7 +478,7 @@ create extension if not exists "pg_trgm";
 create type tipo_persona as enum ('Casada', 'Madre Cabeza De Hogar', 'Viuda', 'Separada');
 create type tipo_visita as enum ('visita', 'seguimiento', 'capacitacion');
 
--- Tabla: sectores
+-- Tabla sectores
 create table if not exists sectores (
   id    bigint generated by default as identity primary key,
   nombre text not null unique,
@@ -757,29 +486,7 @@ create table if not exists sectores (
   lng_base double precision not null
 );
 
-insert into sectores (nombre, lat_base, lng_base) values
-  ('Cabecera Municipal',              1.2035, -76.9190),
-  ('Vereda Bellavista',               1.2380, -76.9420),
-  ('Vereda Cabrera',                  1.1820, -76.9050),
-  ('Vereda Cabuyayaco',              1.1700, -76.9280),
-  ('Vereda Campoalegre',             1.2100, -76.9160),
-  ('Vereda El Cedro',                1.2000, -76.9300),
-  ('Vereda El Ejido',                1.1830, -76.9250),
-  ('Vereda Fatima Carrizayaco',      1.1980, -76.9050),
-  ('Vereda La Cumbre',               1.1950, -76.8950),
-  ('Vereda Las Cochas',              1.1720, -76.9180),
-  ('Vereda Leandro Agreda',          1.1580, -76.9350),
-  ('Vereda Llano Grande',            1.1680, -76.9380),
-  ('Vereda Machindinoy',             1.1950, -76.9250),
-  ('Vereda Palmas',                  1.1880, -76.9350),
-  ('Vereda Sagrado Corazon de Jesus',1.1870, -76.9200),
-  ('Vereda San Felix Sinsayaco',     1.1660, -76.9150),
-  ('Vereda San Jose la Hidraulica',  1.2060, -76.9080),
-  ('Vereda Tamabioy',                1.1750, -76.8980),
-  ('Vereda Villaflor',               1.2150, -76.9250)
-on conflict (nombre) do nothing;
-
--- Tabla: asociadas
+-- Tabla asociadas
 create table if not exists asociadas (
   id                bigint generated by default as identity primary key,
   nombre            text not null,
@@ -800,12 +507,7 @@ create table if not exists asociadas (
   actualizado_en    timestamptz not null default now()
 );
 
-create index idx_asociadas_sector_id on asociadas(sector_id);
-create index idx_asociadas_tipo_persona on asociadas(tipo_persona);
-create index idx_asociadas_coords on asociadas(lat, lng);
-create index idx_asociadas_nombre_trgm on asociadas using gin (nombre gin_trgm_ops);
-
--- Tabla: visitas
+-- Tabla visitas
 create table if not exists visitas (
   id              bigint generated by default as identity primary key,
   asociada_id     bigint not null references asociadas(id) on delete cascade,
@@ -818,13 +520,12 @@ create table if not exists visitas (
   actualizado_en  timestamptz not null default now()
 );
 
+-- Indices
+create index idx_asociadas_sector_id on asociadas(sector_id);
 create index idx_visitas_asociada_id on visitas(asociada_id);
 create index idx_visitas_fecha on visitas(fecha);
-create index idx_visitas_tipo on visitas(tipo);
-create index idx_visitas_proxima on visitas(proxima_visita)
-  where proxima_visita is not null;
 
--- Trigger: actualizar updated_at
+-- Trigger actualizar updated_at
 create or replace function trigger_set_updated_at()
 returns trigger as $$
 begin
@@ -841,7 +542,7 @@ create trigger trg_visitas_updated_at
   before update on visitas
   for each row execute function trigger_set_updated_at();
 
--- Trigger: sincronizar estadisticas de visita en asociadas
+-- Sincronizar estadisticas
 create or replace function sync_asociada_visita_stats()
 returns trigger as $$
 begin
@@ -865,195 +566,117 @@ create trigger trg_visitas_sync_asociada
   after insert or delete on visitas
   for each row execute function sync_asociada_visita_stats();
 
--- RLS: deshabilitado (sin autenticacion)
+-- RLS deshabilitado
 alter table sectores disable row level security;
 alter table asociadas disable row level security;
 alter table visitas disable row level security;
 \end{lstlisting}
 
-\subsection{Cómo configurar el proyecto desde cero}
-
+\subsection{Configuraci\'on desde cero}
 \begin{enumerate}[nosep]
-  \item Clonar el repositorio:
-\begin{lstlisting}[style=bashstyle]
-git clone https://github.com/DavidSolorza/Sibundoy.git
-cd Sibundoy
-\end{lstlisting}
-
-  \item Instalar dependencias:
-\begin{lstlisting}[style=bashstyle]
-pnpm install
-\end{lstlisting}
-
-  \item Configurar variables de entorno: crear archivo \texttt{.env}:
-\begin{lstlisting}[style=bashstyle]
-VITE_SUPABASE_URL=https://zzcjrdewctrxsgkgxofd.supabase.co
-VITE_SUPABASE_ANON_KEY=<tu-anon-key>
-\end{lstlisting}
-
-  \item Ejecutar el esquema SQL en Supabase: pegar el contenido de \texttt{supabase/schema.sql} en el editor SQL de Supabase.
-
-  \item Ejecutar migración de \texttt{realizada}:
-\begin{lstlisting}[style=sqlstyle]
-ALTER TABLE visitas ADD COLUMN IF NOT EXISTS realizada BOOLEAN DEFAULT false;
-\end{lstlisting}
-
-  \item Iniciar el servidor de desarrollo:
-\begin{lstlisting}[style=bashstyle]
-pnpm dev
-\end{lstlisting}
-
-  \item Para build de producción:
-\begin{lstlisting}[style=bashstyle]
-pnpm build
-pnpm preview
-\end{lstlisting}
+  \item Clonar: \texttt{git clone https://github.com/DavidSolorza/Sibundoy.git}
+  \item Instalar: \texttt{pnpm install}
+  \item Crear \texttt{.env}: \texttt{VITE\_SUPABASE\_URL} y \texttt{VITE\_SUPABASE\_ANON\_KEY}
+  \item Ejecutar \texttt{supabase/schema.sql} en el editor SQL de Supabase.
+  \item Ejecutar migraci\'on: \texttt{ALTER TABLE visitas ADD COLUMN IF NOT EXISTS realizada BOOLEAN DEFAULT false;}
+  \item Iniciar: \texttt{pnpm dev} (desarrollo) o \texttt{pnpm build \&\& pnpm preview} (producci\'on).
 \end{enumerate}
 
-\newpage
 % =============================================================================
 \section{Respaldo de la base de datos}
-\label{sec:respaldo}
 
-\subsection{Archivos de migración}
-El proyecto incluye los siguientes archivos SQL en la carpeta \texttt{supabase/}:
-
-\begin{longtable}{@{}llp{6cm}@{}}
+\subsection{Archivos de migraci\'on}
+\begin{tabular}{ll}
   \toprule
-  \textbf{Archivo} & \textbf{Propósito} \\
+  \textbf{Archivo} & \textbf{Prop\'osito} \\
   \midrule
-  \endhead
+  \texttt{schema.sql} & Esquema completo: tablas, \'indices, vistas, triggers \\
+  \texttt{seed.sql} & Datos de ejemplo (45 asociadas simuladas) \\
+  \texttt{migrate\_realtime.sql} & Configuraci\'on Realtime \\
+  \texttt{migrate\_menores\_hogar.sql} & Agrega columna menores\_hogar \\
+  \texttt{migrate\_estado\_civil.sql} & Agrega estado civil \\
+  \texttt{migrate\_dedup.sql} & Limpieza de duplicados \\
+  \texttt{fix\_rls.sql} & Correcciones RLS \\
   \bottomrule
-  \endfoot
-  \texttt{schema.sql} & Esquema completo: tablas, índices, vistas, triggers. \\
-  \texttt{seed.sql} & Datos de ejemplo (45 asociadas simuladas). \\
-  \texttt{migrate\_realtime.sql} & Configuración de publicación Realtime. \\
-  \texttt{migrate\_menores\_hogar.sql} & Agrega columna \texttt{menores\_hogar}. \\
-  \texttt{migrate\_estado\_civil.sql} & Agrega columna de estado civil. \\
-  \texttt{migrate\_dedup.sql} & Funciones para limpieza de duplicados. \\
-  \texttt{fix\_rls.sql} & Correcciones de Row Level Security. \\
-\end{longtable}
+\end{tabular}
 
-\subsection{Procedimiento de respaldo}
-
-Para respaldar la base de datos desde Supabase:
-
+\subsection{Procedimiento de respaldo en Supabase}
 \begin{enumerate}[nosep]
   \item Ir a \url{https://supabase.com/dashboard/org/zzcjrdewctrxsgkgxofd}
   \item Seleccionar el proyecto.
-  \item Ir a \textbf{Database $\rightarrow$ Backups}.
-  \item Habilitar \textbf{PITR} (Point In Time Recovery) si se requiere respaldo continuo.
-  \item Para respaldo manual: usar el botón \textbf{Trigger a backup} o descargar desde \textbf{Database $\rightarrow$ Backup $\rightarrow$ Download backup}.
+  \item Ir a \textbf{Database} $\rightarrow$ \textbf{Backups}.
+  \item Usar \textbf{Trigger a backup} para respaldo manual.
 \end{enumerate}
 
-\subsection{Comandos de respaldo con pg\_dump}
-
-Si tiene acceso directo a la base de datos:
-
+\subsection{Comandos pg\_dump}
 \begin{lstlisting}[style=bashstyle]
 # Respaldo completo
 pg_dump "postgresql://postgres:[password]@db.zzcjrdewctrxsgkgxofd.supabase.co:5432/postgres" > respaldo_agromap.sql
 
-# Respaldo solo esquema
-pg_dump --schema-only "..." > esquema_agromap.sql
-
-# Respaldo solo datos
-pg_dump --data-only "..." > datos_agromap.sql
-\end{lstlisting}
-
-\subsection{Restauración}
-
-\begin{lstlisting}[style=bashstyle]
-# Restaurar respaldo completo
+# Restaurar
 psql "postgresql://postgres:[password]@db.zzcjrdewctrxsgkgxofd.supabase.co:5432/postgres" < respaldo_agromap.sql
 \end{lstlisting}
 
-\newpage
 % =============================================================================
-\section{Tecnologías utilizadas}
-\label{sec:tecnologias}
+\section{Tecnolog\'ias utilizadas}
 
 \subsection{Frontend}
-
-\begin{longtable}{@{}llp{6cm}@{}}
+\begin{tabular}{lll}
   \toprule
-  \textbf{Tecnología} & \textbf{Versión} & \textbf{Propósito} \\
+  \textbf{Tecnolog\'ia} & \textbf{Versi\'on} & \textbf{Prop\'osito} \\
   \midrule
-  \endhead
-  \bottomrule
-  \endfoot
-  React & 19.2.6 & Framework de interfaz de usuario \\
-  Vite & 8.0.12 & Servidor de desarrollo y empaquetador \\
+  React & 19.2.6 & Framework de UI \\
+  Vite & 8.0.12 & Servidor de desarrollo y bundler \\
   Tailwind CSS & 4.3.0 & Framework CSS utilitario \\
   React Router DOM & 7.15.0 & Enrutamiento del lado del cliente \\
-  Lucide React & 1.14.0 & Biblioteca de iconos SVG \\
-  Recharts & 3.8.1 & Gráficos interactivos (barras, pastel, línea) \\
-  Leaflet & 1.9.4 & Mapas interactivos de código abierto \\
-  React Leaflet & 5.0.0 & Integración de Leaflet con React \\
-  React Leaflet Cluster & 4.1.3 & Agrupación de marcadores en el mapa \\
-  ESLint & 10.3.0 & Linter de código JavaScript \\
-\end{longtable}
+  Lucide React & 1.14.0 & Iconos SVG \\
+  Recharts & 3.8.1 & Gr\'aficos (barras, pastel, l\'inea) \\
+  Leaflet & 1.9.4 & Mapas interactivos \\
+  React Leaflet & 5.0.0 & Integraci\'on Leaflet + React \\
+  \bottomrule
+\end{tabular}
 
 \subsection{Backend y base de datos}
-
-\begin{longtable}{@{}llp{6cm}@{}}
+\begin{tabular}{lll}
   \toprule
-  \textbf{Tecnología} & \textbf{Versión} & \textbf{Propósito} \\
+  \textbf{Tecnolog\'ia} & \textbf{Versi\'on} & \textbf{Prop\'osito} \\
   \midrule
-  \endhead
-  \bottomrule
-  \endfoot
-  Supabase & --- & Backend-as-a-service (API REST + Realtime) \\
+  Supabase & --- & Backend-as-a-service (API + Realtime) \\
   PostgreSQL & 15.x & Base de datos relacional \\
-  @supabase/supabase-js & 2.105.4 & Cliente JavaScript para Supabase \\
-  pgcrypto & --- & Extensiones criptográficas de PostgreSQL \\
-  pg\_trgm & --- & Búsqueda de texto con trigramas \\
-\end{longtable}
-
-\subsection{Exportación e importación}
-
-\begin{longtable}{@{}llp{6cm}@{}}
-  \toprule
-  \textbf{Tecnología} & \textbf{Versión} & \textbf{Propósito} \\
-  \midrule
-  \endhead
+  @supabase/supabase-js & 2.105.4 & Cliente JavaScript \\
   \bottomrule
-  \endfoot
-  xlsx (SheetJS) & 0.18.5 & Lectura y escritura de archivos Excel \\
-  jsPDF & 4.2.1 & Generación de PDF en el cliente \\
-  jspdf-autotable & 5.0.7 & Tablas con estilo en jsPDF \\
-  html2canvas & 1.4.1 & Captura de elementos HTML como imagen \\
-\end{longtable}
+\end{tabular}
 
-\subsection{Despliegue y desarrollo}
-
-\begin{longtable}{@{}llp{6cm}@{}}
+\subsection{Exportaci\'on}
+\begin{tabular}{lll}
   \toprule
-  \textbf{Tecnología} & \textbf{Versión} & \textbf{Propósito} \\
+  \textbf{Tecnolog\'ia} & \textbf{Versi\'on} & \textbf{Prop\'osito} \\
   \midrule
-  \endhead
+  xlsx (SheetJS) & 0.18.5 & Lectura/escritura de Excel \\
+  jsPDF & 4.2.1 & Generaci\'on de PDF \\
+  jspdf-autotable & 5.0.7 & Tablas en PDF \\
   \bottomrule
-  \endfoot
-  pnpm & 11.1.2 & Gestor de paquetes \\
-  Node.js & $\ge$ 18 & Entorno de ejecución \\
-  Git & --- & Control de versiones \\
-  GitHub & --- & Repositorio remoto \\
-  Vercel (opcional) & --- & Plataforma de despliegue \\
-\end{longtable}
+\end{tabular}
 
-\subsection{Arquitectura de despliegue}
+\subsection{Despliegue}
+\begin{tabular}{ll}
+  \toprule
+  \textbf{Tecnolog\'ia} & \textbf{Prop\'osito} \\
+  \midrule
+  pnpm 11.1.2 & Gestor de paquetes \\
+  Node.js $\ge$ 18 & Entorno de ejecuci\'on \\
+  Git / GitHub & Control de versiones \\
+  Vercel (opcional) & Plataforma de despliegue \\
+  \bottomrule
+\end{tabular}
 
+\subsection{Diagrama de despliegue}
 \begin{center}
-\begin{tikzpicture}[
-  node distance=2cm,
-  box/.style={rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, font=\small, draw, thick},
-  arrow/.style={thick, ->, >=stealth},
-]
-
+\begin{tikzpicture}[node distance=2.5cm]
 \node[box, fill=blue!10, draw=blueaccent] (dev) {Desarrollador};
 \node[box, fill=primary!10, draw=primary, right of=dev, xshift=2.5cm] (git) {GitHub};
-\node[box, fill=green!10, draw=greenaccent, right of=git, xshift=2.5cm] (build) {Vite Build\\ (static files)};
-\node[box, fill=amber!10, draw=amberaccent, below of=build, yshift=-1cm] (vercel) {Vercel / CDN\\ (Hosting)};
+\node[box, fill=green!10, draw=greenaccent, right of=git, xshift=2.5cm] (build) {Vite Build\\ (archivos est\'aticos)};
+\node[box, fill=amberaccent!10, draw=amberaccent, below of=build, yshift=-1cm] (vercel) {Vercel / CDN\\ (Hosting)};
 \node[box, fill=red!10, draw=red!80, below of=git, yshift=-1cm] (supa) {Supabase\\ (PostgreSQL + API)};
 
 \draw[arrow] (dev) -- (git);
@@ -1061,19 +684,16 @@ psql "postgresql://postgres:[password]@db.zzcjrdewctrxsgkgxofd.supabase.co:5432/
 \draw[arrow] (build) -- (vercel);
 \draw[arrow] (vercel) -- (supa);
 \draw[arrow] (git) -- (supa);
-
 \end{tikzpicture}
 \end{center}
 
 \subsection{Licencia y atribuciones}
-
 \begin{itemize}[nosep]
-  \item \textbf{Iconos:} Lucide React (licencia ISC).
-  \item \textbf{Mapas:} OpenStreetMap (ODbL), Esri, OpenTopoMap.
-  \item \textbf{Leaflet:} Licencia BSD-2-Clause.
-  \item \textbf{Recharts:} Licencia MIT.
-  \item \textbf{jsPDF:} Licencia MIT.
-  \item \textbf{Supabase:} Apache 2.0 (self-hosted) / SaaS.
+  \item Iconos: Lucide React (ISC).
+  \item Mapas: OpenStreetMap (ODbL), Esri, OpenTopoMap.
+  \item Leaflet: BSD-2-Clause.
+  \item Recharts, jsPDF: MIT.
+  \item Supabase: Apache 2.0.
 \end{itemize}
 
 \vfill
@@ -1082,7 +702,7 @@ psql "postgresql://postgres:[password]@db.zzcjrdewctrxsgkgxofd.supabase.co:5432/
   \centering\textcolor{white}{\large\textbf{Software desarrollado por WolfEnterprise}}
 \end{tcolorbox}
 \vspace{0.5cm}
-{\small AgroMap --- Sistema de Gestión de Asociadas --- Versión 1.0}\\[0.3cm]
+{\small AgroMap --- Sistema de Gesti\'on de Asociadas --- Versi\'on 1.0}\\[0.3cm]
 {\small \texttt{agromapsibundoy@gmail.com}}\\[0.3cm]
 {\small \url{https://github.com/DavidSolorza/Sibundoy.git}}
 \end{center}
