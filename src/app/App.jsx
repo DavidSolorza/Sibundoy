@@ -4,6 +4,7 @@ import { Download, Users, ClipboardList, AlertTriangle } from "lucide-react";
 import { AsociadasProvider } from "../features/asociadas/AsociadasContext";
 import { VisitasProvider } from "../features/visitas/VisitasContext";
 import Navbar from "../shared/ui/Navbar";
+import ErrorBoundary from "../shared/ui/ErrorBoundary";
 import MapaPage from "../features/mapa/MapaPage";
 import ExportadorAsociadas from "../features/asociadas/components/ExportadorAsociadas";
 import ExportadorVisitas from "../features/visitas/components/ExportadorVisitas";
@@ -35,7 +36,8 @@ function App() {
                   <div className="h-7 w-7 animate-spin rounded-full border-2 border-slate-800 border-t-transparent" />
                 </div>
               }>
-                <Routes>
+                <ErrorBoundary>
+                  <Routes>
                   <Route path="/" element={<MapaPage />} />
                   <Route path="/huertas" element={<HuertasPage />} />
                   <Route path="/visitas" element={<VisitasPage />} />
@@ -44,6 +46,7 @@ function App() {
                   <Route path="/exportacion" element={<ExportacionWrapper />} />
                   <Route path="/importar" element={<ImportarPage />} />
                 </Routes>
+                </ErrorBoundary>
               </Suspense>
             </main>
           </div>

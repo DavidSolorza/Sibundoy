@@ -5,13 +5,15 @@ function Modal({ open, onClose, title, children, large }) {
   const overlayRef = useRef(null);
   const contentRef = useRef(null);
   const dragRef = useRef(null);
+  const offsetRef = useRef({ x: 0, y: 0 });
   const dragOccurred = useRef(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const onHeaderMouseDown = useCallback((e) => {
     if (e.button !== 0) return;
     dragOccurred.current = false;
-    dragRef.current = { startX: e.clientX, startY: e.clientY };
+    const o = offsetRef.current;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, baseX: o.x, baseY: o.y };
     setIsDragging(true);
   }, []);
 
@@ -23,12 +25,18 @@ function Modal({ open, onClose, title, children, large }) {
       dragOccurred.current = true;
       const d = dragRef.current;
       if (!d) return;
-      el.style.transform = `translate(${e.clientX - d.startX}px, ${e.clientY - d.startY}px)`;
+      const dx = d.baseX + e.clientX - d.startX;
+      const dy = d.baseY + e.clientY - d.startY;
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
     };
-    const onUp = () => {
+    const onUp = (e) => {
+      const d = dragRef.current;
+      if (d) {
+        offsetRef.current.x = d.baseX + e.clientX - d.startX;
+        offsetRef.current.y = d.baseY + e.clientY - d.startY;
+      }
       dragRef.current = null;
       setIsDragging(false);
-      if (el) el.style.transform = "";
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
@@ -44,7 +52,7 @@ function Modal({ open, onClose, title, children, large }) {
 
   useEffect(() => {
     if (open) { document.body.style.overflow = "hidden"; }
-    else { document.body.style.overflow = ""; dragRef.current = null; setIsDragging(false); }
+    else { document.body.style.overflow = ""; offsetRef.current = { x: 0, y: 0 }; dragRef.current = null; setIsDragging(false); }
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
@@ -56,6 +64,9 @@ function Modal({ open, onClose, title, children, large }) {
 
   if (!open) return null;
 
+  const { x, y } = offsetRef.current;
+  const hasOffset = x !== 0 || y !== 0;
+
   return (
     <div
       ref={overlayRef}
@@ -65,6 +76,7 @@ function Modal({ open, onClose, title, children, large }) {
       <div
         ref={contentRef}
         className={`flex max-h-[90vh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:rounded-xl mt-16 sm:mt-0 pb-[env(safe-area-inset-bottom,0px)] ${large ? "max-w-3xl" : "max-w-lg"} ${isDragging ? "cursor-grabbing select-none" : ""}`}
+        style={hasOffset && !isDragging ? { transform: `translate(${x}px, ${y}px)` } : undefined}
       >
         <div
           className="flex cursor-grab items-center justify-between border-b border-slate-200 px-4 py-3.5 sm:px-5 sm:py-4"
