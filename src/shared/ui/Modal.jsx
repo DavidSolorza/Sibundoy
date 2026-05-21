@@ -47,7 +47,9 @@ function Modal({ open, onClose, title, children, large }) {
   }, [isDragging]);
 
   const handleOverlayClick = useCallback((e) => {
-    if (e.target === overlayRef.current && !dragOccurred.current) onClose();
+    if (e.target !== overlayRef.current) return;
+    if (dragOccurred.current) { dragOccurred.current = false; return; }
+    onClose();
   }, [onClose]);
 
   useEffect(() => {
