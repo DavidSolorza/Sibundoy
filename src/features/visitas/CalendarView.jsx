@@ -110,16 +110,20 @@ function CalendarView({ visitas, onDayClick }) {
           if (!cell) return <div key={`empty-${i}`} className="bg-white min-h-[95px]" />;
           const isToday = cell.dateStr === todayStr;
           const isFuture = cell.dateStr > todayStr;
-          const allPastOrCompleted = cell.visits.length > 0 && cell.visits.every(v => v.realizada || cell.dateStr < todayStr);
+          const allCompleted = cell.visits.length > 0 && cell.visits.every(v => v.realizada);
+          const hasOverdue = cell.visits.length > 0 && cell.visits.some(v => !v.realizada && cell.dateStr < todayStr);
+          const pastDue = hasOverdue;
           return (
             <button
               key={cell.dateStr}
               onClick={() => onDayClick(cell.dateStr)}
               className={`cursor-pointer px-1.5 py-1.5 text-left transition-colors min-h-[95px] flex flex-col relative
                 ${cell.visitCount > 0
-                  ? allPastOrCompleted
-                    ? "bg-gradient-to-b from-white to-slate-100/60 hover:to-slate-200/80 shadow-[inset_0_-2px_0_0_rgba(148,163,184,0.3)]"
-                    : "bg-gradient-to-b from-white to-blue-50/60 hover:to-blue-100/80 shadow-[inset_0_-2px_0_0_rgba(59,130,246,0.3)]"
+                  ? pastDue
+                    ? "bg-gradient-to-b from-white to-red-50/80 hover:to-red-100/80 shadow-[inset_0_-2px_0_0_rgba(239,68,68,0.4)]"
+                    : allCompleted
+                      ? "bg-gradient-to-b from-white to-slate-100/60 hover:to-slate-200/80 shadow-[inset_0_-2px_0_0_rgba(148,163,184,0.3)]"
+                      : "bg-gradient-to-b from-white to-blue-50/60 hover:to-blue-100/80 shadow-[inset_0_-2px_0_0_rgba(59,130,246,0.3)]"
                   : "bg-white hover:bg-slate-50"
                 }
                 ${isToday ? "ring-2 ring-inset ring-slate-800" : ""}
@@ -128,7 +132,7 @@ function CalendarView({ visitas, onDayClick }) {
               <div className="flex items-center justify-between mb-1">
                 {cell.visitCount > 0 ? (
                   <span className={`flex items-center justify-center h-6 w-6 rounded-full text-white text-[11px] font-bold leading-none ${
-                    allPastOrCompleted ? "bg-slate-400" : "bg-blue-600"
+                    pastDue ? "bg-red-500" : allCompleted ? "bg-slate-400" : "bg-blue-600"
                   }`}>
                     {cell.visitCount}
                   </span>
@@ -144,14 +148,17 @@ function CalendarView({ visitas, onDayClick }) {
                     {(["visita", "seguimiento", "capacitacion"]).map((tipo) => {
                       const count = cell.visits.filter((v) => v.tipo === tipo).length;
                       if (!count) return null;
-                      const muted = allPastOrCompleted;
+                      const muted = allCompleted;
+                      const overdue = pastDue && !muted;
                       return (
                         <span key={tipo} className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold leading-tight ${
-                          muted
-                            ? "bg-slate-200 text-slate-500"
-                            : tipo === "visita" ? "bg-blue-200 text-blue-800" :
-                              tipo === "seguimiento" ? "bg-amber-200 text-amber-800" :
-                              "bg-emerald-200 text-emerald-800"
+                          overdue
+                            ? "bg-red-200 text-red-800"
+                            : muted
+                              ? "bg-slate-200 text-slate-500"
+                              : tipo === "visita" ? "bg-blue-200 text-blue-800" :
+                                tipo === "seguimiento" ? "bg-amber-200 text-amber-800" :
+                                "bg-emerald-200 text-emerald-800"
                         }`}>
                           {tipo === "visita" ? "V" : tipo === "seguimiento" ? "S" : "C"}
                           <span className="text-[11px] font-bold">{count}</span>
