@@ -442,20 +442,18 @@ function AdminDashboard() {
           {exporting ? "Exportando..." : "Exportar PDF"}
         </button>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Asociadas" value={asociadas.length} icon={Users} onClick={() => setListModal({ title: "Todas las Asociadas", items: asociadas.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) })} />
-        <StatCard label="Promedio Edad" value={`${promedioEdad} años`} icon={BarChart3} onClick={() => setListModal({ title: "Promedio de Edad", items: [...asociadas].sort((a, b) => b.edad - a.edad).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) })} />
         <StatCard label="Total Sectores" value={sectorNamesList.length} icon={Layers} onClick={() => setBreakdownModal({ title: "Total Sectores", items: Object.entries(stats.sectores).map(([name, value]) => ({ name: name.replace("Vereda ", ""), value })).sort((a, b) => b.value - a.value) })} />
         <StatCard label="Extensión De Tierra" value={`${totalExtension.toFixed(1)} m²`} icon={MapPin} onClick={() => setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta).sort((a, b) => parseFloat(b.areaHuerta) - parseFloat(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.areaHuerta} m²` })) })} />
         <StatCard label="Productos" value={prodChartData.length} icon={Wheat} onClick={() => setBreakdownModal({ title: "Productos", items: prodChartData, valueLabel: "asoc" })} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} onClick={() => setListModal({ title: "Total Visitas", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
         <StatCard label="Visitas Realizadas" value={visitasRealizadas} icon={CheckCircle} onClick={() => setListModal({ title: "Visitas Realizadas", items: visitas.filter(v => v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) })} />
         <StatCard label="Visitas Pendientes" value={visitasPendientes} icon={Clock} onClick={() => setListModal({ title: "Visitas Pendientes", items: visitas.filter(v => !v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) })} />
         <StatCard label="Asociadas Activas" value={activas} icon={UserCheck} onClick={() => setListModal({ title: "Asociadas Activas", items: asociadas.filter(a => a.numVisitas > 0).sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
-        <StatCard label="Prom. Visitas/Asoc" value={promVisitas} icon={BarChart3} onClick={() => setListModal({ title: "Prom. Visitas/Asoc", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
