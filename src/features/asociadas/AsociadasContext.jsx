@@ -216,8 +216,11 @@ export function AsociadasProvider({ children }) {
       if (!sectores[a.sector]) sectores[a.sector] = [];
       sectores[a.sector].push(a);
     });
+    Object.keys(sectorMap).forEach((nombre) => {
+      if (!sectores[nombre]) sectores[nombre] = [];
+    });
     return sectores;
-  }, [asociadas]);
+  }, [asociadas, sectorMap]);
 
   const findDuplicates = useCallback(({ nombre, sector, telefono, lat, lng, excludeId }) => {
     const n = (s) => s?.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";

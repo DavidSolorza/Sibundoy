@@ -15,7 +15,7 @@ const SECTORES = [
   "Vereda Fátima Carrizayaco", "Vereda La Cumbre",
   "Vereda Las Cochas", "Vereda Leandro Agreda", "Vereda Llano Grande",
   "Vereda Machindinoy", "Vereda Palmas",
-  "Vereda Sagrado Corazón de Jesús", "Vereda San Félix Sinsayaco",
+  "Vereda Sagrado Corazón de Jesús", "Vereda San Agustín", "Vereda San Félix Sinsayaco",
   "Vereda San José la Hidráulica", "Vereda Tamabioy",
   "Vereda Villaflor"
 ];
