@@ -205,12 +205,17 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   }, [updateAsociada, showToast]);
 
   useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => { setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setAccuracy(pos.coords.accuracy); },
-        () => { showToast("No Se Pudo Obtener Tu Ubicación", "error"); }
-      );
-    }
+    if (!("geolocation" in navigator)) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setAccuracy(pos.coords.accuracy); },
+      () => { showToast("No Se Pudo Obtener Tu Ubicación", "error"); }
+    );
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => { setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setAccuracy(pos.coords.accuracy); },
+      () => {},
+      { enableHighAccuracy: false, timeout: 10000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
   }, [showToast]);
 
   const destination = useMemo(() => (routeDest ? { lat: routeDest[0], lng: routeDest[1] } : null), [routeDest]);
