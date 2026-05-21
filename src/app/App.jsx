@@ -31,12 +31,12 @@ function App() {
             )}
             <Navbar />
             <main className={`flex-1 overflow-auto px-4 pb-4 md:px-6 md:py-6 ${isSupabaseMock ? 'pt-20' : 'pt-14'}`}>
-              <Suspense fallback={
-                <div className="flex items-center justify-center py-20">
-                  <div className="h-7 w-7 animate-spin rounded-full border-2 border-slate-800 border-t-transparent" />
-                </div>
-              }>
-                <ErrorBoundary>
+              <ErrorBoundary>
+                <Suspense fallback={
+                  <div className="flex items-center justify-center py-20">
+                    <div className="h-7 w-7 animate-spin rounded-full border-2 border-slate-800 border-t-transparent" />
+                  </div>
+                }>
                   <Routes>
                   <Route path="/" element={<MapaPage />} />
                   <Route path="/huertas" element={<HuertasPage />} />
@@ -45,9 +45,9 @@ function App() {
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="/exportacion" element={<ExportacionWrapper />} />
                   <Route path="/importar" element={<ImportarPage />} />
-                </Routes>
-                </ErrorBoundary>
-              </Suspense>
+                  </Routes>
+                </Suspense>
+              </ErrorBoundary>
             </main>
           </div>
         </VisitasProvider>
