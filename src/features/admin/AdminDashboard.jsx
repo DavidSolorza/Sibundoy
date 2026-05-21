@@ -444,22 +444,15 @@ function AdminDashboard() {
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Asociadas" value={asociadas.length} icon={Users} onClick={() => setListModal({ title: "Todas las Asociadas", items: asociadas.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) })} />
-        <StatCard label="Total Sectores" value={sectorNamesList.length} icon={Layers} onClick={() => setBreakdownModal({ title: "Total Sectores", items: Object.entries(stats.sectores).map(([name, value]) => ({ name: name.replace("Vereda ", ""), value })).sort((a, b) => b.value - a.value) })} />
-        <StatCard label="Extensión De Tierra" value={`${totalExtension.toFixed(1)} m²`} icon={MapPin} onClick={() => setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta).sort((a, b) => parseFloat(b.areaHuerta) - parseFloat(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.areaHuerta} m²` })) })} />
-        <StatCard label="Productos" value={prodChartData.length} icon={Wheat} onClick={() => setBreakdownModal({ title: "Productos", items: prodChartData, valueLabel: "asoc" })} />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} onClick={() => setListModal({ title: "Total Visitas", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
-        <StatCard label="Visitas Realizadas" value={visitasRealizadas} icon={CheckCircle} onClick={() => setListModal({ title: "Visitas Realizadas", items: visitas.filter(v => v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) })} />
-        <StatCard label="Visitas Pendientes" value={visitasPendientes} icon={Clock} onClick={() => setListModal({ title: "Visitas Pendientes", items: visitas.filter(v => !v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) })} />
+        <StatCard label="Total Beneficiarios" value={totalBeneficiarios} icon={Heart} onClick={() => setListModal({ title: "Total Beneficiarios", items: [...asociadas].sort((a, b) => (b.numPersonas || 1) - (a.numPersonas || 1)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numPersonas || 1} personas` })) })} />
+        <StatCard label="Menores De Edad" value={totalMenores} icon={Baby} onClick={() => setListModal({ title: "Menores De Edad", items: asociadas.filter(a => a.menoresHogar > 0).sort((a, b) => (b.menoresHogar || 0) - (a.menoresHogar || 0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.menoresHogar} menores` })) })} />
         <StatCard label="Asociadas Activas" value={activas} icon={UserCheck} onClick={() => setListModal({ title: "Asociadas Activas", items: asociadas.filter(a => a.numVisitas > 0).sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Con Ubicación" value={`${conUbicacion} / ${asociadas.length}`} icon={MapPin} onClick={() => setListModal({ title: "Con Ubicación", items: asociadas.filter(a => a.lat != null && a.lng != null).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Con ubicación" })) })} />
-        <StatCard label="Total Beneficiarios" value={totalBeneficiarios} icon={Heart} onClick={() => setListModal({ title: "Total Beneficiarios", items: [...asociadas].sort((a, b) => (b.numPersonas || 1) - (a.numPersonas || 1)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numPersonas || 1} personas` })) })} />
-        <StatCard label="Menores De Edad" value={totalMenores} icon={Baby} onClick={() => setListModal({ title: "Menores De Edad", items: asociadas.filter(a => a.menoresHogar > 0).sort((a, b) => (b.menoresHogar || 0) - (a.menoresHogar || 0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.menoresHogar} menores` })) })} />
+        <StatCard label="Visitas Realizadas" value={visitasRealizadas} icon={CheckCircle} onClick={() => setListModal({ title: "Visitas Realizadas", items: visitas.filter(v => v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) })} />
+        <StatCard label="Visitas Pendientes" value={visitasPendientes} icon={Clock} onClick={() => setListModal({ title: "Visitas Pendientes", items: visitas.filter(v => !v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) })} />
+        <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} onClick={() => setListModal({ title: "Total Visitas", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
         <StatCard label="Sin Visitas" value={sinVisitas} icon={XCircle} onClick={() => setListModal({ title: "Sin Visitas", items: asociadas.filter(a => !a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Sin visitas" })) })} />
         <button onClick={() => document.getElementById('alertas-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-amber-200 active:bg-amber-50/50">
@@ -473,6 +466,13 @@ function AdminDashboard() {
             </div>
           </div>
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Total Sectores" value={sectorNamesList.length} icon={Layers} onClick={() => setBreakdownModal({ title: "Total Sectores", items: Object.entries(stats.sectores).map(([name, value]) => ({ name: name.replace("Vereda ", ""), value })).sort((a, b) => b.value - a.value) })} />
+        <StatCard label="Con Ubicación" value={`${conUbicacion} / ${asociadas.length}`} icon={MapPin} onClick={() => setListModal({ title: "Con Ubicación", items: asociadas.filter(a => a.lat != null && a.lng != null).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Con ubicación" })) })} />
+        <StatCard label="Extensión De Tierra" value={`${totalExtension.toFixed(1)} m²`} icon={MapPin} onClick={() => setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta).sort((a, b) => parseFloat(b.areaHuerta) - parseFloat(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.areaHuerta} m²` })) })} />
+        <StatCard label="Productos" value={prodChartData.length} icon={Wheat} onClick={() => setBreakdownModal({ title: "Productos", items: prodChartData, valueLabel: "asoc" })} />
       </div>
 
       {totalAlertas > 0 && (
