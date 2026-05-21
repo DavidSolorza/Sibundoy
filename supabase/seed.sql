@@ -50,7 +50,7 @@ declare
   num_v int;
 begin
   for idx in 1..array_length(nombres, 1) loop
-    sector_nombre := (select nombre from sectores order by id limit 1 offset ((idx - 1) % 19));
+    sector_nombre := (select nombre from sectores order by id limit 1 offset ((idx - 1) % 20));
     select lat_base, lng_base into lat_base, lng_base from sectores where nombre = sector_nombre;
 
     lat_final := round((lat_base + (((idx - 1) % 7) - 3) * 0.002)::numeric, 4);

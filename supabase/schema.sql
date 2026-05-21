@@ -40,7 +40,8 @@ insert into sectores (nombre, lat_base, lng_base) values
   ('Vereda San Félix Sinsayaco',     1.1660, -76.9150),
   ('Vereda San José la Hidráulica',  1.2060, -76.9080),
   ('Vereda Tamabioy',                1.1750, -76.8980),
-  ('Vereda Villaflor',               1.2150, -76.9250)
+   ('Vereda San Agustín',             1.1900, -76.9100),
+   ('Vereda Villaflor',               1.2150, -76.9250)
 on conflict (nombre) do nothing;
 
 -- 3. Tabla principal: asociadas
