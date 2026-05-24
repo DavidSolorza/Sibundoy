@@ -163,7 +163,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   const { asociadas: all, addAsociada, updateAsociada, deleteAsociada } = useAsociadas();
   const { showToast, ToastDisplay } = useToast();
   const { isViewOnly } = useViewMode();
-  const items = (filteredAsociadas || all).filter((a) => a.lat != null && a.lng != null);
+  const items = useMemo(() => (filteredAsociadas || all).filter((a) => a.lat != null && a.lng != null), [filteredAsociadas, all]);
   const [routeDest, setRouteDest] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
   const [origin, setOrigin] = useState({ lat: 5.0573, lng: -75.4878 });

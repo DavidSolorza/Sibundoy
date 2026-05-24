@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Sprout, MapPin, User, Phone, Wheat, Users, Calendar, FileText, ClipboardList, Tag, Navigation, Plus, X, SlidersHorizontal, Crosshair, Check, RefreshCw } from "lucide-react";
+import { Search, Sprout, MapPin, User, Phone, Wheat, Users, Calendar, FileText, ClipboardList, Tag, Navigation, Plus, X, SlidersHorizontal, Crosshair, Check, RefreshCw, LocateFixed } from "lucide-react";
 import useDebounce from "../../shared/lib/useDebounce";
 import { formatTimeAgo } from "../../shared/lib/dates";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
@@ -19,9 +19,16 @@ import useViewMode from "../../shared/lib/useViewMode";
 
 const DEFAULT_COORDS = { lat: 5.0573, lng: -75.4878 };
 
-function FitBounds({ puntos }) {
+function FitBoundsOnce({ puntos }) {
   const map = useMap();
-  useEffect(() => { if (puntos.length > 0) { const bounds = L.latLngBounds(puntos); map.fitBounds(bounds, { padding: [60, 60] }); } }, [puntos, map]);
+  const fitted = useRef(false);
+  useEffect(() => {
+    if (puntos.length > 0 && !fitted.current) {
+      fitted.current = true;
+      const bounds = L.latLngBounds(puntos);
+      map.fitBounds(bounds, { padding: [60, 60] });
+    }
+  }, [puntos, map]);
   return null;
 }
 
@@ -48,7 +55,7 @@ function MapModal({ asociada, onClose }) {
               <Marker position={[asociada.lat, asociada.lng]} icon={markerIcon}>
                 <Popup><p className="text-sm font-semibold">{asociada.nombre}</p><p className="text-xs text-slate-500">{asociada.sector}</p></Popup>
               </Marker>
-              <FitBounds puntos={[[asociada.lat, asociada.lng]]} />
+              <FitBoundsOnce puntos={[[asociada.lat, asociada.lng]]} />
             </MapContainer>
           </div>
         </div>
@@ -67,12 +74,26 @@ function ClickPicker({ onPick }) {
 function MapLocationPicker({ open, onClose, onConfirm }) {
   const [coords, setCoords] = useState(DEFAULT_COORDS);
   const mapRef = useRef(null);
+  const keyRef = useRef(0);
 
   const handlePick = useCallback((c) => setCoords(c), []);
 
+  const handleLocate = useCallback(() => {
+    if (!("geolocation" in navigator)) { alert("Geolocalización no disponible en este navegador."); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setCoords(c);
+        keyRef.current += 1;
+        mapRef.current?.flyTo([c.lat, c.lng], 16);
+      },
+      () => alert("No se pudo obtener tu ubicación. Verifica los permisos."),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }, []);
+
   useEffect(() => {
     if (open)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCoords(DEFAULT_COORDS);
   }, [open]);
 
@@ -83,10 +104,15 @@ function MapLocationPicker({ open, onClose, onConfirm }) {
   return (
     <Modal open={open} onClose={onClose} title="Ubicación En El Mapa">
       <div className="space-y-3">
-        <p className="text-xs text-slate-500 flex items-center gap-1.5">
-          <Crosshair className="h-3.5 w-3.5 text-slate-400" />
-          Haz clic en el mapa para colocar la ubicación de la nueva asociada.
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-slate-500 flex items-center gap-1.5 flex-1">
+            <Crosshair className="h-3.5 w-3.5 text-slate-400" />
+            Haz clic en el mapa para colocar la ubicación de la nueva asociada.
+          </p>
+          <button type="button" onClick={handleLocate} className="cursor-pointer inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50">
+            <LocateFixed className="h-3.5 w-3.5" /> Aquí
+          </button>
+        </div>
         <div className="h-[350px] w-full overflow-hidden rounded-lg border border-slate-200">
           <MapContainer ref={mapRef} center={[DEFAULT_COORDS.lat, DEFAULT_COORDS.lng]} zoom={14} className="h-full w-full" doubleClickZoom={false}>
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -96,7 +122,7 @@ function MapLocationPicker({ open, onClose, onConfirm }) {
                 <Popup><p className="text-sm font-semibold">Ubicación Seleccionada</p></Popup>
               </Marker>
             )}
-            {coords && <FitBounds puntos={[[coords.lat, coords.lng]]} />}
+            {coords && <FitBoundsOnce key={keyRef.current} puntos={[[coords.lat, coords.lng]]} />}
           </MapContainer>
         </div>
         {coords && (
