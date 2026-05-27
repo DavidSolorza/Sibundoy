@@ -70,6 +70,7 @@ function RouteLayer({ destination, origin, onInfo }) {
         }
       })
       .catch(() => clearTimeout(timer));
+    return () => { controller.abort(); clearTimeout(timer); };
   }, [destination, origin, onInfo, distKm]);
 
   return (
@@ -175,6 +176,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   const [infoVisible, setInfoVisible] = useState(() => window.matchMedia("(hover: none) and (pointer: coarse)").matches);
   const mapRef = useRef(null);
   const containerRef = useRef(null);
+  const processingRef = useRef(false);
 
   useEffect(() => {
     if (initialRouteDest) {
@@ -184,7 +186,12 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
     }
   }, [initialRouteDest]);
 
-  const handleLongPress = useCallback((latlng) => { if (!isViewOnly) setFormCoords({ lat: latlng.lat, lng: latlng.lng }); }, [isViewOnly]);
+  const handleLongPress = useCallback((latlng) => {
+    if (!isViewOnly && !processingRef.current) {
+      processingRef.current = true;
+      setFormCoords({ lat: latlng.lat, lng: latlng.lng });
+    }
+  }, [isViewOnly]);
 
   const handleSave = useCallback(async (asociada) => {
     try {
@@ -249,7 +256,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
     }
     setDeletingAsociada(null);
   }, [deletingAsociada, deleteAsociada, showToast]);
-  const handleFormClose = useCallback(() => { setFormCoords(null); setEditingAsociada(null); }, []);
+  const handleFormClose = useCallback(() => { setFormCoords(null); setEditingAsociada(null); processingRef.current = false; }, []);
 
   const visibleMarkers = useMemo(() => {
     if (!routeDest) return items;

@@ -197,7 +197,7 @@ function AdminDashboard() {
     return { sectores, sectoresEdad, sectoresPersonas, sectoresVisitas, tipos };
   }, [asociadas]);
 
-  const totalVisitas = asociadas.reduce((sum, a) => sum + a.numVisitas, 0);
+  const totalVisitas = visitas.length;
   const visitasRealizadas = visitas.filter((v) => v.realizada).length;
   const visitasPendientes = visitas.length - visitasRealizadas;
   const edadValidas = asociadas.filter((a) => a.edad != null && !isNaN(a.edad));

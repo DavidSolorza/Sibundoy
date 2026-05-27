@@ -121,6 +121,8 @@ function VisitasPage() {
       proximaVisita: v.proximaVisita || "",
     });
     setShowForm(true);
+    setSectorModalVisitas(null);
+    setDeletingVisita(null);
   }, []);
 
   const handleSubmit = useCallback(async (e) => {
@@ -501,7 +503,7 @@ function VisitasPage() {
                       className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-blue-50 hover:text-blue-500 transition-colors" title="Editar">
                       <Edit3 className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={(e) => { e.stopPropagation(); setDeletingVisita(v); }}
+                    <button onClick={(e) => { e.stopPropagation(); setDeletingVisita(v); setSectorModalVisitas(null); }}
                       className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors" title="Eliminar">
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
