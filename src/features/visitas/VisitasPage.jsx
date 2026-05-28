@@ -239,7 +239,7 @@ function VisitasPage() {
 
       <div className="grid grid-cols-5 gap-3 mb-4">
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Totales</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Visitas</p>
           <p className="mt-0.5 text-xl font-bold text-slate-800">{stats.total}</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
