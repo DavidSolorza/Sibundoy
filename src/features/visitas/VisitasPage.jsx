@@ -209,11 +209,11 @@ function VisitasPage() {
         </div>
       </div>
 
-      {proximas.length > 0 && (
-        <Card className="mb-4 !border-blue-200 !bg-blue-50/50">
-          <div className="flex items-center gap-2 text-sm font-semibold text-blue-800 mb-2">
-            <CalendarClock className="h-4 w-4" /> Próximas Visitas Programadas ({proximas.length})
-          </div>
+      <Card className="mb-4 !border-blue-200 !bg-blue-50/50">
+        <div className="flex items-center gap-2 text-sm font-semibold text-blue-800 mb-2">
+          <CalendarClock className="h-4 w-4" /> Próximas Visitas Programadas {proximas.length > 0 && `(${proximas.length})`}
+        </div>
+        {proximas.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {proximas.slice(0, 5).map((v) => {
               const a = asociadaMap[v.asociadaId];
@@ -230,8 +230,10 @@ function VisitasPage() {
               <span className="inline-flex items-center text-xs text-slate-400">+{proximas.length - 5} más</span>
             )}
           </div>
-        </Card>
-      )}
+        ) : (
+          <p className="text-xs text-slate-500 py-1">No hay próximas visitas programadas.</p>
+        )}
+      </Card>
 
       <div className="grid grid-cols-5 gap-3 mb-4">
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">

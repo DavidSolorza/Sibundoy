@@ -35,8 +35,8 @@ function ClickPicker({ onPick }) {
 
 function LocationPickerModal({ open, onClose, onConfirm, initialCoords }) {
   const [coords, setCoords] = useState(initialCoords || SIBUNDOY);
+  const [fitKey, setFitKey] = useState(0);
   const mapRef = useRef(null);
-  const keyRef = useRef(0);
 
   const handlePick = useCallback((c) => { setCoords(c); }, []);
   const handleLocate = useCallback(() => {
@@ -45,7 +45,7 @@ function LocationPickerModal({ open, onClose, onConfirm, initialCoords }) {
       (pos) => {
         const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setCoords(c);
-        keyRef.current += 1;
+        setFitKey(k => k + 1);
         mapRef.current?.flyTo([c.lat, c.lng], 16);
       },
       () => alert("No se pudo obtener tu ubicación. Verifica los permisos."),
@@ -82,7 +82,7 @@ function LocationPickerModal({ open, onClose, onConfirm, initialCoords }) {
                 <Popup><p className="text-sm font-semibold">Ubicación seleccionada</p></Popup>
               </Marker>
             )}
-            {coords && <FitBoundsOnce key={keyRef.current} puntos={[[coords.lat, coords.lng]]} />}
+            {coords && <FitBoundsOnce key={fitKey} puntos={[[coords.lat, coords.lng]]} />}
           </MapContainer>
         </div>
         {coords && (
