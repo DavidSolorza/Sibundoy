@@ -55,13 +55,15 @@ function VisitasPage() {
   }, [visitas]);
 
   const stats = useMemo(() => {
-    const now = getLocalDateString().slice(0, 7);
-    const thisMonth = visitas.filter((v) => v.fecha.startsWith(now));
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const prefix = nextMonth.toISOString().slice(0, 7);
+    const nextMonthCount = visitas.filter((v) => (v.proximaVisita || "").startsWith(prefix)).length;
     const uniqueAsociadas = new Set(visitas.map((v) => v.asociadaId)).size;
     const byType = {};
     visitas.forEach((v) => { byType[v.tipo] = (byType[v.tipo] || 0) + 1; });
     const mostType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
-    return { total: visitas.length, thisMonth: thisMonth.length, uniqueAsociadas, byType, mostType };
+    return { total: visitas.length, nextMonth: nextMonthCount, uniqueAsociadas, byType, mostType };
   }, [visitas]);
 
   const filtered = useMemo(() => {
@@ -241,8 +243,8 @@ function VisitasPage() {
           <p className="mt-0.5 text-xl font-bold text-slate-800">{stats.total}</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Este Mes</p>
-          <p className="mt-0.5 text-xl font-bold text-slate-800">{stats.thisMonth}</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Próximo Mes</p>
+          <p className="mt-0.5 text-xl font-bold text-slate-800">{stats.nextMonth}</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Asociadas Visitadas</p>
