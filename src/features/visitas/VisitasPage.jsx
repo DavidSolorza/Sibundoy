@@ -56,15 +56,16 @@ function VisitasPage() {
 
   const stats = useMemo(() => {
     const now = new Date();
+    const today = now.toISOString().split("T")[0];
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const prefix = nextMonth.toISOString().slice(0, 7);
     const nextMonthCount = visitas.filter((v) => (v.proximaVisita || "").startsWith(prefix)).length;
-    const pending = visitas.filter((v) => !v.realizada);
-    const uniqueAsociadas = new Set(pending.map((v) => v.asociadaId)).size;
+    const programadas = visitas.filter((v) => v.proximaVisita && v.proximaVisita >= today && !v.realizada);
+    const uniqueAsociadas = new Set(programadas.map((v) => v.asociadaId)).size;
     const byType = {};
-    pending.forEach((v) => { byType[v.tipo] = (byType[v.tipo] || 0) + 1; });
+    programadas.forEach((v) => { byType[v.tipo] = (byType[v.tipo] || 0) + 1; });
     const mostType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
-    return { total: pending.length, nextMonth: nextMonthCount, uniqueAsociadas, byType, mostType };
+    return { total: programadas.length, nextMonth: nextMonthCount, uniqueAsociadas, byType, mostType };
   }, [visitas]);
 
   const filtered = useMemo(() => {
