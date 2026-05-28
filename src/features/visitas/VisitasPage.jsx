@@ -59,11 +59,12 @@ function VisitasPage() {
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const prefix = nextMonth.toISOString().slice(0, 7);
     const nextMonthCount = visitas.filter((v) => (v.proximaVisita || "").startsWith(prefix)).length;
-    const uniqueAsociadas = new Set(visitas.map((v) => v.asociadaId)).size;
+    const pending = visitas.filter((v) => !v.realizada);
+    const uniqueAsociadas = new Set(pending.map((v) => v.asociadaId)).size;
     const byType = {};
-    visitas.forEach((v) => { byType[v.tipo] = (byType[v.tipo] || 0) + 1; });
+    pending.forEach((v) => { byType[v.tipo] = (byType[v.tipo] || 0) + 1; });
     const mostType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
-    return { total: visitas.length, nextMonth: nextMonthCount, uniqueAsociadas, byType, mostType };
+    return { total: pending.length, nextMonth: nextMonthCount, uniqueAsociadas, byType, mostType };
   }, [visitas]);
 
   const filtered = useMemo(() => {
