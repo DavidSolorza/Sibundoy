@@ -194,21 +194,13 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   }, [isViewOnly]);
 
   const handleSave = useCallback(async (asociada) => {
-    try {
-      await addAsociada(asociada);
-      showToast("Asociada Agregada Correctamente");
-    } catch {
-      showToast("Error Al Crear Asociada", "error");
-    }
+    await addAsociada(asociada);
+    showToast("Asociada Agregada Correctamente");
   }, [addAsociada, showToast]);
 
   const handleUpdate = useCallback(async (asociada) => {
-    try {
-      await updateAsociada(asociada.id, asociada);
-      showToast("Asociada Actualizada Correctamente");
-    } catch {
-      showToast("Error Al Actualizar Asociada", "error");
-    }
+    await updateAsociada(asociada.id, asociada);
+    showToast("Asociada Actualizada Correctamente");
   }, [updateAsociada, showToast]);
 
   useEffect(() => {
@@ -244,17 +236,17 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
-  const handleEditAsociada = useCallback((a) => { setEditingAsociada(a); }, []);
-  const handleDeleteRequest = useCallback((a) => { setDeletingAsociada(a); }, []);
+  const handleEditAsociada = useCallback((a) => { setFormCoords(null); setDeletingAsociada(null); setEditingAsociada(a); }, []);
+  const handleDeleteRequest = useCallback((a) => { setFormCoords(null); setEditingAsociada(null); setDeletingAsociada(a); }, []);
   const handleConfirmDelete = useCallback(async () => {
     if (!deletingAsociada) return;
     try {
       await deleteAsociada(deletingAsociada.id);
       showToast("Asociada Eliminada Correctamente");
+      setDeletingAsociada(null);
     } catch {
       showToast("Error al eliminar", "error");
     }
-    setDeletingAsociada(null);
   }, [deletingAsociada, deleteAsociada, showToast]);
   const handleFormClose = useCallback(() => { setFormCoords(null); setEditingAsociada(null); processingRef.current = false; }, []);
 
@@ -345,7 +337,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
           <LocateFixed className="h-4 w-4 text-blue-600" /> <span className="hidden sm:inline">Centrar Aquí</span>
         </button>
           {!isViewOnly && (
-            <button onClick={() => setFormCoords({ lat: origin.lat, lng: origin.lng })} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white shadow-md transition-colors hover:bg-emerald-700 active:bg-emerald-800 min-h-[40px]" title="Añadir Productora En Mi Ubicación">
+            <button onClick={() => { if (!processingRef.current) { processingRef.current = true; setEditingAsociada(null); setDeletingAsociada(null); setFormCoords({ lat: origin.lat, lng: origin.lng }); } }} className="cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-medium text-white shadow-md transition-colors hover:bg-emerald-700 active:bg-emerald-800 min-h-[40px]" title="Añadir Productora En Mi Ubicación">
               <Crosshair className="h-4 w-4" /> <span className="hidden sm:inline">Añadir Aquí</span>
             </button>
           )}

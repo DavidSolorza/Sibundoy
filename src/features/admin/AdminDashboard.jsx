@@ -178,6 +178,14 @@ function AdminDashboard() {
   const [exporting, setExporting] = useState(false);
   const dashboardRef = useRef(null);
 
+  const closeAllModals = useCallback(() => {
+    setSectorModal(null);
+    setTipoModal(null);
+    setDetailSector(null);
+    setListModal(null);
+    setBreakdownModal(null);
+  }, []);
+
   const stats = useMemo(() => {
     const sectores = {};
     const sectoresEdad = {};
@@ -282,17 +290,20 @@ function AdminDashboard() {
 
   const handleBarClick = useCallback((data) => {
     if (data?.fullName) {
+      closeAllModals();
       setSectorModal({ name: data.fullName, list: asociadas.filter((a) => a.sector === data.fullName) });
     }
   }, [asociadas]);
 
   const handlePieClick = useCallback((data) => {
     if (data?.name) {
+      closeAllModals();
       setTipoModal({ name: data.name, list: asociadas.filter((a) => a.tipoPersona === data.name) });
     }
   }, [asociadas]);
 
   const handleTableRowClick = useCallback((sectorFullName) => {
+    closeAllModals();
     setDetailSector({ name: sectorFullName, list: asociadas.filter((a) => a.sector === sectorFullName) });
   }, [asociadas]);
 
@@ -443,17 +454,17 @@ function AdminDashboard() {
         </button>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Asociadas" value={asociadas.length} icon={Users} onClick={() => setListModal({ title: "Todas las Asociadas", items: asociadas.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) })} />
-        <StatCard label="Total Beneficiarios" value={totalBeneficiarios} icon={Heart} onClick={() => setListModal({ title: "Total Beneficiarios", items: [...asociadas].sort((a, b) => (b.numPersonas || 1) - (a.numPersonas || 1)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numPersonas || 1} personas` })) })} />
-        <StatCard label="Menores De Edad" value={totalMenores} icon={Baby} onClick={() => setListModal({ title: "Menores De Edad", items: asociadas.filter(a => a.menoresHogar > 0).sort((a, b) => (b.menoresHogar || 0) - (a.menoresHogar || 0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.menoresHogar} menores` })) })} />
-        <StatCard label="Asociadas Activas" value={activas} icon={UserCheck} onClick={() => setListModal({ title: "Asociadas Activas", items: asociadas.filter(a => a.numVisitas > 0).sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
+        <StatCard label="Total Asociadas" value={asociadas.length} icon={Users} onClick={() => { closeAllModals(); setListModal({ title: "Todas las Asociadas", items: asociadas.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) }); }} />
+        <StatCard label="Total Beneficiarios" value={totalBeneficiarios} icon={Heart} onClick={() => { closeAllModals(); setListModal({ title: "Total Beneficiarios", items: [...asociadas].sort((a, b) => (b.numPersonas || 1) - (a.numPersonas || 1)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numPersonas || 1} personas` })) }); }} />
+        <StatCard label="Menores De Edad" value={totalMenores} icon={Baby} onClick={() => { closeAllModals(); setListModal({ title: "Menores De Edad", items: asociadas.filter(a => a.menoresHogar > 0).sort((a, b) => (b.menoresHogar || 0) - (a.menoresHogar || 0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.menoresHogar} menores` })) }); }} />
+        <StatCard label="Asociadas Activas" value={activas} icon={UserCheck} onClick={() => { closeAllModals(); setListModal({ title: "Asociadas Activas", items: asociadas.filter(a => a.numVisitas > 0).sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) }); }} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Visitas Realizadas" value={visitasRealizadas} icon={CheckCircle} onClick={() => setListModal({ title: "Visitas Realizadas", items: visitas.filter(v => v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) })} />
-        <StatCard label="Visitas Pendientes" value={visitasPendientes} icon={Clock} onClick={() => setListModal({ title: "Visitas Pendientes", items: visitas.filter(v => !v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) })} />
-        <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} onClick={() => setListModal({ title: "Total Visitas", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) })} />
-        <StatCard label="Sin Visitas" value={sinVisitas} icon={XCircle} onClick={() => setListModal({ title: "Sin Visitas", items: asociadas.filter(a => !a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Sin visitas" })) })} />
+        <StatCard label="Visitas Realizadas" value={visitasRealizadas} icon={CheckCircle} onClick={() => { closeAllModals(); setListModal({ title: "Visitas Realizadas", items: visitas.filter(v => v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
+        <StatCard label="Visitas Pendientes" value={visitasPendientes} icon={Clock} onClick={() => { closeAllModals(); setListModal({ title: "Visitas Pendientes", items: visitas.filter(v => !v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
+        <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} onClick={() => { closeAllModals(); setListModal({ title: "Total Visitas", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) }); }} />
+        <StatCard label="Sin Visitas" value={sinVisitas} icon={XCircle} onClick={() => { closeAllModals(); setListModal({ title: "Sin Visitas", items: asociadas.filter(a => !a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Sin visitas" })) }); }} />
         <button onClick={() => document.getElementById('alertas-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-amber-200 active:bg-amber-50/50">
           <div className="flex items-center gap-4">
@@ -469,10 +480,10 @@ function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Sectores" value={sectorNamesList.length} icon={Layers} onClick={() => setBreakdownModal({ title: "Total Sectores", items: Object.entries(stats.sectores).map(([name, value]) => ({ name: name.replace("Vereda ", ""), value })).sort((a, b) => b.value - a.value) })} />
-        <StatCard label="Con Ubicación" value={`${conUbicacion} / ${asociadas.length}`} icon={MapPin} onClick={() => setListModal({ title: "Con Ubicación", items: asociadas.filter(a => a.lat != null && a.lng != null).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Con ubicación" })) })} />
-        <StatCard label="Extensión De Tierra" value={`${totalExtension.toFixed(1)} m²`} icon={MapPin} onClick={() => setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta).sort((a, b) => parseFloat(b.areaHuerta) - parseFloat(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.areaHuerta} m²` })) })} />
-        <StatCard label="Productos" value={prodChartData.length} icon={Wheat} onClick={() => setBreakdownModal({ title: "Productos", items: prodChartData, valueLabel: "asoc" })} />
+        <StatCard label="Total Sectores" value={sectorNamesList.length} icon={Layers} onClick={() => { closeAllModals(); setBreakdownModal({ title: "Total Sectores", items: Object.entries(stats.sectores).map(([name, value]) => ({ name: name.replace("Vereda ", ""), value })).sort((a, b) => b.value - a.value) }); }} />
+        <StatCard label="Con Ubicación" value={`${conUbicacion} / ${asociadas.length}`} icon={MapPin} onClick={() => { closeAllModals(); setListModal({ title: "Con Ubicación", items: asociadas.filter(a => a.lat != null && a.lng != null).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Con ubicación" })) }); }} />
+        <StatCard label="Extensión De Tierra" value={`${totalExtension.toFixed(1)} m²`} icon={MapPin} onClick={() => { closeAllModals(); setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta).sort((a, b) => parseFloat(b.areaHuerta) - parseFloat(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.areaHuerta} m²` })) }); }} />
+        <StatCard label="Productos" value={prodChartData.length} icon={Wheat} onClick={() => { closeAllModals(); setBreakdownModal({ title: "Productos", items: prodChartData, valueLabel: "asoc" }); }} />
       </div>
 
       {totalAlertas > 0 && (
@@ -490,7 +501,7 @@ function AdminDashboard() {
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {alertas.sinVisita.map((a) => (
-                    <button key={a.id} onClick={() => setSectorModal({ name: a.sector, list: asociadas.filter((x) => x.sector === a.sector) })}
+                    <button key={a.id} onClick={() => { closeAllModals(); setSectorModal({ name: a.sector, list: asociadas.filter((x) => x.sector === a.sector) }); }}
                       className="cursor-pointer rounded-md bg-white/80 px-2 py-0.5 text-[11px] font-medium text-slate-700 shadow-sm border border-amber-100 hover:bg-white transition-colors">
                       {a.nombre}
                     </button>
@@ -507,7 +518,7 @@ function AdminDashboard() {
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {alertas.bajaFrec.map((a) => (
-                    <button key={a.id} onClick={() => setSectorModal({ name: a.sector, list: asociadas.filter((x) => x.sector === a.sector) })}
+                    <button key={a.id} onClick={() => { closeAllModals(); setSectorModal({ name: a.sector, list: asociadas.filter((x) => x.sector === a.sector) }); }}
                       className="cursor-pointer rounded-md bg-white/80 px-2 py-0.5 text-[11px] font-medium text-slate-700 shadow-sm border border-orange-100 hover:bg-white transition-colors">
                       {a.nombre}
                     </button>
@@ -523,7 +534,7 @@ function AdminDashboard() {
                 </div>
                 <div className="space-y-1">
                   {alertas.sectoresPromVisitas.map((s) => (
-                    <button key={s.sector} onClick={() => setDetailSector({ name: s.sector, list: asociadas.filter((x) => x.sector === s.sector) })}
+                    <button key={s.sector} onClick={() => { closeAllModals(); setDetailSector({ name: s.sector, list: asociadas.filter((x) => x.sector === s.sector) }); }}
                       className="cursor-pointer w-full flex items-center justify-between rounded-md bg-white/80 px-2 py-1 text-[11px] text-slate-700 shadow-sm border border-slate-200 hover:bg-white transition-colors">
                       <span className="font-medium truncate mr-2">{s.sector.replace("Vereda ", "")}</span>
                       <span className="shrink-0 text-slate-400">{s.prom} vis/asoc</span>
@@ -587,6 +598,7 @@ function AdminDashboard() {
                 <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={50} cursor="pointer" onClick={(e) => {
                   const range = e?.payload?.name;
                   if (!range) return;
+                  closeAllModals();
                   const idx = EDAD_RANGES.indexOf(range);
                   const list = asociadas.filter((a) => a.edad >= RANGE_MIN[idx] && a.edad <= RANGE_MAX[idx]);
                   setSectorModal({ name: `Edad: ${range}`, list });
@@ -611,6 +623,7 @@ function AdminDashboard() {
                 <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={16} cursor="pointer" onClick={(e) => {
                   const prod = e?.payload?.name;
                   if (!prod) return;
+                  closeAllModals();
                   const list = asociadas.filter((a) => (a.productos || "").toLowerCase().includes(prod.toLowerCase()));
                   setSectorModal({ name: `Producto: ${prod}`, list });
                 }}>
