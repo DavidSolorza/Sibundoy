@@ -293,19 +293,19 @@ function AdminDashboard() {
       closeAllModals();
       setSectorModal({ name: data.fullName, list: asociadas.filter((a) => a.sector === data.fullName) });
     }
-  }, [asociadas]);
+  }, [asociadas, closeAllModals]);
 
   const handlePieClick = useCallback((data) => {
     if (data?.name) {
       closeAllModals();
       setTipoModal({ name: data.name, list: asociadas.filter((a) => a.tipoPersona === data.name) });
     }
-  }, [asociadas]);
+  }, [asociadas, closeAllModals]);
 
   const handleTableRowClick = useCallback((sectorFullName) => {
     closeAllModals();
     setDetailSector({ name: sectorFullName, list: asociadas.filter((a) => a.sector === sectorFullName) });
-  }, [asociadas]);
+  }, [asociadas, closeAllModals]);
 
   const totalAlertas = alertas.sinVisita.length + alertas.bajaFrec.length;
 
