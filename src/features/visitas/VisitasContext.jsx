@@ -172,7 +172,7 @@ export function VisitasProvider({ children }) {
   const getVisitasByAsociada = useCallback((asociadaId) => {
     return visitas
       .filter((v) => v.asociadaId === asociadaId)
-      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+      .sort((a, b) => new Date(b.proximaVisita || b.fecha) - new Date(a.proximaVisita || a.fecha));
   }, [visitas]);
 
   const getProximasVisitas = useCallback(() => {

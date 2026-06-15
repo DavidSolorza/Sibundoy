@@ -77,14 +77,14 @@ function VisitasPage() {
       const matchesTipo = !filterTipo || v.tipo === filterTipo;
       const matchesAsociada = !filterAsociada || v.asociadaId === filterAsociada;
       let matchesQuick = true;
-      if (quickFilter === "today") matchesQuick = v.fecha === today;
+      if (quickFilter === "today") matchesQuick = (v.proximaVisita || v.fecha) === today;
       else if (quickFilter === "week") {
-        const d = new Date(v.fecha);
+        const d = new Date(v.proximaVisita || v.fecha);
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         matchesQuick = d >= weekAgo;
-      }       else if (quickFilter === "month") {
-        matchesQuick = v.fecha.startsWith(getLocalDateString().slice(0, 7));
+      } else if (quickFilter === "month") {
+        matchesQuick = (v.proximaVisita || v.fecha).startsWith(getLocalDateString().slice(0, 7));
       }
       return matchesSearch && matchesTipo && matchesAsociada && matchesQuick && !v.realizada;
     });
@@ -98,8 +98,8 @@ function VisitasPage() {
       groups[sector].push(v);
     });
     return Object.entries(groups).sort(([, visitsA], [, visitsB]) => {
-      const maxA = Math.max(...visitsA.map((v) => new Date(v.fecha || v.proximaVisita).getTime()));
-      const maxB = Math.max(...visitsB.map((v) => new Date(v.fecha || v.proximaVisita).getTime()));
+      const maxA = Math.max(...visitsA.map((v) => new Date(v.proximaVisita || v.fecha).getTime()));
+      const maxB = Math.max(...visitsB.map((v) => new Date(v.proximaVisita || v.fecha).getTime()));
       return maxB - maxA;
     });
   }, [filtered, asociadaMap]);
@@ -472,7 +472,7 @@ function VisitasPage() {
         {sectorModalVisitas && (
           <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
             {[...sectorModalVisitas.items]
-              .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+              .sort((a, b) => new Date(b.proximaVisita || b.fecha) - new Date(a.proximaVisita || a.fecha))
               .map((v) => {
               const a = asociadaMap[v.asociadaId];
               const esRealizada = v.realizada;
@@ -494,7 +494,7 @@ function VisitasPage() {
                         </span>
                       )}
                       <span className={`text-xs font-medium ${esRealizada ? "text-slate-500" : "text-slate-800"}`}>{a?.nombre || "—"}</span>
-                      <span className="text-[10px] text-slate-400">{parseLocalDate(v.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      <span className="text-[10px] text-slate-400">{parseLocalDate(v.proximaVisita || v.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</span>
                     </div>
                     {v.observaciones && <p className={`text-xs mt-1 ${esRealizada ? "text-slate-400" : "text-slate-500"}`}>{v.observaciones}</p>}
                   </div>

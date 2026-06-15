@@ -49,6 +49,8 @@ export function AsociadasProvider({ children }) {
   const [asociadas, setAsociadas] = useState([]);
   const [sectorMap, setSectorMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const refreshing = useRef(false);
 
   useEffect(() => {
     supabase
@@ -239,10 +241,6 @@ export function AsociadasProvider({ children }) {
       })
       .filter(Boolean);
   }, [asociadas]);
-
-  const [lastUpdated, setLastUpdated] = useState(null);
-
-  const refreshing = useRef(false);
 
   const refresh = useCallback(async () => {
     if (refreshing.current) return;

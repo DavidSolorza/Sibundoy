@@ -206,7 +206,7 @@ function DayDetailModal({ dateStr, visits, asociadaMap, onClose, onEdit, onDelet
                     <span className="text-[10px] text-slate-400 shrink-0">{a?.sector?.replace("Vereda ", "")}</span>
                   </div>
                   {v.observaciones && <p className="text-xs text-slate-500 mt-1">{v.observaciones}</p>}
-                  {v.proximaVisita && (
+                  {v.proximaVisita && v.proximaVisita !== v.fecha && (
                     <p className="text-[10px] text-blue-500 mt-1 flex items-center gap-1">
                       <Clock className="h-3 w-3" /> Próxima: {parseLocalDate(v.proximaVisita).toLocaleDateString("es-CO")}
                     </p>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef, memo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, LayersControl, CircleMarker, Circle, ScaleControl } from "react-leaflet";
 import L from "leaflet";
 import { MapPin, Phone, Sprout, Navigation, X, User, Clock, Route, Loader, Heart, Calendar, Crosshair, LocateFixed, Maximize2, Minimize2, Pencil, Trash2, Info, Eye, Users } from "lucide-react";
@@ -160,6 +160,23 @@ function LongPressHandler({ onLongPress }) {
   return null;
 }
 
+const MarkersLayer = memo(function MarkersLayer({ markers, onRoute, onEdit, onDelete, isViewOnly }) {
+  const hRoute = useCallback((dest) => onRoute(dest), [onRoute]);
+  const hEdit = useCallback((a) => onEdit(a), [onEdit]);
+  const hDelete = useCallback((a) => onDelete(a), [onDelete]);
+  return (
+    <MarkerClusterGroup chunkedLoading>
+      {markers.map((a) => (
+        <Marker key={a.id} position={[a.lat, a.lng]} icon={markerIcon}>
+          <Popup>
+            <PopupContent asociada={a} onRoute={hRoute} onEdit={hEdit} onDelete={hDelete} viewOnly={isViewOnly} />
+          </Popup>
+        </Marker>
+      ))}
+    </MarkerClusterGroup>
+  );
+});
+
 function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   const { asociadas: all, addAsociada, updateAsociada, deleteAsociada } = useAsociadas();
   const { showToast, ToastDisplay } = useToast();
@@ -306,15 +323,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
         {!routeDest && <FitBounds puntos={items.map((a) => [a.lat, a.lng])} />}
         <ScaleControl position="bottomleft" />
         <LongPressHandler onLongPress={handleLongPress} />
-        <MarkerClusterGroup chunkedLoading>
-          {visibleMarkers.map((a) => (
-            <Marker key={a.id} position={[a.lat, a.lng]} icon={markerIcon}>
-              <Popup>
-                <PopupContent asociada={a} onRoute={handleRoute} onEdit={handleEditAsociada} onDelete={handleDeleteRequest} viewOnly={isViewOnly} />
-              </Popup>
-            </Marker>
-          ))}
-        </MarkerClusterGroup>
+        <MarkersLayer markers={visibleMarkers} onRoute={handleRoute} onEdit={handleEditAsociada} onDelete={handleDeleteRequest} isViewOnly={isViewOnly} />
         {routeDest && destination && (
           <RouteLayer key={`${routeDest[0].toFixed(5)}-${routeDest[1].toFixed(5)}`} destination={destination} origin={origin} onInfo={setRouteInfo} />
         )}
