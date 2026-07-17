@@ -24,6 +24,12 @@ function daysSince(dateStr) {
   return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function parseArea(area) {
+  if (!area) return 0;
+  const num = parseFloat(area.toString().replace(/[^0-9.,]/g, "").replace(",", "."));
+  return isNaN(num) ? 0 : num;
+}
+
 function CustomTooltip({ active, payload }) {
   if (active && payload?.length) {
     return (
@@ -209,11 +215,7 @@ function AdminDashboard() {
   const promedioEdad = edadValidas.length > 0 ? (edadValidas.reduce((sum, a) => sum + a.edad, 0) / edadValidas.length).toFixed(1) : "—";
   const activas = asociadas.filter((a) => a.numVisitas > 0).length;
   const totalBeneficiarios = asociadas.reduce((sum, a) => sum + a.numPersonas, 0);
-  const totalExtension = asociadas.reduce((sum, a) => {
-    if (!a.areaHuerta) return sum;
-    const num = parseFloat(a.areaHuerta.toString().replace(/[^0-9.,]/g, "").replace(",", "."));
-    return sum + (isNaN(num) ? 0 : num);
-  }, 0);
+  const totalExtension = asociadas.reduce((sum, a) => sum + parseArea(a.areaHuerta), 0);
   const totalMenores = asociadas.reduce((sum, a) => sum + (a.menoresHogar || 0), 0);
   const sectorNamesList = Object.keys(stats.sectores);
 
@@ -479,7 +481,7 @@ function AdminDashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Sectores" value={sectorNamesList.length} icon={Layers} onClick={() => { closeAllModals(); setBreakdownModal({ title: "Total Sectores", items: Object.entries(stats.sectores).map(([name, value]) => ({ name: name.replace("Vereda ", ""), value })).sort((a, b) => b.value - a.value) }); }} />
         <StatCard label="Con Ubicación" value={`${conUbicacion} / ${asociadas.length}`} icon={MapPin} onClick={() => { closeAllModals(); setListModal({ title: "Con Ubicación", items: asociadas.filter(a => a.lat != null && a.lng != null).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Con ubicación" })) }); }} />
-        <StatCard label="Extensión De Tierra" value={`${totalExtension.toFixed(1)} m²`} icon={MapPin} onClick={() => { closeAllModals(); setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta).sort((a, b) => parseFloat(b.areaHuerta) - parseFloat(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.areaHuerta} m²` })) }); }} />
+        <StatCard label="Extensión De Tierra" value={`${totalExtension.toFixed(1)} m²`} icon={MapPin} onClick={() => { closeAllModals(); setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta && a.areaHuerta.toString().trim() !== "").sort((a, b) => parseArea(b.areaHuerta) - parseArea(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: a.areaHuerta.toString().toLowerCase().includes("m") ? a.areaHuerta : `${a.areaHuerta} m²` })) }); }} />
         <StatCard label="Productos" value={prodChartData.length} icon={Wheat} onClick={() => { closeAllModals(); setBreakdownModal({ title: "Productos", items: prodChartData, valueLabel: "asoc" }); }} />
       </div>
 

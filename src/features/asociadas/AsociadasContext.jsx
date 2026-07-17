@@ -51,6 +51,7 @@ function toDB(data, sectorId) {
     lat: data.lat ?? null,
     lng: data.lng ?? null,
     url_foto: data.fotos && data.fotos.length > 0 ? data.fotos[0] : null,
+    fotos: data.fotos || [],
   };
 }
 
@@ -184,18 +185,27 @@ export function AsociadasProvider({ children }) {
   }, [sectorMap]);
 
   const updateAsociada = useCallback(async (id, data) => {
-    let sectorId = data.sector ? sectorMap[data.sector] : undefined;
-    if (data.sector && !sectorId) {
-      const { data: sectorRow } = await supabase
-        .from("sectores")
-        .select("id")
-        .eq("nombre", data.sector)
-        .single();
-      sectorId = sectorRow?.id;
+    let sectorId;
+    if (data.sector !== undefined) {
+      if (data.sector === "" || data.sector === null) {
+        sectorId = null;
+      } else {
+        sectorId = sectorMap[data.sector];
+        if (!sectorId) {
+          const { data: sectorRow } = await supabase
+            .from("sectores")
+            .select("id")
+            .eq("nombre", data.sector)
+            .single();
+          sectorId = sectorRow?.id || null;
+        }
+      }
     }
 
     const dbData = toDB(data, sectorId);
-    if (!sectorId) delete dbData.sector_id;
+    if (dbData.sector_id === undefined) {
+      delete dbData.sector_id;
+    }
 
     const { error } = await supabase
       .from("asociadas")
