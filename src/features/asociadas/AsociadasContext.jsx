@@ -51,7 +51,6 @@ function toDB(data, sectorId) {
     lat: data.lat ?? null,
     lng: data.lng ?? null,
     url_foto: data.fotos && data.fotos.length > 0 ? data.fotos[0] : null,
-    fotos: data.fotos || [],
   };
 }
 
