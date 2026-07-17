@@ -105,8 +105,20 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
 
   useEffect(() => {
     if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setForm(initialData ? { ...initialData } : emptyForm);
+      setForm((prev) => {
+        // Si el formulario ya tiene el mismo ID que los datos iniciales que se quieren cargar,
+        // significa que ya lo inicializamos para esta asociada y no debemos sobreescribir
+        // el estado que el usuario está editando activamente.
+        if (prev && initialData && prev.id === initialData.id) {
+          return prev;
+        }
+        // Si estamos creando una nueva asociada (initialData es nulo) y el formulario ya
+        // está vacío o el usuario ya empezó a escribir en él, no lo reiniciamos
+        if (prev && !initialData && prev.id === undefined && (prev.nombre !== "" || prev.telefono !== "")) {
+          return prev;
+        }
+        return initialData ? { ...initialData } : emptyForm;
+      });
     }
   }, [open, initialData]);
 
