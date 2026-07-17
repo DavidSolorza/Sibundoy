@@ -172,14 +172,14 @@ export function VisitasProvider({ children }) {
   const getVisitasByAsociada = useCallback((asociadaId) => {
     return visitas
       .filter((v) => v.asociadaId === asociadaId)
-      .sort((a, b) => new Date(b.proximaVisita || b.fecha) - new Date(a.proximaVisita || a.fecha));
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
   }, [visitas]);
 
   const getProximasVisitas = useCallback(() => {
     const today = new Date().toISOString().split("T")[0];
     return visitas
-      .filter((v) => v.proximaVisita && v.proximaVisita >= today && !v.realizada)
-      .sort((a, b) => new Date(a.proximaVisita) - new Date(b.proximaVisita));
+      .filter((v) => v.fecha >= today && !v.realizada)
+      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   }, [visitas]);
 
   return (

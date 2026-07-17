@@ -61,7 +61,7 @@ function VisitasPage() {
     const today = now.toISOString().split("T")[0];
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const prefix = nextMonth.toISOString().slice(0, 7);
-    const nextMonthCount = visitas.filter((v) => (v.proximaVisita || "").startsWith(prefix)).length;
+    const nextMonthCount = visitas.filter((v) => v.fecha.startsWith(prefix)).length;
     const programadas = visitas.filter((v) => v.proximaVisita && v.proximaVisita >= today && !v.realizada);
     const uniqueAsociadas = new Set(programadas.map((v) => v.asociadaId)).size;
     const byType = {};
@@ -79,14 +79,14 @@ function VisitasPage() {
       const matchesTipo = !filterTipo || v.tipo === filterTipo;
       const matchesAsociada = !filterAsociada || v.asociadaId === filterAsociada;
       let matchesQuick = true;
-      if (quickFilter === "today") matchesQuick = (v.proximaVisita || v.fecha) === today;
+      if (quickFilter === "today") matchesQuick = v.fecha === today;
       else if (quickFilter === "week") {
-        const d = new Date(v.proximaVisita || v.fecha);
+        const d = new Date(v.fecha);
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         matchesQuick = d >= weekAgo;
       } else if (quickFilter === "month") {
-        matchesQuick = (v.proximaVisita || v.fecha).startsWith(getLocalDateString().slice(0, 7));
+        matchesQuick = v.fecha.startsWith(getLocalDateString().slice(0, 7));
       }
       return matchesSearch && matchesTipo && matchesAsociada && matchesQuick && !v.realizada;
     });
@@ -100,8 +100,8 @@ function VisitasPage() {
       groups[sector].push(v);
     });
     return Object.entries(groups).sort(([, visitsA], [, visitsB]) => {
-      const maxA = Math.max(...visitsA.map((v) => new Date(v.proximaVisita || v.fecha).getTime()));
-      const maxB = Math.max(...visitsB.map((v) => new Date(v.proximaVisita || v.fecha).getTime()));
+      const maxA = Math.max(...visitsA.map((v) => new Date(v.fecha).getTime()));
+      const maxB = Math.max(...visitsB.map((v) => new Date(v.fecha).getTime()));
       return maxB - maxA;
     });
   }, [filtered, asociadaMap]);
@@ -237,7 +237,7 @@ function VisitasPage() {
                   <span className={`inline-block h-2 w-2 rounded-full ${typeDots[v.tipo]}`} />
                   <span className="font-medium">{a?.nombre || "—"}</span>
                   <span className="text-slate-400">·</span>
-                  <span className="text-blue-600 font-medium">{parseLocalDate(v.proximaVisita).toLocaleDateString("es-CO")}</span>
+                  <span className="text-blue-600 font-medium">{parseLocalDate(v.fecha).toLocaleDateString("es-CO")}</span>
                 </div>
               );
             })}
@@ -293,7 +293,7 @@ function VisitasPage() {
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
             </div>
           ) : (
-            <CalendarView visitas={calendarVisitas} onDayClick={setSelectedDay} />
+            <CalendarView visitas={visitas} onDayClick={setSelectedDay} />
           )}
         </div>
       ) : (
@@ -415,7 +415,7 @@ function VisitasPage() {
       )}
 
       {view === "calendar" && (
-        <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (calendarVisitas.filter((v) => v.fecha === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} onEdit={openEditForm} onDelete={(v) => setDeletingVisita(v)} onMarcarRealizada={marcarRealizada} />
+        <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (visitas.filter((v) => v.fecha === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} onEdit={openEditForm} onDelete={(v) => setDeletingVisita(v)} onMarcarRealizada={marcarRealizada} />
       )}
 
       <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? "Editar Visita" : "Registrar Visita"}>
@@ -456,13 +456,22 @@ function VisitasPage() {
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
               placeholder="Notas sobre la visita..." />
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500 flex items-center gap-1.5">
-              <CalendarClock className="h-3.5 w-3.5 text-blue-500" />
-              Programar próxima visita <span className="text-slate-400 font-normal">(opcional)</span>
-            </label>
-            <Input type="date" value={formData.proximaVisita} onChange={(e) => setFormData({ ...formData, proximaVisita: e.target.value })}
-              min={getLocalDateString()} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-blue-500" />
+                Fecha de visita <span className="text-red-400">*</span>
+              </label>
+              <Input type="date" value={formData.fecha} onChange={(e) => setFormData({ ...formData, fecha: e.target.value })} required />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                <CalendarClock className="h-3.5 w-3.5 text-slate-400" />
+                Próxima (opcional)
+              </label>
+              <Input type="date" value={formData.proximaVisita} onChange={(e) => setFormData({ ...formData, proximaVisita: e.target.value })}
+                min={formData.fecha || getLocalDateString()} />
+            </div>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
@@ -485,7 +494,7 @@ function VisitasPage() {
         {sectorModalVisitas && (
           <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
             {[...sectorModalVisitas.items]
-              .sort((a, b) => new Date(b.proximaVisita || b.fecha) - new Date(a.proximaVisita || a.fecha))
+              .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
               .map((v) => {
               const a = asociadaMap[v.asociadaId];
               const esRealizada = v.realizada;
