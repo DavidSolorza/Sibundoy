@@ -19,7 +19,7 @@ const SECTORES = [
   "Vereda San José la Hidráulica", "Vereda Tamabioy",
   "Vereda Villaflor"
 ];
-const ESTADOS_CIVIL = ["Casada", "Madre Cabeza De Hogar", "Viuda", "Separada"];
+const ESTADOS_CIVIL = ["Soltera", "Casada", "Madre Cabeza De Hogar", "Viuda", "Separada"];
 
 const CULTIVOS_POPULARES = [
   "Cilantro", "Ajo", "Cebolla", "Lechuga", "Zanahoria", 

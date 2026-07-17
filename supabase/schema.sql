@@ -8,7 +8,7 @@ create extension if not exists "pgcrypto";
 create extension if not exists "pg_trgm";
 
 -- 1. Tipos enumerados
-create type tipo_persona as enum ('Casada', 'Madre Cabeza De Hogar', 'Viuda', 'Separada');
+create type tipo_persona as enum ('Soltera', 'Casada', 'Madre Cabeza De Hogar', 'Viuda', 'Separada');
 create type tipo_visita as enum ('visita', 'seguimiento', 'capacitacion');
 
 -- 2. Tabla: sectores (catálogo)
