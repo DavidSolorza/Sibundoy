@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { Calendar, ClipboardList, Plus, X, Search, Clock, Trash2, Filter, LayoutList, Edit3, CalendarClock, RefreshCw, ChevronLeft, ChevronRight, MapPin, CheckCircle } from "lucide-react";
 import useDebounce from "../../shared/lib/useDebounce";
 import { formatTimeAgo } from "../../shared/lib/dates";
@@ -25,6 +26,7 @@ function VisitasPage() {
   const { asociadas } = useAsociadas();
   const { visitas, loading, addVisita, editVisita, deleteVisita, marcarRealizada, getProximasVisitas, refresh, lastUpdated } = useVisitas();
   const { showToast, ToastDisplay } = useToast();
+  const location = useLocation();
 
   const searchRef = useRef(null);
   const PER_PAGE = 10;
@@ -109,11 +111,20 @@ function VisitasPage() {
 
   const hasFilters = searchQuery || filterTipo || filterAsociada || quickFilter;
 
-  const openAddForm = useCallback(() => {
+  const openAddForm = useCallback((preselectId) => {
     setEditingId(null);
-    setFormData(getEmptyForm());
+    setFormData({
+      ...getEmptyForm(),
+      asociadaId: preselectId ? Number(preselectId) : ""
+    });
     setShowForm(true);
   }, []);
+
+  useEffect(() => {
+    if (location.state && location.state.preselectAsociadaId) {
+      openAddForm(location.state.preselectAsociadaId);
+    }
+  }, [location.state, openAddForm]);
 
   const openEditForm = useCallback((v) => {
     setEditingId(v.id);

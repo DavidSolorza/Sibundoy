@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { NavLink, useSearchParams } from "react-router-dom";
-import { Map, Sprout, ClipboardList, Download, Upload, Settings, Menu, X, Bell } from "lucide-react";
+import { Sprout, ClipboardList, Download, Upload, Settings, Menu, X, Bell } from "lucide-react";
 import useVisitas from "../../features/visitas/useVisitas";
 
 function Navbar() {
@@ -14,8 +14,7 @@ function Navbar() {
 
   const links = useMemo(() => {
     const all = [
-      { to: "/", label: "Mapa", icon: Map },
-      { to: "/huertas", label: "Huertas", icon: Sprout },
+      { to: "/", label: "Huertas", icon: Sprout },
       { to: "/visitas", label: "Visitas", icon: ClipboardList, badge: notifCount > 0 ? notifCount : undefined },
     ];
     if (!isViewOnly) {

@@ -21,6 +21,12 @@ const SECTORES = [
 ];
 const ESTADOS_CIVIL = ["Casada", "Madre Cabeza De Hogar", "Viuda", "Separada"];
 
+const CULTIVOS_POPULARES = [
+  "Cilantro", "Ajo", "Cebolla", "Lechuga", "Zanahoria", 
+  "Repollo", "Tomate", "Remolacha", "Acelga", "Espinaca", 
+  "Maíz", "Fríjol", "Papa", "Manzanilla", "Menta"
+];
+
 const emptyForm = {
   nombre: "",
   edad: "",
@@ -41,6 +47,48 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
   const isEditing = !!initialData;
   const [form, setForm] = useState(initialData ? { ...initialData } : emptyForm);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [customProduct, setCustomProduct] = useState("");
+
+  const selectedProducts = useMemo(() => {
+    return (form.productos || "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+  }, [form.productos]);
+
+  const handleToggleProduct = (productName) => {
+    let current = (form.productos || "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    
+    if (current.includes(productName)) {
+      current = current.filter((p) => p !== productName);
+    } else {
+      current = [...current, productName];
+    }
+    setForm((prev) => ({ ...prev, productos: current.join(", ") }));
+  };
+
+  const handleAddCustomProduct = (e) => {
+    if (e) e.preventDefault();
+    const trimmed = customProduct.trim();
+    if (!trimmed) return;
+    
+    let current = (form.productos || "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+      
+    if (!current.some(p => p.toLowerCase() === trimmed.toLowerCase())) {
+      current = [...current, trimmed];
+      setForm((prev) => ({ ...prev, productos: current.join(", ") }));
+      showToast(`Añadido: ${trimmed}`);
+    } else {
+      showToast("El producto ya está seleccionado", "warning");
+    }
+    setCustomProduct("");
+  };
 
   const duplicateWarning = useMemo(() => {
     if (!form.nombre || form.nombre.length < 2) return null;
@@ -97,7 +145,7 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
     { label: "Estado Civil", name: "tipoPersona", type: "select", options: ESTADOS_CIVIL },
     { label: "Sector", name: "sector", type: "select", options: SECTORES, required: true, searchable: true },
     { label: "Área Huerta", name: "areaHuerta", type: "text" },
-    { label: "Productos", name: "productos", type: "text" },
+    { label: "Productos Cultivados", name: "productos", type: "productos" },
     { label: "Fecha Siembra", name: "fechaSiembra", type: "date" },
     { label: "Observaciones", name: "observaciones", type: "textarea" },
   ];
@@ -127,7 +175,7 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {fields.map((f) => (
-            <div key={f.name} className={f.type === "textarea" ? "col-span-2" : ""}>
+            <div key={f.name} className={f.type === "textarea" || f.type === "productos" ? "col-span-2" : ""}>
               <label className="mb-1 block text-xs font-medium text-slate-500">
                 {f.label}
                 {f.required && <span className="text-red-400 ml-0.5">*</span>}
@@ -159,6 +207,75 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
                   rows={3}
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors duration-200 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
                 />
+              ) : f.type === "productos" ? (
+                <div className="space-y-3 p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                    {CULTIVOS_POPULARES.map((p) => {
+                      const isSelected = selectedProducts.includes(p);
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => handleToggleProduct(p)}
+                          className={`cursor-pointer inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-all duration-150 border ${
+                            isSelected
+                              ? "bg-emerald-600 text-white border-emerald-600 shadow-sm animate-pulse"
+                              : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  {selectedProducts.filter(p => !CULTIVOS_POPULARES.includes(p)).length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Otros agregados</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedProducts.filter(p => !CULTIVOS_POPULARES.includes(p)).map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => handleToggleProduct(p)}
+                            className="cursor-pointer inline-flex items-center rounded-full bg-slate-200 text-slate-700 border border-slate-300 px-3 py-1 text-xs font-medium hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+                            title="Haz clic para quitar"
+                          >
+                            {p} &times;
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      placeholder="Añadir otro cultivo..."
+                      value={customProduct}
+                      onChange={(e) => setCustomProduct(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddCustomProduct();
+                        }
+                      }}
+                      className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:border-slate-400 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleAddCustomProduct()}
+                      className="cursor-pointer rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 transition-colors"
+                    >
+                      Añadir +
+                    </button>
+                  </div>
+
+                  <div className="text-[10px] text-slate-500 font-medium">
+                    <span className="font-semibold text-slate-600">Seleccionados: </span>
+                    {form.productos || <em className="text-slate-400">Ninguno seleccionado</em>}
+                  </div>
+                </div>
               ) : (
                 <Input
                   name={f.name}

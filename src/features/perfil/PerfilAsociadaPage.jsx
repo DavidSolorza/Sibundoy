@@ -85,16 +85,23 @@ function PerfilAsociadaPage() {
               <MapPin className="h-3.5 w-3.5" />{asociada.sector}
             </p>
           </div>
-          {asociada.lat != null && asociada.lng != null ? (
-            <button onClick={() => navigate("/", { state: { routeTo: [asociada.lat, asociada.lng] } })}
-              className="cursor-pointer shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 active:bg-blue-800">
-              <Navigation className="h-4 w-4" /> Cómo llegar
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {asociada.lat != null && asociada.lng != null ? (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
+                <MapPin className="h-4 w-4 text-emerald-600" /> Ubicación registrada
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-400">
+                <MapPin className="h-4 w-4" /> Sin ubicación
+              </span>
+            )}
+            <button 
+              onClick={() => navigate("/visitas", { state: { preselectAsociadaId: asociada.id } })}
+              className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white transition-all duration-150 hover:bg-slate-700 active:bg-slate-900 shadow-sm"
+            >
+              <Calendar className="h-4 w-4 text-emerald-400" /> Registrar Visita
             </button>
-          ) : (
-            <span className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-400">
-              <MapPin className="h-4 w-4" /> Sin ubicación
-            </span>
-          )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">

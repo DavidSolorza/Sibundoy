@@ -1,11 +1,10 @@
 import { lazy, Suspense, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Download, Users, ClipboardList, AlertTriangle } from "lucide-react";
 import { AsociadasProvider } from "../features/asociadas/AsociadasContext";
 import { VisitasProvider } from "../features/visitas/VisitasContext";
 import Navbar from "../shared/ui/Navbar";
 import ErrorBoundary from "../shared/ui/ErrorBoundary";
-import MapaPage from "../features/mapa/MapaPage";
 import ExportadorAsociadas from "../features/asociadas/components/ExportadorAsociadas";
 import ExportadorVisitas from "../features/visitas/components/ExportadorVisitas";
 import ImportarPage from "../features/importar/ImportarPage";
@@ -38,8 +37,8 @@ function App() {
                   </div>
                 }>
                   <Routes>
-                  <Route path="/" element={<MapaPage />} />
-                  <Route path="/huertas" element={<HuertasPage />} />
+                  <Route path="/" element={<HuertasPage />} />
+                  <Route path="/huertas" element={<Navigate to="/" replace />} />
                   <Route path="/visitas" element={<VisitasPage />} />
                   <Route path="/asociada/:id" element={<PerfilAsociadaPage />} />
                   <Route path="/admin" element={<AdminPage />} />

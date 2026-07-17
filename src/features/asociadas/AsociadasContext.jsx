@@ -22,6 +22,7 @@ function toFrontend(row) {
     observaciones: row.observaciones,
     lat: row.lat,
     lng: row.lng,
+    fotos: row.fotos || [],
   };
 }
 
@@ -42,6 +43,7 @@ function toDB(data, sectorId) {
     observaciones: data.observaciones || null,
     lat: data.lat ?? null,
     lng: data.lng ?? null,
+    fotos: data.fotos ?? [],
   };
 }
 

@@ -79,9 +79,6 @@ function SectorDetailModal({ sectorName, asociadas: items, onClose }) {
               </div>
               <div className="flex items-center gap-3 shrink-0 ml-2">
                 <span className="text-xs text-slate-400">{a.edad} años</span>
-                <button onClick={() => { onClose(); navigate("/", { state: { routeTo: [a.lat, a.lng] } }); }} className="cursor-pointer rounded-md bg-blue-50 p-1 text-blue-600 transition-colors hover:bg-blue-100" title="Ver en mapa">
-                  <Navigation className="h-3 w-3" />
-                </button>
               </div>
             </div>
           ))}
