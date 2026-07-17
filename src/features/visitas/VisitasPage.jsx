@@ -250,89 +250,91 @@ function VisitasPage() {
         )}
       </Card>
 
-      <div className="grid grid-cols-5 gap-3 mb-4">
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Total Visitas</p>
-          <p className="mt-0.5 text-xl font-bold text-slate-800">{stats.total}</p>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm group hover:border-slate-300 transition-colors">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Visitas</p>
+          <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-800 group-hover:scale-105 origin-left transition-transform">{stats.total}</p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Próximo Mes</p>
-          <p className="mt-0.5 text-xl font-bold text-slate-800">{stats.nextMonth}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm group hover:border-slate-300 transition-colors">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Próximo Mes</p>
+          <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-800 group-hover:scale-105 origin-left transition-transform">{stats.nextMonth}</p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Asociadas Visitadas</p>
-          <p className="mt-0.5 text-xl font-bold text-slate-800">{stats.uniqueAsociadas}</p>
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm group hover:border-slate-300 transition-colors">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asociadas</p>
+          <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-800 group-hover:scale-105 origin-left transition-transform">{stats.uniqueAsociadas}</p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Más Frecuente</p>
-          <p className="mt-0.5 text-xl font-bold text-slate-800 flex items-center gap-1.5">
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm group hover:border-slate-300 transition-colors col-span-2 md:col-span-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Más Frecuente</p>
+          <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-800 flex items-center gap-1.5 group-hover:scale-105 origin-left transition-transform">
             {stats.mostType ? (
               <>
-                <span className={`inline-block h-2.5 w-2.5 rounded-full ${typeDots[stats.mostType]}`} />
+                <span className={`inline-block h-2 w-2 rounded-full ${typeDots[stats.mostType]}`} />
                 {stats.mostType.charAt(0).toUpperCase() + stats.mostType.slice(1)}
-                <span className="text-sm font-normal text-slate-400">({stats.byType[stats.mostType]})</span>
+                <span className="text-xs font-bold text-slate-400">({stats.byType[stats.mostType]})</span>
               </>
             ) : "—"}
           </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm flex items-center justify-between">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3.5 shadow-sm flex items-center justify-between col-span-2 md:col-span-1">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-slate-400">Actualizado</p>
-            <p className="mt-0.5 text-xs text-slate-500">{lastUpdated ? formatTimeAgo(lastUpdated) : "—"}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Actualizado</p>
+            <p className="mt-0.5 text-xs font-semibold text-slate-500">{lastUpdated ? formatTimeAgo(lastUpdated) : "—"}</p>
           </div>
-          <button onClick={refresh} disabled={loading} className="cursor-pointer rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 disabled:cursor-default" title="Actualizar datos">
+          <button onClick={refresh} disabled={loading} className="cursor-pointer rounded-xl p-2 bg-white border border-slate-200 shadow-sm text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-700 hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-default" title="Actualizar datos">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>
       </div>
 
       {view === "calendar" ? (
-        <Card>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-transparent" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
             </div>
           ) : (
             <CalendarView visitas={calendarVisitas} onDayClick={setSelectedDay} />
           )}
-        </Card>
+        </div>
       ) : (
-        <Card>
-          <div className="space-y-3 mb-3">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+          <div className="space-y-3 mb-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <Input ref={searchRef} type="text" placeholder="Buscar por asociada o sector... (presiona /)" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+              <Input ref={searchRef} type="text" placeholder="Buscar por asociada o sector... (presiona /)" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 border-slate-300 focus:border-slate-800 rounded-xl" />
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
               {quickFilters.map(({ key, label }) => (
                 <button key={key} onClick={() => setQuickFilter(quickFilter === key ? null : key)}
-                  className={`cursor-pointer rounded-lg border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                    quickFilter === key ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-500 border-slate-200 hover:border-slate-400"
+                  className={`cursor-pointer rounded-lg border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${
+                    quickFilter === key ? "bg-slate-800 text-white border-slate-800 shadow-sm" : "bg-white text-slate-500 border-slate-200 hover:border-slate-400 hover:shadow-sm hover:text-slate-700"
                   }`}>
                   {label}
                 </button>
               ))}
             </div>
             {hasFilters && (
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-100">
                 <Filter className="h-3 w-3" />
-                {quickFilter && <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">{quickFilters.find(f => f.key === quickFilter)?.label} <button onClick={() => setQuickFilter(null)} className="cursor-pointer hover:text-slate-900"><X className="h-3 w-3" /></button></span>}
-                {filterTipo && <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">{filterTipo} <button onClick={() => setFilterTipo(null)} className="cursor-pointer hover:text-slate-900"><X className="h-3 w-3" /></button></span>}
-                {filterAsociada && <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 font-medium text-slate-700">{asociadaMap[filterAsociada]?.nombre} <button onClick={() => setFilterAsociada(null)} className="cursor-pointer hover:text-slate-900"><X className="h-3 w-3" /></button></span>}
-                <button onClick={clearFilters} className="cursor-pointer ml-auto text-slate-400 hover:text-slate-600">Limpiar</button>
+                {quickFilter && <span className="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 shadow-sm px-2 py-1 font-bold text-slate-700">{quickFilters.find(f => f.key === quickFilter)?.label} <button onClick={() => setQuickFilter(null)} className="cursor-pointer hover:text-slate-900"><X className="h-3 w-3" /></button></span>}
+                {filterTipo && <span className="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 shadow-sm px-2 py-1 font-bold text-slate-700">{filterTipo} <button onClick={() => setFilterTipo(null)} className="cursor-pointer hover:text-slate-900"><X className="h-3 w-3" /></button></span>}
+                {filterAsociada && <span className="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 shadow-sm px-2 py-1 font-bold text-slate-700">{asociadaMap[filterAsociada]?.nombre} <button onClick={() => setFilterAsociada(null)} className="cursor-pointer hover:text-slate-900"><X className="h-3 w-3" /></button></span>}
+                <button onClick={clearFilters} className="cursor-pointer ml-auto text-slate-400 hover:text-slate-600 font-bold text-[11px] uppercase tracking-wider">Limpiar</button>
               </div>
             )}
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-transparent" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <ClipboardList className="h-8 w-8 text-slate-300 mb-2" />
-              <p className="text-sm font-medium text-slate-600">No hay visitas registradas</p>
-              <p className="text-xs text-slate-400 mt-1">Programa la primera visita para empezar el seguimiento.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 border border-slate-100">
+                <ClipboardList className="h-8 w-8 text-slate-300" />
+              </div>
+              <p className="text-sm font-bold text-slate-700">No hay visitas registradas</p>
+              <p className="text-xs font-medium text-slate-400 mt-1.5">Programa la primera visita para empezar el seguimiento.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -342,39 +344,39 @@ function VisitasPage() {
                 const total = items.length;
                 return (
                   <button key={sector} onClick={() => setSectorModalVisitas({ sector, items })}
-                    className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-300 active:bg-blue-50/50 group">
+                    className="cursor-pointer w-full text-left rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-300 hover:scale-[1.01] active:bg-blue-50/50 group">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors">
                           <MapPin className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{sector}</p>
-                          <p className="text-[11px] text-slate-400">{total} visita{total !== 1 ? "s" : ""}</p>
+                          <p className="text-sm font-bold text-slate-800 truncate">{sector}</p>
+                          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest">{total} visita{total !== 1 ? "s" : ""}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
                         {pendientes > 0 && (
-                          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                          <span className="inline-flex items-center rounded-md bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-700">
                             {pendientes} pend.
                           </span>
                         )}
                         {realizadas > 0 && (
-                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                          <span className="inline-flex items-center rounded-md bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-emerald-700">
                             {realizadas} hechas
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1.5">
                       {(["visita", "seguimiento", "capacitacion"]).map((tipo) => {
                         const count = items.filter((v) => v.tipo === tipo).length;
                         if (!count) return null;
                         return (
-                          <span key={tipo} className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
-                            tipo === "visita" ? "bg-blue-100 text-blue-700" :
-                            tipo === "seguimiento" ? "bg-amber-100 text-amber-700" :
-                            "bg-emerald-100 text-emerald-700"
+                          <span key={tipo} className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
+                            tipo === "visita" ? "bg-blue-50 border-blue-200 text-blue-700" :
+                            tipo === "seguimiento" ? "bg-amber-50 border-amber-200 text-amber-700" :
+                            "bg-emerald-50 border-emerald-200 text-emerald-700"
                           }`}>
                             {tipo === "visita" ? "V" : tipo === "seguimiento" ? "S" : "C"} {count}
                           </span>
@@ -387,29 +389,29 @@ function VisitasPage() {
             </div>
           )}
           {!loading && filtered.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
-              <span className="text-xs text-slate-400">
-                {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, grouped.length)} de {grouped.length} sectores
+            <div className="flex items-center justify-between mt-4 px-2 py-2 border-t border-slate-100">
+              <span className="text-[11px] font-bold tracking-widest uppercase text-slate-400">
+                Mostrando {page * PER_PAGE + 1} – {Math.min((page + 1) * PER_PAGE, grouped.length)} de {grouped.length} sectores
               </span>
               <div className="flex items-center gap-3">
                 <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}
-                  className="cursor-pointer disabled:opacity-30 disabled:cursor-default text-slate-500 hover:text-slate-800 transition-colors">
-                  <ChevronLeft className="h-4 w-4" />
+                  className="cursor-pointer disabled:opacity-30 disabled:cursor-default text-slate-500 hover:text-slate-800 transition-colors p-1 rounded-md hover:bg-slate-200">
+                  <ChevronLeft className="h-5 w-5" />
                 </button>
                 <div className="flex items-center gap-1.5">
                   {Array.from({ length: totalPages }, (_, i) => (
                     <button key={i} onClick={() => setPage(i)}
-                      className={`cursor-pointer h-2 rounded-full transition-all duration-200 ${i === page ? "w-6 bg-slate-800" : "w-2 bg-slate-300 hover:bg-slate-400"}`} />
+                      className={`cursor-pointer h-2 rounded-full transition-all duration-300 ${i === page ? "w-6 bg-slate-800" : "w-2 bg-slate-300 hover:bg-slate-400"}`} />
                   ))}
                 </div>
                 <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page === totalPages - 1}
-                  className="cursor-pointer disabled:opacity-30 disabled:cursor-default text-slate-500 hover:text-slate-800 transition-colors">
-                  <ChevronRight className="h-4 w-4" />
+                  className="cursor-pointer disabled:opacity-30 disabled:cursor-default text-slate-500 hover:text-slate-800 transition-colors p-1 rounded-md hover:bg-slate-200">
+                  <ChevronRight className="h-5 w-5" />
                 </button>
               </div>
             </div>
           )}
-        </Card>
+        </div>
       )}
 
       {view === "calendar" && (

@@ -197,68 +197,68 @@ export default function EstadisticasHuertas({ asociadas, temporalFilter }) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
         {/* KPI 1: Cumplimiento */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm group hover:border-emerald-200 transition-colors">
           <div className="flex justify-between items-start">
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cumplimiento de Visitas</p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cumplimiento de Visitas</p>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold text-slate-800">{metaCumplimiento.porcentaje}%</span>
+                <span className="text-3xl font-black tracking-tight text-slate-800">{metaCumplimiento.porcentaje}%</span>
                 <span className="text-xs text-slate-500 font-medium">de metas</span>
               </div>
-              <p className="text-[11px] text-slate-500">
-                {metaCumplimiento.completadas} completadas de {metaCumplimiento.total} programadas
+              <p className="text-[11px] font-medium text-slate-500">
+                {metaCumplimiento.completadas} completadas de {metaCumplimiento.total}
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">
-              <CheckCircle className="h-5 w-5" />
+            <div className="p-3 rounded-full bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform">
+              <CheckCircle className="h-6 w-6" />
             </div>
           </div>
-          <div className="mt-3 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${metaCumplimiento.porcentaje}%` }} />
+          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-emerald-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${metaCumplimiento.porcentaje}%` }} />
           </div>
         </div>
 
         {/* KPI 2: Cobertura Territorial */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm group hover:border-blue-200 transition-colors">
           <div className="flex justify-between items-start">
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Cobertura Territorial</p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cobertura Territorial</p>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold text-slate-800">{coberturaTerritorial.porcentaje}%</span>
+                <span className="text-3xl font-black tracking-tight text-slate-800">{coberturaTerritorial.porcentaje}%</span>
                 <span className="text-xs text-slate-500 font-medium">veredas</span>
               </div>
-              <p className="text-[11px] text-slate-500">
-                {coberturaTerritorial.visitados} veredas visitadas de {coberturaTerritorial.totalSectores} totales
+              <p className="text-[11px] font-medium text-slate-500">
+                {coberturaTerritorial.visitados} veredas de {coberturaTerritorial.totalSectores} totales
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
-              <Globe className="h-5 w-5" />
+            <div className="p-3 rounded-full bg-blue-50 text-blue-600 group-hover:scale-110 transition-transform">
+              <Globe className="h-6 w-6" />
             </div>
           </div>
-          <div className="mt-3 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${coberturaTerritorial.porcentaje}%` }} />
+          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-blue-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${coberturaTerritorial.porcentaje}%` }} />
           </div>
         </div>
 
         {/* KPI 3: Tasa de Crecimiento */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm group hover:border-amber-200 transition-colors">
           <div className="flex justify-between items-start">
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Productores Registrados</p>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Productores Totales</p>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold text-slate-800">{asociadas.length}</span>
-                <span className="text-xs text-slate-500 font-medium">totales</span>
+                <span className="text-3xl font-black tracking-tight text-slate-800">{asociadas.length}</span>
+                <span className="text-xs text-slate-500 font-medium">registrados</span>
               </div>
-              <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                Avance y crecimiento progresivo del programa
+              <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+                Avance histórico del programa
               </p>
             </div>
-            <div className="p-3 rounded-xl bg-amber-50 text-amber-600">
-              <Users className="h-5 w-5" />
+            <div className="p-3 rounded-full bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform">
+              <Users className="h-6 w-6" />
             </div>
           </div>
-          <div className="mt-3 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-amber-500 h-full rounded-full transition-all duration-500" style={{ width: `100%` }} />
+          <div className="mt-4 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-amber-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `100%` }} />
           </div>
         </div>
 

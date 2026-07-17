@@ -15,9 +15,21 @@ const defaultColumns = [
 function SortIcon({ columnKey, sortBy }) {
   if (!sortBy || sortBy.key !== columnKey) return null;
   return sortBy.dir === "asc"
-    ? <ChevronUp className="h-3 w-3 ml-0.5 inline-block" />
-    : <ChevronDown className="h-3 w-3 ml-0.5 inline-block" />;
+    ? <ChevronUp className="h-4 w-4 ml-1 inline-block text-blue-500" />
+    : <ChevronDown className="h-4 w-4 ml-1 inline-block text-blue-500" />;
 }
+
+const TipoPersonaBadge = ({ tipo }) => {
+  if (!tipo) return "—";
+  let colorClass = "bg-slate-100 text-slate-700 border border-slate-200";
+  if (tipo === "Madre Cabeza De Hogar") colorClass = "bg-rose-50 text-rose-700 border border-rose-200";
+  else if (tipo === "Casada") colorClass = "bg-blue-50 text-blue-700 border border-blue-200";
+  else if (tipo === "Viuda") colorClass = "bg-purple-50 text-purple-700 border border-purple-200";
+  else if (tipo === "Separada") colorClass = "bg-orange-50 text-orange-700 border border-orange-200";
+  else if (tipo === "Soltera") colorClass = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+  
+  return <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${colorClass}`}>{tipo}</span>;
+};
 
 // Sub-component for an individual row
 const TableRow = memo(function TableRow({ 
@@ -73,49 +85,32 @@ const TableRow = memo(function TableRow({
     onStartEdit(asociada.id);
   };
 
-  return (
-    <tr className={`border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50 cursor-pointer ${selected ? "bg-blue-50/50" : ""}`}>
+  return (    <tr className={`border-b border-slate-100/50 transition-all duration-200 hover:bg-slate-50/80 cursor-pointer ${selected ? "bg-blue-50/50" : ""}`}>
       {/* Action panel column */}
-      <td className="sticky left-0性能 z-10 whitespace-nowrap bg-white px-1.5 py-2.5 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.05)]" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-1">
+      <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-4 py-3.5 shadow-[2px_0_10px_-4px_rgba(0,0,0,0.05)]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2">
           <input type="checkbox" checked={selected} onChange={() => onToggleSelect(asociada.id)}
-            className="h-3.5 w-3.5 rounded border-slate-300 text-slate-800 focus:ring-slate-400 cursor-pointer shrink-0 mr-1.5" />
+            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0 mr-2" />
           
-          <button onClick={() => navigate(`/asociada/${asociada.id}`)} className="cursor-pointer rounded-md bg-slate-800 text-white transition-colors hover:bg-slate-700 min-h-7 min-w-7 flex items-center justify-center" title="Perfil Completo">
-            <User className="h-3.5 w-3.5" />
-          </button>
-          
-          <button onClick={() => onViewMap(asociada)} className="cursor-pointer rounded-md bg-emerald-50 text-emerald-600 transition-colors hover:bg-emerald-100 min-h-7 min-w-7 flex items-center justify-center" title="Ver En Mapa">
-            <MapPin className="h-3.5 w-3.5" />
-          </button>
-
-          <button onClick={() => onViewGallery(asociada)} className="cursor-pointer rounded-md bg-amber-50 text-amber-600 transition-colors hover:bg-amber-100 min-h-7 min-w-7 flex items-center justify-center relative" title="Ver Fotos">
-            <Camera className="h-3.5 w-3.5" />
-            {asociada.fotos?.length > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[8px] font-bold text-white scale-90">
-                {asociada.fotos.length}
-              </span>
-            )}
+          <button onClick={() => navigate(`/asociada/${asociada.id}`)} className="cursor-pointer rounded-lg bg-slate-800 text-white shadow-sm transition-all hover:bg-slate-700 hover:scale-105 min-h-8 min-w-8 flex items-center justify-center" title="Perfil Completo">
+            <User className="h-4 w-4" />
           </button>
 
           {!viewOnly && (
             <>
               {isEditing ? (
                 <>
-                  <button onClick={handleSave} className="cursor-pointer rounded-md bg-emerald-600 text-white hover:bg-emerald-700 min-h-7 min-w-7 flex items-center justify-center" title="Guardar">
-                    <Check className="h-3.5 w-3.5" />
+                  <button onClick={handleSave} className="cursor-pointer rounded-lg bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 min-h-8 min-w-8 flex items-center justify-center" title="Guardar">
+                    <Check className="h-4 w-4" />
                   </button>
-                  <button onClick={handleCancel} className="cursor-pointer rounded-md bg-slate-200 text-slate-700 hover:bg-slate-300 min-h-7 min-w-7 flex items-center justify-center" title="Cancelar">
-                    <X className="h-3.5 w-3.5" />
+                  <button onClick={handleCancel} className="cursor-pointer rounded-lg bg-slate-200 text-slate-700 shadow-sm hover:bg-slate-300 min-h-8 min-w-8 flex items-center justify-center" title="Cancelar">
+                    <X className="h-4 w-4" />
                   </button>
                 </>
               ) : (
                 <>
-                  <button onClick={handleStartEditing} className="cursor-pointer rounded-md bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100 min-h-7 min-w-7 flex items-center justify-center" title="Editar en Fila">
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button onClick={() => onDelete(asociada)} className="cursor-pointer rounded-md bg-red-50 text-red-500 transition-colors hover:bg-red-100 min-h-7 min-w-7 flex items-center justify-center" title="Eliminar">
-                    <Trash2 className="h-3.5 w-3.5" />
+                  <button onClick={() => onDelete(asociada)} className="cursor-pointer rounded-lg bg-rose-50 text-rose-500 transition-colors hover:bg-rose-100 min-h-8 min-w-8 flex items-center justify-center" title="Eliminar">
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </>
               )}
@@ -185,15 +180,20 @@ const TableRow = memo(function TableRow({
 
         // View only mode
         return (
-          <td key={col.key} className="whitespace-nowrap px-2 py-2.5 text-sm text-slate-700">
-            {col.key === "sector" ? (
-              <Badge variant="primary">{val}</Badge>
+          <td key={col.key} className="whitespace-nowrap px-4 py-3.5 text-[13px] text-slate-600">
+            {col.key === "nombre" ? (
+              <span className="font-semibold text-slate-800">{val}</span>
+            ) : col.key === "sector" ? (
+              <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 text-slate-600 text-[11px] font-semibold border border-slate-200">
+                <MapPin className="h-3 w-3 mr-1 text-slate-400" />
+                {val}
+              </span>
             ) : col.key === "tipoPersona" ? (
-              <Badge variant="warning">{val}</Badge>
+              <TipoPersonaBadge tipo={val} />
             ) : col.key === "productos" ? (
-              <span className="max-w-[140px] truncate block" title={val || ""}>{val || "—"}</span>
+              <span className="max-w-[160px] truncate block text-slate-500" title={val || ""}>{val || "—"}</span>
             ) : col.key === "numPersonas" ? (
-              <span className="font-semibold text-slate-800">{val ?? "—"}</span>
+              <span className="font-bold text-slate-700 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">{val ?? "—"}</span>
             ) : (
               val ?? ""
             )}
@@ -264,24 +264,24 @@ const TablaAsociadas = memo(function TablaAsociadas({
         </div>
       )}
       
-      <div className="overflow-x-auto rounded-lg border border-slate-200 shadow-sm">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-800 text-white">
+      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table className="min-w-full divide-y divide-slate-100">
+          <thead className="bg-slate-50/80 backdrop-blur-sm sticky top-0 z-20 border-b border-slate-200">
             {/* Headers row */}
             <tr>
-              <th className="sticky left-0 z-20 whitespace-nowrap bg-slate-800 px-1.5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white shadow-[2px_0_6px_-2px_rgba(0,0,0,0.15)]">
-                <div className="flex items-center gap-1.5">
+              <th className="sticky left-0 z-20 whitespace-nowrap bg-slate-50/90 backdrop-blur-sm px-4 py-4 text-left text-[11px] font-bold uppercase tracking-widest text-slate-500 shadow-[2px_0_10px_-4px_rgba(0,0,0,0.05)]">
+                <div className="flex items-center gap-2">
                   <input type="checkbox" checked={allSelected} onChange={() => {
                     if (allSelected) onToggleSelect("__all__");
                     else onSelectAll?.();
-                  }} className="h-3.5 w-3.5 rounded border-slate-500 bg-white text-slate-800 focus:ring-slate-400 cursor-pointer" />
-                  <span className="ml-1.5">Acciones</span>
+                  }} className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                  <span className="ml-1">Acciones</span>
                 </div>
               </th>
               {cols.map((col) => (
-                <th key={col.key} className="whitespace-nowrap px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider text-white">
+                <th key={col.key} className="whitespace-nowrap px-4 py-4 text-left text-[11px] font-bold uppercase tracking-widest text-slate-500">
                   {onSort ? (
-                    <button onClick={() => onSort(col.key)} className="cursor-pointer inline-flex items-center hover:text-slate-300 transition-colors">
+                    <button onClick={() => onSort(col.key)} className="cursor-pointer inline-flex items-center hover:text-slate-800 transition-colors">
                       {col.label}
                       <SortIcon columnKey={col.key} sortBy={sortBy} />
                     </button>

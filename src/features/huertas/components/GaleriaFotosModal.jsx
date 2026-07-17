@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Plus, Trash2, Camera, Loader2 } from "lucide-react";
 import useAsociadas from "../../asociadas/useAsociadas";
 import Modal from "../../../shared/ui/Modal";
+import { supabase } from "../../../services/supabase";
 
 export default function GaleriaFotosModal({ asociada, open, onClose }) {
   const { updateAsociada } = useAsociadas();
@@ -73,13 +74,17 @@ export default function GaleriaFotosModal({ asociada, open, onClose }) {
     setIsUploading(true);
     try {
       const newUrls = await Promise.all(
-        files.map((file) => {
-          return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = (err) => reject(err);
-          });
+        files.map(async (file) => {
+          const timestamp = Date.now();
+          const randomString = Math.random().toString(36).substring(2, 8);
+          const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+          const fileName = `${timestamp}_${randomString}_${cleanName}`;
+          
+          const { error } = await supabase.storage.from("fotos").upload(fileName, file);
+          if (error) throw error;
+          
+          const { data: publicData } = supabase.storage.from("fotos").getPublicUrl(fileName);
+          return publicData.publicUrl;
         })
       );
       
@@ -87,6 +92,7 @@ export default function GaleriaFotosModal({ asociada, open, onClose }) {
       await updateAsociada(asociada.id, { ...asociada, fotos: updatedFotos });
       setActiveIndex(updatedFotos.length - 1);
     } catch (err) {
+      console.error("Error upload:", err);
       alert("Error cargando la foto: " + err.message);
     } finally {
       setIsUploading(false);
@@ -96,9 +102,25 @@ export default function GaleriaFotosModal({ asociada, open, onClose }) {
 
   const handleDelete = async () => {
     if (!window.confirm("¿Seguro que deseas eliminar esta imagen de la galería?")) return;
-    const updatedFotos = fotos.filter((_, idx) => idx !== activeIndex);
-    await updateAsociada(asociada.id, { ...asociada, fotos: updatedFotos });
-    setActiveIndex((prev) => Math.max(0, prev - 1));
+    
+    try {
+      const fotoUrl = fotos[activeIndex];
+      
+      if (fotoUrl && fotoUrl.includes("/storage/v1/object/public/fotos/")) {
+        const parts = fotoUrl.split("/storage/v1/object/public/fotos/");
+        if (parts.length > 1) {
+          const fileName = parts[1];
+          await supabase.storage.from("fotos").remove([fileName]).catch(e => console.error("Error eliminando archivo:", e));
+        }
+      }
+      
+      const updatedFotos = fotos.filter((_, idx) => idx !== activeIndex);
+      await updateAsociada(asociada.id, { ...asociada, fotos: updatedFotos });
+      setActiveIndex((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error("Error eliminando:", err);
+      alert("Error al eliminar la foto: " + err.message);
+    }
   };
 
   return (

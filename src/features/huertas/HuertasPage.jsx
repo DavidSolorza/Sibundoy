@@ -509,14 +509,14 @@ function HuertasPage() {
       {/* Main View Render */}
       {activeTab === "tabla" ? (
         <div className="space-y-4">
-          <Card>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
             <div className="space-y-3">
               {/* Search Bar / Sector selection strip */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                <Input ref={searchRef} type="text" placeholder="Búsqueda rápida por nombre, teléfono o cultivo..." value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }} className="pl-10 pr-10" />
+                <Input ref={searchRef} type="text" placeholder="Búsqueda rápida por nombre, teléfono o cultivo..." value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }} className="pl-10 pr-10 border-slate-300 focus:border-slate-800 focus:ring-slate-800 rounded-xl" />
                 {query && (
-                  <button onClick={clearSearch} className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" aria-label="Limpiar Búsqueda">
+                  <button onClick={clearSearch} className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" aria-label="Limpiar Búsqueda">
                     <X className="h-4 w-4" />
                   </button>
                 )}
@@ -525,10 +525,10 @@ function HuertasPage() {
               {/* Veredas Horizontal Buttons */}
               <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1 snap-x snap-mandatory md:flex-wrap md:overflow-visible md:pb-0 md:mx-0 md:px-0">
                 <button onClick={() => { setActiveSector(null); setPage(0); }}
-                  className={`cursor-pointer inline-flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-200 snap-start ${
+                  className={`cursor-pointer inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all duration-200 snap-start ${
                     !activeSector ? "border-slate-800 bg-slate-800 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:shadow-sm"
                   }`}>
-                  <Sprout className="h-3 w-3 shrink-0" />
+                  <Sprout className="h-3.5 w-3.5 shrink-0" />
                   <span className="whitespace-nowrap">Todos</span>
                   <span className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${!activeSector ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
                     {asociadas.length}
@@ -538,10 +538,10 @@ function HuertasPage() {
                   const isActive = activeSector === sector;
                   return (
                     <button key={sector} onClick={() => { setActiveSector(isActive ? null : sector); setPage(0); }}
-                      className={`cursor-pointer inline-flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-200 snap-start ${
+                      className={`cursor-pointer inline-flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all duration-200 snap-start ${
                         isActive ? "border-slate-800 bg-slate-800 text-white shadow-sm" : "border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:shadow-sm"
                       }`}>
-                      <MapPin className="h-3 w-3 shrink-0" />
+                      <MapPin className="h-3.5 w-3.5 shrink-0" />
                       <span className="whitespace-nowrap">{sector.replace("Vereda ", "")}</span>
                       <span className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
                         {sectores[sector].length}
@@ -553,51 +553,51 @@ function HuertasPage() {
 
               {/* Filters State */}
               {hasActiveFilters && (
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
                   <span>
                     {sorted.length === 1 ? "1 resultado" : `${sorted.length} resultados`}
-                    {activeSector && <> · Sector: <span className="font-semibold text-slate-700">{activeSector}</span></>}
-                    {query && <> · Búsqueda: "<span className="font-semibold text-slate-700">{query}</span>"</>}
-                    {temporalFilter !== "todo" && <> · Temporal: <span className="font-semibold text-slate-700">{temporalFilter}</span></>}
+                    {activeSector && <> · Sector: <span className="font-bold text-slate-700">{activeSector}</span></>}
+                    {query && <> · Búsqueda: "<span className="font-bold text-slate-700">{query}</span>"</>}
+                    {temporalFilter !== "todo" && <> · Temporal: <span className="font-bold text-slate-700">{temporalFilter}</span></>}
                     {Object.entries(columnFilters).filter(([_, v]) => v).length > 0 && (
-                      <> · Filtros columna: <span className="font-semibold text-slate-700">{Object.entries(columnFilters).filter(([_, v]) => v).map(([k, v]) => `${k}:${v}`).join(", ")}</span></>
+                      <> · Filtros columna: <span className="font-bold text-slate-700">{Object.entries(columnFilters).filter(([_, v]) => v).map(([k, v]) => `${k}:${v}`).join(", ")}</span></>
                     )}
                   </span>
-                  <button onClick={clearFilters} className="ml-auto cursor-pointer inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-800">
+                  <button onClick={clearFilters} className="ml-auto cursor-pointer inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-600 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-800">
                     <X className="h-3 w-3" /> Limpiar Todo
                   </button>
                 </div>
               )}
             </div>
-          </Card>
+          </div>
 
           {/* Grid Table Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Sprout className="h-4 w-4 text-emerald-600" />
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-base font-bold text-slate-800">
+                <Sprout className="h-5 w-5 text-emerald-600" />
                 Registros de Huertas
                 {sorted.length !== asociadas.length && (
-                  <span className="text-xs font-normal text-slate-400">({sorted.length} de {asociadas.length})</span>
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-widest">{sorted.length} visibles</span>
                 )}
-              </CardTitle>
-            </CardHeader>
+              </h3>
+            </div>
 
             {loading ? (
               <div className="flex items-center justify-center py-16">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-800 border-t-transparent" />
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
               </div>
             ) : sorted.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
-                  <Search className="h-6 w-6 text-slate-400" />
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 border border-slate-100">
+                  <Search className="h-8 w-8 text-slate-300" />
                 </div>
-                <p className="text-sm font-medium text-slate-700">No se encontraron resultados</p>
-                <p className="mt-1 text-xs text-slate-400">Prueba con otros filtros o verifica los filtros de columna.</p>
+                <p className="text-sm font-bold text-slate-700">No se encontraron resultados</p>
+                <p className="mt-1.5 text-xs font-medium text-slate-400">Prueba con otros filtros o verifica los filtros de columna.</p>
                 {hasActiveFilters && (
-                  <button onClick={clearFilters} className="mt-3 cursor-pointer inline-flex items-center gap-1 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-700">
-                    <X className="h-3 w-3" /> Limpiar Filtros
+                  <button onClick={clearFilters} className="mt-4 cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-slate-700 shadow-sm hover:scale-105 active:scale-95">
+                    <X className="h-3.5 w-3.5" /> Limpiar Filtros
                   </button>
                 )}
               </div>
@@ -621,28 +621,28 @@ function HuertasPage() {
                   onColumnFilterChange={setColumnFilters}
                 />
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100">
-                    <span className="text-xs text-slate-400">
-                      {page * PER_PAGE + 1}–{Math.min((page + 1) * PER_PAGE, sorted.length)} de {sorted.length}
+                  <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 bg-slate-50/50">
+                    <span className="text-[11px] font-bold tracking-widest uppercase text-slate-400">
+                      Mostrando {page * PER_PAGE + 1} – {Math.min((page + 1) * PER_PAGE, sorted.length)} de {sorted.length}
                     </span>
                     <div className="flex items-center gap-3">
-                      <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="cursor-pointer disabled:opacity-30 disabled:cursor-default text-slate-500 hover:text-slate-800 transition-colors">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                      <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0} className="cursor-pointer disabled:opacity-30 disabled:cursor-default text-slate-500 hover:text-slate-800 transition-colors p-1 rounded-md hover:bg-slate-200">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
                       </button>
                       <div className="flex items-center gap-1.5">
                         {Array.from({ length: totalPages }, (_, i) => (
-                          <button key={i} onClick={() => setPage(i)} className={`cursor-pointer h-2 rounded-full transition-all duration-200 ${i === page ? "w-6 bg-slate-800" : "w-2 bg-slate-300 hover:bg-slate-400"}`} />
+                          <button key={i} onClick={() => setPage(i)} className={`cursor-pointer h-2 rounded-full transition-all duration-300 ${i === page ? "w-6 bg-slate-800" : "w-2 bg-slate-300 hover:bg-slate-400"}`} />
                         ))}
                       </div>
-                      <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page === totalPages - 1} className="cursor-pointer disabled:opacity-30 disabled:cursor-default text-slate-500 hover:text-slate-800 transition-colors">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      <button onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page === totalPages - 1} className="cursor-pointer disabled:opacity-30 disabled:cursor-default text-slate-500 hover:text-slate-800 transition-colors p-1 rounded-md hover:bg-slate-200">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
                       </button>
                     </div>
                   </div>
                 )}
               </>
             )}
-          </Card>
+          </div>
         </div>
       ) : (
         /* Analytics view */

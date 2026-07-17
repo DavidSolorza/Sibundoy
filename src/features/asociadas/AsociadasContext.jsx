@@ -5,6 +5,12 @@ import { supabase } from "../../services/supabase";
 const AsociadasContext = createContext(null);
 
 function toFrontend(row) {
+  const baseFotos = row.fotos || [];
+  let allFotos = [...baseFotos];
+  if (row.url_foto && !allFotos.includes(row.url_foto)) {
+    allFotos.unshift(row.url_foto);
+  }
+
   return {
     id: row.id,
     nombre: row.nombre,
@@ -22,7 +28,8 @@ function toFrontend(row) {
     observaciones: row.observaciones,
     lat: row.lat,
     lng: row.lng,
-    fotos: row.fotos || [],
+    fotos: allFotos,
+    urlFoto: row.url_foto || null,
   };
 }
 
@@ -43,7 +50,7 @@ function toDB(data, sectorId) {
     observaciones: data.observaciones || null,
     lat: data.lat ?? null,
     lng: data.lng ?? null,
-    fotos: data.fotos ?? [],
+    url_foto: data.fotos && data.fotos.length > 0 ? data.fotos[0] : null,
   };
 }
 

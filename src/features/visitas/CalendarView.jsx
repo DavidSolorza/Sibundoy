@@ -257,8 +257,8 @@ function CalendarView({ visitas, onDayClick }) {
       <div className="w-full lg:w-64 shrink-0 flex flex-col gap-4">
         
         {/* Retrasadas / Overdue Tasks panel */}
-        <div className="rounded-2xl border border-red-100 bg-red-50/30 p-4 flex flex-col">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-red-700 mb-3">
+        <div className="rounded-2xl border border-red-100 bg-gradient-to-br from-red-50/80 to-white shadow-sm p-4 flex flex-col">
+          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-widest font-bold text-red-700 mb-3">
             <AlertTriangle className="h-4 w-4" />
             <span>Visitas Vencidas ({sidebarData.totalRetrasadas})</span>
           </div>
@@ -271,7 +271,7 @@ function CalendarView({ visitas, onDayClick }) {
                   <div 
                     key={v.id} 
                     onClick={() => onDayClick(v.fecha)}
-                    className="cursor-pointer bg-white border border-red-100 hover:border-red-200 rounded-lg p-2.5 text-[10px] shadow-sm hover:shadow-md transition-all"
+                    className="cursor-pointer bg-white border border-red-100 hover:border-red-300 rounded-xl p-3 text-[10px] shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-800 truncate max-w-[110px]">{asoc?.nombre}</span>
@@ -295,8 +295,8 @@ function CalendarView({ visitas, onDayClick }) {
         </div>
 
         {/* Esta semana / Current week tasks panel */}
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 flex flex-col">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-3">
+        <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/80 to-white shadow-sm p-4 flex flex-col">
+          <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-widest font-bold text-blue-800 mb-3">
             <Clock className="h-4 w-4 text-blue-500" />
             <span>Pendientes Esta Semana ({sidebarData.totalEstaSemana})</span>
           </div>
@@ -309,7 +309,7 @@ function CalendarView({ visitas, onDayClick }) {
                   <div 
                     key={v.id} 
                     onClick={() => onDayClick(v.fecha)}
-                    className="cursor-pointer bg-white border border-slate-200 hover:border-slate-300 rounded-lg p-2.5 text-[10px] shadow-sm hover:shadow-md transition-all"
+                    className="cursor-pointer bg-white border border-slate-200 hover:border-blue-300 rounded-xl p-3 text-[10px] shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-800 truncate max-w-[110px]">{asoc?.nombre}</span>
