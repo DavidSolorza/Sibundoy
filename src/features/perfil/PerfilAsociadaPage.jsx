@@ -80,8 +80,8 @@ function PerfilAsociadaPage() {
   const proximaVisitaProgramada = useMemo(() => {
     if (!visitas.length) return null;
     const futuras = visitas
-      .filter((v) => v.proximaVisita && new Date(v.proximaVisita).getTime() >= new Date().setHours(0,0,0,0))
-      .sort((a, b) => new Date(a.proximaVisita) - new Date(b.proximaVisita));
+      .filter((v) => !v.realizada && new Date(v.fecha).getTime() >= new Date().setHours(0,0,0,0))
+      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
     return futuras.length > 0 ? futuras[0] : null;
   }, [visitas]);
 
@@ -133,7 +133,7 @@ function PerfilAsociadaPage() {
           <div>
             <h3 className="text-sm font-bold text-emerald-800">Próxima Visita Programada</h3>
             <p className="text-sm text-emerald-700 mt-0.5">
-              Hay una labor de <span className="font-semibold">{TIPO_LABELS[proximaVisitaProgramada.tipo]}</span> agendada para el <span className="font-semibold">{parseLocalDate(proximaVisitaProgramada.proximaVisita).toLocaleDateString("es-CO", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>.
+              Hay una labor de <span className="font-semibold">{TIPO_LABELS[proximaVisitaProgramada.tipo]}</span> agendada para el <span className="font-semibold">{parseLocalDate(proximaVisitaProgramada.fecha).toLocaleDateString("es-CO", { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>.
             </p>
           </div>
         </div>

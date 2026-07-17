@@ -516,7 +516,7 @@ function VisitasPage() {
                         </span>
                       )}
                       <span className={`text-xs font-medium ${esRealizada ? "text-slate-500" : "text-slate-800"}`}>{a?.nombre || "—"}</span>
-                      <span className="text-[10px] text-slate-400">{parseLocalDate(v.proximaVisita || v.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</span>
+                      <span className="text-[10px] text-slate-400">{parseLocalDate(v.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</span>
                     </div>
                     {v.observaciones && <p className={`text-xs mt-1 ${esRealizada ? "text-slate-400" : "text-slate-500"}`}>{v.observaciones}</p>}
                   </div>
