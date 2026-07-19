@@ -270,9 +270,24 @@ function ImportarPage() {
         if (record.lat == null) record.lat = 5.0573;
         if (record.lng == null) record.lng = -75.4878;
 
-        const { error } = await supabase.from("asociadas").insert(record);
-        if (error) { errors++; errorRows.push(i + 1); }
-        else success++;
+        // Buscar si ya existe por nombre
+        const { data: existingData } = await supabase
+          .from("asociadas")
+          .select("id")
+          .ilike("nombre", record.nombre)
+          .maybeSingle();
+
+        if (existingData) {
+          // Si existe, actualizamos el resto de los datos
+          const { error } = await supabase.from("asociadas").update(record).eq("id", existingData.id);
+          if (error) { errors++; errorRows.push(i + 1); }
+          else success++;
+        } else {
+          // Si no existe, lo insertamos
+          const { error } = await supabase.from("asociadas").insert(record);
+          if (error) { errors++; errorRows.push(i + 1); }
+          else success++;
+        }
       }
 
       setImportResult({ success, errors, errorRows });
@@ -327,17 +342,11 @@ function ImportarPage() {
           record.nombre = val;
           if (!val) {
             record.reasons.push({ type: "sin_nombre", existing: "", id: null });
-          } else {
-            const match = existingNorm.find((e) => {
-              const en = e.nombre?.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\d+/g, "");
-              const vn = val.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-              return en === vn;
-            });
-            if (match) record.reasons.push({ type: "nombre", existing: match.nombre, id: match.id });
           }
+          // Eliminamos la validación de duplicados por nombre ya que ahora se actualizan automáticamente
         } else if (dbKey === "telefono" && val) {
           const match = existingNorm.find((e) => e.telefono === val);
-          if (match && !record.reasons.some((r) => r.type === "nombre" && r.id === match.id)) {
+          if (match) {
             record.reasons.push({ type: "telefono", existing: match.nombre, id: match.id });
           }
         } else if ((dbKey === "lat" || dbKey === "lng") && val) {
@@ -354,7 +363,7 @@ function ImportarPage() {
           if (e.lat == null || e.lng == null) return false;
           return Math.abs(e.lat - record._lat) < 0.0001 && Math.abs(e.lng - record._lng) < 0.0001;
         });
-        if (match && !record.reasons.some((r) => r.type === "nombre" && r.id === match.id) && !record.reasons.some((r) => r.type === "telefono" && r.id === match.id)) {
+        if (match && !record.reasons.some((r) => r.type === "telefono" && r.id === match.id)) {
           record.reasons.push({ type: "ubicacion", existing: match.nombre, id: match.id });
         }
       }
@@ -423,14 +432,8 @@ function ImportarPage() {
     const newNombre = editData["nombre"]?.replace(/\d+/g, "").trim() || "";
     if (!newNombre) {
       newReasons.push({ type: "sin_nombre", existing: "", id: null });
-    } else {
-      const match = existing.find((e) => {
-        const en = e.nombre?.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\d+/g, "");
-        const vn = newNombre.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        return en === vn;
-      });
-      if (match) newReasons.push({ type: "nombre", existing: match.nombre, id: match.id });
     }
+    // Eliminamos la validación de duplicados por nombre ya que ahora se actualizan automáticamente
     const rawTelefono = editData["telefono"]?.toString().trim() ?? "";
     if (rawTelefono) {
       const match = existing.find((e) => e.telefono === rawTelefono);
