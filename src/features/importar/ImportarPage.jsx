@@ -267,8 +267,8 @@ function ImportarPage() {
 
         if (!valid) { errors++; errorRows.push(i + 1); continue; }
 
-        if (record.lat == null) record.lat = 5.0573;
-        if (record.lng == null) record.lng = -75.4878;
+        const latWasNull = record.lat == null;
+        const lngWasNull = record.lng == null;
 
         // Buscar si ya existe por nombre
         const { data: existingData } = await supabase
@@ -278,12 +278,18 @@ function ImportarPage() {
           .maybeSingle();
 
         if (existingData) {
-          // Si existe, actualizamos el resto de los datos
+          // Si existe, actualizamos el resto de los datos, pero no sobreescribimos lat/lng si no venían en el excel
+          if (latWasNull) delete record.lat;
+          if (lngWasNull) delete record.lng;
+
           const { error } = await supabase.from("asociadas").update(record).eq("id", existingData.id);
           if (error) { errors++; errorRows.push(i + 1); }
           else success++;
         } else {
-          // Si no existe, lo insertamos
+          // Si no existe, usamos valores por defecto para lat/lng si no venían
+          if (latWasNull) record.lat = 5.0573;
+          if (lngWasNull) record.lng = -75.4878;
+
           const { error } = await supabase.from("asociadas").insert(record);
           if (error) { errors++; errorRows.push(i + 1); }
           else success++;
