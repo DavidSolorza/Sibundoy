@@ -55,7 +55,7 @@ function MapModal({ asociada, onClose }) {
             <span className="flex items-center gap-1"><Wheat className="h-3.5 w-3.5 text-slate-400" />{asociada.areaHuerta}</span>
           </div>
           <div className="h-[400px] w-full overflow-hidden rounded-lg border border-slate-200">
-            <MapContainer ref={mapRef} center={[asociada.lat, asociada.lng]} zoom={14} className="h-full w-full" zoomControl={false}>
+            <MapContainer ref={mapRef} center={useMemo(() => [asociada.lat, asociada.lng], [asociada.lat, asociada.lng])} zoom={14} className="h-full w-full" zoomControl={false}>
               <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               <Marker position={[asociada.lat, asociada.lng]} icon={markerIcon}>
                 <Popup><p className="text-sm font-semibold">{asociada.nombre}</p><p className="text-xs text-slate-500">{asociada.sector}</p></Popup>
@@ -119,7 +119,7 @@ function MapLocationPicker({ open, onClose, onConfirm }) {
           </button>
         </div>
         <div className="h-[350px] w-full overflow-hidden rounded-lg border border-slate-200">
-          <MapContainer ref={mapRef} center={[DEFAULT_COORDS.lat, DEFAULT_COORDS.lng]} zoom={14} className="h-full w-full" doubleClickZoom={false}>
+          <MapContainer ref={mapRef} center={useMemo(() => [DEFAULT_COORDS.lat, DEFAULT_COORDS.lng], [])} zoom={14} className="h-full w-full" doubleClickZoom={false}>
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <ClickPicker onPick={handlePick} />
             {coords && (

@@ -223,7 +223,7 @@ function PerfilAsociadaPage() {
             <div className="p-0">
               {asociada.lat != null && asociada.lng != null ? (
                 <div className="h-[350px] w-full z-0">
-                  <MapContainer center={[asociada.lat, asociada.lng]} zoom={16} className="h-full w-full" zoomControl={false} scrollWheelZoom={false}>
+                  <MapContainer center={useMemo(() => [asociada.lat, asociada.lng], [asociada.lat, asociada.lng])} zoom={16} className="h-full w-full" zoomControl={false} scrollWheelZoom={false}>
                     <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                     <Marker position={[asociada.lat, asociada.lng]} icon={markerIcon}>
                       <Popup><p className="text-sm font-semibold">{asociada.nombre}</p><p className="text-xs text-slate-500">{asociada.sector}</p></Popup>

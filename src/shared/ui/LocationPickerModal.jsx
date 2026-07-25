@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import { MapPin, Crosshair, Check, LocateFixed } from "lucide-react";
@@ -54,8 +54,11 @@ function LocationPickerModal({ open, onClose, onConfirm, initialCoords }) {
   }, []);
 
   useEffect(() => {
-    if (open) setCoords(initialCoords || SIBUNDOY);
-  }, [open, initialCoords]);
+    if (open) {
+      setCoords(initialCoords || SIBUNDOY);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
     if (mapRef.current) setTimeout(() => mapRef.current.invalidateSize(), 100);
@@ -74,7 +77,7 @@ function LocationPickerModal({ open, onClose, onConfirm, initialCoords }) {
           </button>
         </div>
         <div className="h-[350px] w-full overflow-hidden rounded-lg border border-slate-200">
-          <MapContainer ref={mapRef} center={[coords.lat, coords.lng]} zoom={16} className="h-full w-full" doubleClickZoom={false}>
+          <MapContainer ref={mapRef} center={useMemo(() => [coords.lat, coords.lng], [coords.lat, coords.lng])} zoom={16} className="h-full w-full" doubleClickZoom={false}>
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <ClickPicker onPick={handlePick} />
             {coords && (

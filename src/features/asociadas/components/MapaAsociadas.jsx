@@ -308,7 +308,7 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
           <Eye className="h-3.5 w-3.5" /> Solo vista
         </div>
       )}
-      <MapContainer center={[5.0573, -75.4878]} zoom={14} className="h-full w-full" doubleClickZoom={false} ref={mapRef}>
+      <MapContainer center={useMemo(() => [5.0573, -75.4878], [])} zoom={14} className="h-full w-full" doubleClickZoom={false} ref={mapRef}>
         <LayersControl position="bottomright">
           <LayersControl.BaseLayer checked name="Mapa Normal">
             <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
