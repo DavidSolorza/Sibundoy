@@ -20,7 +20,7 @@ import GaleriaFotosModal from "../huertas/components/GaleriaFotosModal";
 function PerfilAsociadaPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { asociadas, updateAsociada } = useAsociadas();
+  const { asociadas, updateAsociada, loading } = useAsociadas();
   const { getVisitasByAsociada } = useVisitas();
 
   const [isEditing, setIsEditing] = useState(false);
@@ -86,6 +86,15 @@ function PerfilAsociadaPage() {
   }, [visitas]);
 
   const necesitaAtencion = diasSinVisita === null || diasSinVisita > 30;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent mb-4" />
+        <p className="text-sm font-semibold text-slate-500">Cargando perfil...</p>
+      </div>
+    );
+  }
 
   if (!asociada) {
     return (
