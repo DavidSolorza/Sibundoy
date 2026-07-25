@@ -61,6 +61,8 @@ create table if not exists asociadas (
   observaciones     text,
   lat               double precision,
   lng               double precision,
+  url_foto          text,
+  fotos             jsonb default '[]'::jsonb,
   creado_en         timestamptz not null default now(),
   actualizado_en    timestamptz not null default now()
 );

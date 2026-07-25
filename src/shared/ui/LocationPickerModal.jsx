@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, LayersControl } from "react-leaflet";
 import L from "leaflet";
 import { MapPin, Crosshair, Check, LocateFixed } from "lucide-react";
 import Modal from "./Modal";
@@ -78,7 +78,14 @@ function LocationPickerModal({ open, onClose, onConfirm, initialCoords }) {
         </div>
         <div className="h-[350px] w-full overflow-hidden rounded-lg border border-slate-200">
           <MapContainer ref={mapRef} center={useMemo(() => [coords.lat, coords.lng], [coords.lat, coords.lng])} zoom={16} className="h-full w-full" doubleClickZoom={false}>
-            <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <LayersControl position="bottomright">
+              <LayersControl.BaseLayer checked name="Mapa Normal">
+                <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              </LayersControl.BaseLayer>
+              <LayersControl.BaseLayer name="Satélite">
+                <TileLayer attribution='&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+              </LayersControl.BaseLayer>
+            </LayersControl>
             <ClickPicker onPick={handlePick} />
             {coords && (
               <Marker position={[coords.lat, coords.lng]} icon={pickerIcon}>
