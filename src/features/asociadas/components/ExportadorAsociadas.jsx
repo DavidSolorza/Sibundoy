@@ -66,10 +66,10 @@ function ExportadorAsociadas() {
       const row = {};
       cols.forEach((c) => {
         if (c.key === "historial_visitas") {
-          const misVisitas = visitas.filter((v) => v.asociada_id === a.id).map(v => v.fecha).sort();
+          const misVisitas = visitas.filter((v) => (v.asociadaId || v.asociada_id) === a.id).map(v => v.fecha).sort();
           row[c.label] = misVisitas.length > 0 ? misVisitas.join(", ") : "";
         } else if (c.key === "numVisitas") {
-          row[c.label] = visitas.filter((v) => v.asociada_id === a.id).length;
+          row[c.label] = visitas.filter((v) => (v.asociadaId || v.asociada_id) === a.id).length;
         } else {
           row[c.label] = a[c.key] ?? "";
         }
