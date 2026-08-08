@@ -17,6 +17,7 @@ const DB_FIELDS = [
   { key: "area_huerta", label: "Área Huerta", type: "text" },
   { key: "productos", label: "Productos", type: "text" },
   { key: "fecha_siembra", label: "Fecha Siembra", type: "date" },
+  { key: "historial_visitas", label: "Historial Visitas (separado por comas)", type: "text" },
   { key: "observaciones", label: "Observaciones", type: "text" },
   { key: "lat", label: "Latitud", type: "number" },
   { key: "lng", label: "Longitud", type: "number" },
@@ -33,6 +34,7 @@ const AUTO_MAP = {
   area_huerta: ["area_huerta", "área huerta", "area huerta", "área de la huerta", "area de la huerta", "huerta", "tamaño huerta", "m²", "area", "área", "tamaño", "tamano"],
   productos: ["productos", "productos a sembrar", "productos sembrar", "cultivos", "siembra", "que siembra", "que cultiva", "cosecha"],
   fecha_siembra: ["fecha_siembra", "fecha siembra", "siembra", "fecha de siembra", "fecha_siembra", "fecha de la siembra"],
+  historial_visitas: ["historial", "visitas", "historial_visitas", "historial visitas", "fechas visitas", "fecha visita", "ultima visita", "última visita", "visita"],
   observaciones: ["observaciones", "observacion", "observación", "notas", "comentarios", "nota", "comentario", "descripcion", "descripción", "detalle", "detalles"],
   lat: ["lat", "latitud", "latitude", "latitud (mapa)", "latitud mapa"],
   lng: ["lng", "lon", "longitud", "longitude", "lng", "longitud (mapa)", "longitud mapa"],
@@ -235,6 +237,7 @@ function ImportarPage() {
         const row = rowInfo.raw || rowInfo;
         const record = {};
         let valid = true;
+        let visitasDates = [];
 
         for (const [dbKey, colName] of Object.entries(columnMap)) {
           let val = row[colName]?.toString().trim() ?? "";
@@ -260,6 +263,11 @@ function ImportarPage() {
           } else if (dbKey === "fecha_siembra") {
             const d = new Date(val);
             record.fecha_siembra = isNaN(d.getTime()) ? null : d.toISOString().split("T")[0];
+          } else if (dbKey === "historial_visitas") {
+            if (val) {
+              // Separamos por comas y limpiamos espacios
+              visitasDates = val.split(",").map(v => v.trim()).filter(Boolean);
+            }
           } else {
             record[dbKey] = val || null;
           }
@@ -276,23 +284,65 @@ function ImportarPage() {
           .select("id")
           .ilike("nombre", record.nombre)
           .maybeSingle();
+          
+        let asocId = null;
 
         if (existingData) {
+          asocId = existingData.id;
           // Si existe, actualizamos el resto de los datos, pero no sobreescribimos lat/lng si no venían en el excel
           if (latWasNull) delete record.lat;
           if (lngWasNull) delete record.lng;
 
           const { error } = await supabase.from("asociadas").update(record).eq("id", existingData.id);
-          if (error) { errors++; errorRows.push(i + 1); }
+          if (error) { errors++; errorRows.push(i + 1); continue; }
           else success++;
         } else {
           // Si no existe, usamos valores por defecto para lat/lng si no venían
           if (latWasNull) record.lat = 5.0573;
           if (lngWasNull) record.lng = -75.4878;
 
-          const { error } = await supabase.from("asociadas").insert(record);
-          if (error) { errors++; errorRows.push(i + 1); }
-          else success++;
+          const { data: insertedData, error } = await supabase.from("asociadas").insert(record).select("id").single();
+          if (error) { errors++; errorRows.push(i + 1); continue; }
+          else {
+            success++;
+            asocId = insertedData.id;
+          }
+        }
+        
+        // Procesar historial de visitas
+        if (asocId && visitasDates.length > 0) {
+          try {
+            // Obtener visitas existentes para no duplicarlas
+            const { data: existingVisitas } = await supabase
+              .from("visitas")
+              .select("fecha")
+              .eq("asociada_id", asocId);
+              
+            const existingSet = new Set((existingVisitas || []).map(v => v.fecha));
+            const newVisitas = [];
+            
+            visitasDates.forEach(dateStr => {
+              const d = new Date(dateStr);
+              if (!isNaN(d.getTime())) {
+                const isoDate = d.toISOString().split("T")[0];
+                if (!existingSet.has(isoDate)) {
+                  newVisitas.push({
+                    asociada_id: asocId,
+                    fecha: isoDate,
+                    tipo: "visita",
+                    realizada: true
+                  });
+                  existingSet.add(isoDate); // Prevent duplicates inside the same row
+                }
+              }
+            });
+            
+            if (newVisitas.length > 0) {
+              await supabase.from("visitas").insert(newVisitas);
+            }
+          } catch (err) {
+            console.error("Error insertando visitas para", record.nombre, err);
+          }
         }
       }
 
