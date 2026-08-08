@@ -53,7 +53,15 @@ function VisitasPage() {
   const proximas = useMemo(() => getProximasVisitas(), [getProximasVisitas]);
 
   const calendarVisitas = useMemo(() => {
-    return visitas.map((v) => ({ ...v, fecha: v.proximaVisita || v.fecha }));
+    // Show each visit on its actual date AND also on proximaVisita if it exists
+    const entries = [];
+    visitas.forEach((v) => {
+      entries.push({ ...v }); // show on fecha (actual date)
+      if (v.proximaVisita) {
+        entries.push({ ...v, fecha: v.proximaVisita, _esFuturo: true }); // show on next planned date
+      }
+    });
+    return entries;
   }, [visitas]);
 
   const stats = useMemo(() => {

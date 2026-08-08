@@ -95,7 +95,8 @@ export function VisitasProvider({ children }) {
   const addVisita = useCallback(async (visita) => {
     const backendData = toBackendVisita(visita);
     const res = await api.createVisita(backendData);
-    const mapped = toFrontendVisita(res.data || res);
+    // api.js already unwraps { data: [...] } -> firstOrNull -> object
+    const mapped = toFrontendVisita(Array.isArray(res) ? res[0] : res);
     setVisitas((prev) => [mapped, ...prev]);
     return mapped;
   }, []);
@@ -107,11 +108,11 @@ export function VisitasProvider({ children }) {
   }, []);
 
   const marcarRealizada = useCallback(async (id) => {
-    // Para simplificar, obtenemos la visita y le ponemos realizada=true
     const visita = visitas.find(v => v.id === id);
     if (!visita) return;
-    
-    await api.updateVisita(id, { realizada: true });
+    // PUT requires full object — send existing data with realizada = true
+    const backendData = toBackendVisita({ ...visita, realizada: true });
+    await api.updateVisita(id, backendData);
     setVisitas((prev) => prev.map((v) => (v.id === id ? { ...v, realizada: true } : v)));
   }, [visitas]);
 
