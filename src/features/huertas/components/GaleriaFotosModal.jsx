@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Plus, Trash2, Camera, Loader2 } from "lucide-react";
 import useAsociadas from "../../asociadas/useAsociadas";
 import Modal from "../../../shared/ui/Modal";
-import { api } from "../../../services/api";
+import { api } from "../../../core/http/api";
 
 export default function GaleriaFotosModal({ asociada, open, onClose }) {
   const { updateAsociada } = useAsociadas();

@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { api } from "../../services/api";
+import { api } from "../../core/http/api";
 import { toFrontendVisita, toBackendVisita } from "../../shared/utils/normalizer";
 import { io } from "socket.io-client";
 

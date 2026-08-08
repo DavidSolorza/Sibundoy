@@ -14,7 +14,9 @@ export function toFrontendAsociada(row) {
 
   // Extraer el nombre del sector
   let sectorNombre = "";
-  if (typeof row.sector === "object" && row.sector?.nombre) {
+  if (typeof row.sectores === "object" && row.sectores?.nombre) {
+    sectorNombre = row.sectores.nombre;
+  } else if (typeof row.sector === "object" && row.sector?.nombre) {
     sectorNombre = row.sector.nombre;
   } else if (typeof row.sector === "string") {
     sectorNombre = row.sector;
