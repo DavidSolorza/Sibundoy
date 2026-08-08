@@ -130,8 +130,8 @@ export function VisitasProvider({ children }) {
   const getProximasVisitas = useCallback(() => {
     const today = new Date().toISOString().split("T")[0];
     return visitas
-      .filter((v) => v.fecha >= today && !v.realizada)
-      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+      .filter((v) => v.proximaVisita && v.proximaVisita >= today)
+      .sort((a, b) => new Date(a.proximaVisita) - new Date(b.proximaVisita));
   }, [visitas]);
 
   return (

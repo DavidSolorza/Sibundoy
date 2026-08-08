@@ -95,6 +95,8 @@ function VisitasPage() {
         matchesQuick = d >= weekAgo;
       } else if (quickFilter === "month") {
         matchesQuick = v.fecha.startsWith(getLocalDateString().slice(0, 7));
+      } else if (quickFilter === "proximas") {
+        matchesQuick = !!v.proximaVisita && v.proximaVisita >= today;
       }
       return matchesSearch && matchesTipo && matchesAsociada && matchesQuick;
     });
@@ -205,6 +207,7 @@ function VisitasPage() {
     { key: "today", label: "Hoy" },
     { key: "week", label: "7 días" },
     { key: "month", label: "Este mes" },
+    { key: "proximas", label: "📅 Próximas" },
   ];
 
   return (
@@ -238,23 +241,23 @@ function VisitasPage() {
         </div>
         {proximas.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {proximas.slice(0, 5).map((v) => {
+            {proximas.slice(0, 6).map((v) => {
               const a = asociadaMap[v.asociadaId];
               return (
                 <div key={v.id} className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-blue-200 px-2.5 py-1.5 text-xs text-slate-700 shadow-sm">
                   <span className={`inline-block h-2 w-2 rounded-full ${typeDots[v.tipo]}`} />
                   <span className="font-medium">{a?.nombre || "—"}</span>
                   <span className="text-slate-400">·</span>
-                  <span className="text-blue-600 font-medium">{parseLocalDate(v.fecha).toLocaleDateString("es-CO")}</span>
+                  <span className="text-blue-600 font-semibold">{parseLocalDate(v.proximaVisita).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span>
                 </div>
               );
             })}
-            {proximas.length > 5 && (
-              <span className="inline-flex items-center text-xs text-slate-400">+{proximas.length - 5} más</span>
+            {proximas.length > 6 && (
+              <span className="inline-flex items-center text-xs text-slate-400">+{proximas.length - 6} más</span>
             )}
           </div>
         ) : (
-          <p className="text-xs text-slate-500 py-1">No hay próximas visitas programadas.</p>
+          <p className="text-xs text-slate-500 py-1">No hay próximas visitas programadas. Al registrar una visita, indícale una <strong>Próxima fecha</strong> para que aparezca aquí.</p>
         )}
       </Card>
 
@@ -423,7 +426,7 @@ function VisitasPage() {
       )}
 
       {view === "calendar" && (
-        <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (visitas.filter((v) => v.fecha === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} onEdit={openEditForm} onDelete={(v) => setDeletingVisita(v)} onMarcarRealizada={marcarRealizada} />
+        <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (visitas.filter((v) => v.fecha === selectedDay || v.proximaVisita === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} onEdit={openEditForm} onDelete={(v) => setDeletingVisita(v)} onMarcarRealizada={marcarRealizada} />
       )}
 
       <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? "Editar Visita" : "Registrar Visita"}>
@@ -452,6 +455,14 @@ function VisitasPage() {
               Fecha de visita <span className="text-red-400">*</span>
             </label>
             <Input type="date" value={formData.fecha} onChange={(e) => setFormData({ ...formData, fecha: e.target.value })} required />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500 flex items-center gap-1.5">
+              <CalendarClock className="h-3.5 w-3.5 text-emerald-500" />
+              Próxima visita <span className="text-slate-400 font-normal">(opcional)</span>
+            </label>
+            <Input type="date" value={formData.proximaVisita || ""} onChange={(e) => setFormData({ ...formData, proximaVisita: e.target.value || "" })} />
+            <p className="text-[10px] text-slate-400 mt-1">Si indicas esta fecha, aparecerá en el banner de &quot;Próximas Visitas&quot; y en el calendario.</p>
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
