@@ -360,7 +360,15 @@ function DayDetailModal({ dateStr, visits, asociadaMap, onClose, onEdit, onDelet
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${v.realizada ? "bg-slate-200 text-slate-500" : typeBg[v.tipo]}`}>{v.tipo}</span>
-                    {v.realizada && <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-slate-300 text-slate-600">Realizada</span>}
+                    {v.realizada ? (
+                      <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-slate-700 text-white">
+                        <CheckCircle2 className="h-3 w-3" /> Realizada
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                        <Clock className="h-3 w-3" /> Pendiente
+                      </span>
+                    )}
                     <span className="text-xs font-bold text-slate-800 truncate">{a?.nombre || "—"}</span>
                     <span className="text-[10px] text-slate-400 shrink-0">{a?.sector?.replace("Vereda ", "")}</span>
                   </div>

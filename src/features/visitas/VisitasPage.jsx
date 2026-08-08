@@ -501,9 +501,13 @@ function VisitasPage() {
                         v.tipo === "seguimiento" ? "bg-amber-100 text-amber-700" :
                         "bg-emerald-100 text-emerald-700"
                       }`}>{v.tipo}</span>
-                      {esRealizada && (
+                      {esRealizada ? (
                         <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                           <CheckCircle className="h-3 w-3" /> Realizada
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                          <Clock className="h-3 w-3" /> Pendiente
                         </span>
                       )}
                       <span className={`text-xs font-medium ${esRealizada ? "text-slate-500" : "text-slate-800"}`}>{a?.nombre || "—"}</span>
