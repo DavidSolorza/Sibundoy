@@ -231,15 +231,39 @@ function AdminDashboard() {
   const sectorNamesList = Object.keys(stats.sectores);
 
   const alertas = useMemo(() => {
-    const sinVisita = asociadas.filter((a) => daysSince(a.fechaUltimaVisita) > DIAS_ALERTA_VISITA);
-    const bajaFrec = asociadas.filter((a) => a.numVisitas < 2);
-    const sectoresPromVisitas = Object.entries(stats.sectoresVisitas).map(([sector, visitas]) => ({
+    const today = new Date();
+
+    // Calcular la última visita REAL por asociada desde la tabla de visitas
+    const ultimaVisitaPor = {};
+    const conteoVisitasPor = {};
+    visitas.forEach((v) => {
+      const aid = v.asociadaId;
+      conteoVisitasPor[aid] = (conteoVisitasPor[aid] || 0) + 1;
+      if (!ultimaVisitaPor[aid] || v.fecha > ultimaVisitaPor[aid]) {
+        ultimaVisitaPor[aid] = v.fecha;
+      }
+    });
+
+    // Asociadas sin visita en más de DIAS_ALERTA_VISITA días (o nunca visitadas)
+    const sinVisita = asociadas.filter((a) => {
+      const ultima = ultimaVisitaPor[a.id] || a.fechaUltimaVisita;
+      const dias = ultima
+        ? Math.floor((today - new Date(ultima)) / (1000 * 60 * 60 * 24))
+        : 999;
+      return dias > DIAS_ALERTA_VISITA;
+    });
+
+    // Asociadas con baja frecuencia (menos de 2 visitas reales registradas)
+    const bajaFrec = asociadas.filter((a) => (conteoVisitasPor[a.id] || 0) < 2);
+
+    const sectoresPromVisitas = Object.entries(stats.sectoresVisitas).map(([sector, visitasCount]) => ({
       sector,
-      prom: (visitas / (stats.sectores[sector] || 1)).toFixed(1),
+      prom: (visitasCount / (stats.sectores[sector] || 1)).toFixed(1),
       total: stats.sectores[sector] || 0,
     })).sort((a, b) => a.prom - b.prom).slice(0, 3);
+
     return { sinVisita, bajaFrec, sectoresPromVisitas };
-  }, [asociadas, stats]);
+  }, [asociadas, visitas, stats]);
 
   const sectorChartData = useMemo(() =>
     Object.entries(stats.sectores)
