@@ -44,6 +44,29 @@ function normalize(str) {
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, "").trim();
 }
 
+function parseImportDate(val) {
+  if (!val) return null;
+  val = val.toString().trim();
+  
+  if (!isNaN(val) && Number(val) > 10000) {
+    return new Date((Number(val) - 25569) * 86400 * 1000);
+  }
+  
+  const dmY = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
+  const match = val.match(dmY);
+  if (match) {
+    return new Date(parseInt(match[3], 10), parseInt(match[2], 10) - 1, parseInt(match[1], 10));
+  }
+  
+  const yMd = /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/;
+  const match2 = val.match(yMd);
+  if (match2) {
+    return new Date(parseInt(match2[1], 10), parseInt(match2[2], 10) - 1, parseInt(match2[3], 10));
+  }
+  
+  return new Date(val);
+}
+
 function autoMapColumn(col) {
   const n = normalize(col);
   for (const [key, aliases] of Object.entries(AUTO_MAP)) {
@@ -261,8 +284,8 @@ function ImportarPage() {
             else if (normalized.includes("separada")) record.tipo_persona = "Separada";
             else record.tipo_persona = "Casada";
           } else if (dbKey === "fecha_siembra") {
-            const d = new Date(val);
-            record.fecha_siembra = isNaN(d.getTime()) ? null : d.toISOString().split("T")[0];
+            const d = parseImportDate(val);
+            record.fecha_siembra = (d && !isNaN(d.getTime())) ? d.toISOString().split("T")[0] : null;
           } else if (dbKey === "historial_visitas") {
             if (val) {
               // Separamos por comas y limpiamos espacios
@@ -322,8 +345,8 @@ function ImportarPage() {
             const newVisitas = [];
             
             visitasDates.forEach(dateStr => {
-              const d = new Date(dateStr);
-              if (!isNaN(d.getTime())) {
+              const d = parseImportDate(dateStr);
+              if (d && !isNaN(d.getTime())) {
                 const isoDate = d.toISOString().split("T")[0];
                 if (!existingSet.has(isoDate)) {
                   newVisitas.push({

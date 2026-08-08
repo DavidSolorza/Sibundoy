@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Download, FileSpreadsheet, FileText, FileCode, FileDown, Check, X, SlidersHorizontal, MapPin, Loader2 } from "lucide-react";
 import useAsociadas from "../useAsociadas";
+import useVisitas from "../../visitas/useVisitas";
 import { Card } from "../../../shared/ui/Card";
 import { useToast } from "../../../shared/ui/Toast";
 
@@ -20,6 +21,7 @@ const ALL_COLUMNS = [
   { key: "observaciones", label: "Observaciones" },
   { key: "lat", label: "Latitud" },
   { key: "lng", label: "Longitud" },
+  { key: "historial_visitas", label: "Historial Visitas" },
 ];
 
 const FORMATS = [
@@ -37,6 +39,7 @@ const PRESETS = [
 
 function ExportadorAsociadas() {
   const { asociadas } = useAsociadas();
+  const { visitas } = useVisitas();
   const { showToast, ToastDisplay } = useToast();
   const [selectedCols, setSelectedCols] = useState(ALL_COLUMNS.map((c) => c.key));
   const [format, setFormat] = useState("xlsx");
@@ -62,11 +65,18 @@ function ExportadorAsociadas() {
     return filteredData.map((a) => {
       const row = {};
       cols.forEach((c) => {
-        row[c.label] = a[c.key] ?? "";
+        if (c.key === "historial_visitas") {
+          const misVisitas = visitas.filter((v) => v.asociada_id === a.id).map(v => v.fecha).sort();
+          row[c.label] = misVisitas.length > 0 ? misVisitas.join(", ") : "";
+        } else if (c.key === "numVisitas") {
+          row[c.label] = visitas.filter((v) => v.asociada_id === a.id).length;
+        } else {
+          row[c.label] = a[c.key] ?? "";
+        }
       });
       return row;
     });
-  }, [filteredData, selectedCols]);
+  }, [filteredData, selectedCols, visitas]);
 
   const toggleCol = useCallback((key) => {
     setSelectedCols((prev) =>
