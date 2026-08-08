@@ -283,8 +283,8 @@ function ImportarPage() {
                 // Crear sector si no existe
                 const newSector = await api.createSector({ 
                   nombre: sectorName,
-                  lat_base: 5.0573,
-                  lng_base: -75.4878
+                  lat_base: 1.2035,
+                  lng_base: -76.919
                 });
                 if (newSector && newSector.id) {
                   sectores[sectorLower] = newSector.id;
@@ -319,9 +319,15 @@ function ImportarPage() {
         const latWasNull = record.lat == null;
         const lngWasNull = record.lng == null;
 
-        // Buscar si ya existe por nombre
-        const existingArray = await request(`/asociadas?select=id&nombre=ilike.${encodeURIComponent(record.nombre)}&limit=1`);
-        const existingData = existingArray && existingArray.length > 0 ? existingArray[0] : null;
+        // Buscar si ya existe por nombre (cargamos todo y filtramos en cliente)
+        let existingData = null;
+        try {
+          const allAsociadas = await api.getAsociadas();
+          const nombreNorm = record.nombre.toLowerCase().trim();
+          existingData = (allAsociadas || []).find(a => a.nombre?.toLowerCase().trim() === nombreNorm) || null;
+        } catch {
+          existingData = null;
+        }
           
         let asocId = null;
 
@@ -377,7 +383,10 @@ function ImportarPage() {
             });
             
             if (newVisitas.length > 0) {
-              await request("/visitas", { method: "POST", body: JSON.stringify(newVisitas) });
+              // El servidor acepta visitas de a una, no en bulk array
+              for (const v of newVisitas) {
+                await api.createVisita(v);
+              }
             }
           } catch (err) {
             console.error("Error insertando visitas para", record.nombre, err);

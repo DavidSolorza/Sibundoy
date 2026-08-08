@@ -1,131 +1,167 @@
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+/**
+ * AGENTE 4 - DESARROLLADOR BACKEND (SENIOR BACKEND ENGINEER)
+ * Cliente HTTP Puro y Nativo — Cero SDKs Comerciales.
+ *
+ * Se conecta directamente al servidor REST propio en VITE_API_URL.
+ * Todas las operaciones usan fetch() nativo, inyección manual de headers
+ * y procesamiento manual de respuestas JSON crudas.
+ *
+ * Rutas detectadas en el servidor:
+ *  GET    /asociadas
+ *  POST   /asociadas          (body: objeto)
+ *  PUT    /asociadas/:id      (body: campos a actualizar)
+ *  DELETE /asociadas/:id
+ *
+ *  GET    /visitas
+ *  POST   /visitas            (body: objeto — solo uno a la vez)
+ *  PUT    /visitas/:id
+ *  DELETE /visitas/:id
+ *
+ *  GET    /sectores
+ *  POST   /sectores           (body: objeto)
+ *  DELETE /sectores/:id       (no soportado, se omite)
+ */
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error("Faltan variables de entorno de Supabase (VITE_SUPABASE_URL o VITE_SUPABASE_PUBLISHABLE_KEY)");
+const API_URL = import.meta.env.VITE_API_URL;
+
+if (!API_URL) {
+  console.error("Falta la variable de entorno VITE_API_URL. Ejemplo: https://dashboard.servidor.blog/api");
 }
 
-const REST_URL = `${SUPABASE_URL}/rest/v1`;
-
 /**
- * Cliente HTTP puro (Cero SDKs Comerciales).
- * Se encarga de inyectar los headers obligatorios y procesar las respuestas crudas de Supabase.
+ * Función base de petición HTTP pura.
+ * Inyecta Content-Type, procesa errores y devuelve JSON directamente.
  */
 export async function request(endpoint, options = {}) {
   const config = {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`,
       ...options.headers,
     },
   };
 
-  const response = await fetch(`${REST_URL}${endpoint}`, config);
-  
-  if (response.status === 204) {
-    return null; // No content (e.g. DELETE without return=representation)
-  }
+  const url = `${API_URL}${endpoint}`;
+  const response = await fetch(url, config);
+
+  if (response.status === 204) return null;
 
   const text = await response.text();
-  let data = null;
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch (e) {
-      data = text;
-    }
+  let parsed = null;
+  try {
+    parsed = text ? JSON.parse(text) : null;
+  } catch {
+    if (!response.ok) throw new Error(`Error ${response.status}: ${text}`);
+    return text;
   }
 
   if (!response.ok) {
-    throw new Error(data?.message || data?.error || `Error ${response.status}: ${response.statusText}`);
+    const msg = parsed?.error || parsed?.message || `Error ${response.status}: ${response.statusText}`;
+    throw new Error(msg);
   }
 
-  return data;
+  // El servidor envuelve los datos en { data: [...] }
+  if (parsed && typeof parsed === "object" && "data" in parsed) {
+    return parsed.data;
+  }
+
+  return parsed;
 }
 
-// Helper para extraer el primer elemento de un array devuelto por Supabase al insertar/actualizar
-const firstOrNull = (arr) => (Array.isArray(arr) && arr.length > 0 ? arr[0] : arr);
+// Helper: primer elemento si es array, si no, el dato directo
+const firstOrNull = (res) => (Array.isArray(res) && res.length > 0 ? res[0] : res);
 
 export const api = {
-  // === SECTORES ===
-  getSectores: () => request("/sectores?select=*"),
+  // =========================================================
+  // SECTORES
+  // =========================================================
+  getSectores: () => request("/sectores"),
+
   createSector: async (data) => {
-    const res = await request("/sectores", { 
-      method: "POST", 
+    const res = await request("/sectores", {
+      method: "POST",
       body: JSON.stringify(data),
-      headers: { "Prefer": "return=representation" }
     });
     return firstOrNull(res);
   },
 
-  // === ASOCIADAS ===
-  getAsociadas: () => request("/asociadas?select=*,sectores(nombre)&order=id.asc"),
+  // =========================================================
+  // ASOCIADAS
+  // =========================================================
+  getAsociadas: () => request("/asociadas"),
+
   createAsociada: async (data) => {
-    const res = await request("/asociadas", { 
-      method: "POST", 
-      body: JSON.stringify(data),
-      headers: { "Prefer": "return=representation" }
-    });
-    return firstOrNull(res);
-  },
-  updateAsociada: async (id, data) => {
-    const res = await request(`/asociadas?id=eq.${id}`, { 
-      method: "PATCH", // Update en PostgREST se hace con PATCH
-      body: JSON.stringify(data),
-      headers: { "Prefer": "return=representation" }
-    });
-    return firstOrNull(res);
-  },
-  deleteAsociada: async (id) => {
-    const res = await request(`/asociadas?id=eq.${id}`, { 
-      method: "DELETE",
-      headers: { "Prefer": "return=representation" }
-    });
-    return firstOrNull(res);
-  },
-
-  // === VISITAS ===
-  getVisitas: () => request("/visitas?select=*"),
-  createVisita: async (data) => {
-    const res = await request("/visitas", { 
-      method: "POST", 
-      body: JSON.stringify(data),
-      headers: { "Prefer": "return=representation" }
-    });
-    return firstOrNull(res);
-  },
-  updateVisita: async (id, data) => {
-    const res = await request(`/visitas?id=eq.${id}`, { 
-      method: "PATCH", 
-      body: JSON.stringify(data),
-      headers: { "Prefer": "return=representation" }
-    });
-    return firstOrNull(res);
-  },
-  deleteVisita: async (id) => {
-    const res = await request(`/visitas?id=eq.${id}`, { 
-      method: "DELETE",
-      headers: { "Prefer": "return=representation" }
-    });
-    return firstOrNull(res);
-  },
-
-  // === DASHBOARD Y VISTAS ===
-  // Para el dashboard podemos intentar usar la vista si la tenemos o devolver null para que el frontend lo calcule
-  getDashboard: () => request("/rpc/get_dashboard_stats", { method: "POST" }).catch(() => null),
-  getAlertas: () => request("/alertas_asociadas?select=*").catch(() => []),
-  getProximasVisitas: () => request("/asociadas?select=id,nombre,fecha_ultima_visita,sector_id,num_visitas&order=fecha_ultima_visita.asc&limit=10").catch(() => []),
-
-  // === IMPORTACIÓN MASIVA ===
-  importarMasivo: async (listaAsociadas) => {
-    // PostgREST soporta bulk insert enviando un array
     const res = await request("/asociadas", {
       method: "POST",
-      body: JSON.stringify(listaAsociadas),
-      headers: { "Prefer": "return=representation" }
+      body: JSON.stringify(data),
     });
-    return res;
+    return firstOrNull(res);
   },
+
+  updateAsociada: async (id, data) => {
+    const res = await request(`/asociadas/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+    return firstOrNull(res);
+  },
+
+  deleteAsociada: async (id) => {
+    const res = await request(`/asociadas/${id}`, {
+      method: "DELETE",
+    });
+    return firstOrNull(res);
+  },
+
+  // =========================================================
+  // VISITAS
+  // =========================================================
+  getVisitas: () => request("/visitas"),
+
+  createVisita: async (data) => {
+    const res = await request("/visitas", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return firstOrNull(res);
+  },
+
+  updateVisita: async (id, data) => {
+    const res = await request(`/visitas/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+    return firstOrNull(res);
+  },
+
+  deleteVisita: async (id) => {
+    const res = await request(`/visitas/${id}`, {
+      method: "DELETE",
+    });
+    return firstOrNull(res);
+  },
+
+  // =========================================================
+  // IMPORTACIÓN MASIVA
+  // El servidor no tiene ruta /importar, así que hacemos los
+  // inserts uno a uno usando createAsociada
+  // =========================================================
+  importarMasivo: async (listaAsociadas) => {
+    const results = [];
+    for (const asociada of listaAsociadas) {
+      const res = await request("/asociadas", {
+        method: "POST",
+        body: JSON.stringify(asociada),
+      });
+      results.push(firstOrNull(res));
+    }
+    return results;
+  },
+
+  // =========================================================
+  // DASHBOARD (calculado en frontend, no hay ruta dedicada)
+  // =========================================================
+  getDashboard: () => Promise.resolve(null),
+  getAlertas: () => Promise.resolve([]),
+  getProximasVisitas: () => request("/asociadas").catch(() => []),
 };
