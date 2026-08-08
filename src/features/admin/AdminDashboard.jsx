@@ -208,15 +208,26 @@ function AdminDashboard() {
     return { sectores, sectoresEdad, sectoresPersonas, sectoresVisitas, tipos };
   }, [asociadas]);
 
-  const visitasRealizadas = asociadas.reduce((sum, a) => sum + (a.numVisitas || 0), 0);
-  const visitasPendientes = visitas.filter((v) => !v.realizada).length;
-  const totalVisitas = visitasRealizadas + visitasPendientes;
+  const realizadas = visitas.filter((v) => v.realizada);
+  const pendientes = visitas.filter((v) => !v.realizada);
+  
+  const visitasRealizadas = realizadas.length;
+  const visitasPendientes = pendientes.length;
+  const totalVisitas = visitas.length;
+  
+  const visitasPorAsociada = {};
+  realizadas.forEach(v => {
+    visitasPorAsociada[v.asociadaId] = (visitasPorAsociada[v.asociadaId] || 0) + 1;
+  });
+
   const edadValidas = asociadas.filter((a) => a.edad != null && !isNaN(a.edad));
   const promedioEdad = edadValidas.length > 0 ? (edadValidas.reduce((sum, a) => sum + a.edad, 0) / edadValidas.length).toFixed(1) : "—";
-  const activas = asociadas.filter((a) => a.numVisitas > 0).length;
+  
+  const activas = Object.keys(visitasPorAsociada).length;
   const totalBeneficiarios = asociadas.reduce((sum, a) => sum + a.numPersonas, 0);
   const totalExtension = asociadas.reduce((sum, a) => sum + parseArea(a.areaHuerta), 0);
   const totalMenores = asociadas.reduce((sum, a) => sum + (a.menoresHogar || 0), 0);
+  const sinVisitas = asociadas.length - activas;
   const sectorNamesList = Object.keys(stats.sectores);
 
   const alertas = useMemo(() => {
@@ -283,7 +294,6 @@ function AdminDashboard() {
   }, [visitas]);
 
   const conUbicacion = asociadas.filter((a) => a.lat != null && a.lng != null).length;
-  const sinVisitas = asociadas.filter((a) => !a.numVisitas).length;
   const promVisitas = asociadas.length > 0 ? (totalVisitas / asociadas.length).toFixed(1) : "0";
   const promProductos = asociadas.length > 0 ? (asociadas.reduce((s, a) => s + ((a.productos || "").split(",").filter(Boolean).length), 0) / asociadas.length).toFixed(1) : "0";
 
@@ -456,14 +466,14 @@ function AdminDashboard() {
         <StatCard label="Total Asociadas" value={asociadas.length} icon={Users} onClick={() => { closeAllModals(); setListModal({ title: "Todas las Asociadas", items: asociadas.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) }); }} />
         <StatCard label="Total Beneficiarios" value={totalBeneficiarios} icon={Heart} onClick={() => { closeAllModals(); setListModal({ title: "Total Beneficiarios", items: [...asociadas].sort((a, b) => (b.numPersonas || 1) - (a.numPersonas || 1)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numPersonas || 1} personas` })) }); }} />
         <StatCard label="Menores De Edad" value={totalMenores} icon={Baby} onClick={() => { closeAllModals(); setListModal({ title: "Menores De Edad", items: asociadas.filter(a => a.menoresHogar > 0).sort((a, b) => (b.menoresHogar || 0) - (a.menoresHogar || 0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.menoresHogar} menores` })) }); }} />
-        <StatCard label="Asociadas Activas" value={activas} icon={UserCheck} onClick={() => { closeAllModals(); setListModal({ title: "Asociadas Activas", items: asociadas.filter(a => a.numVisitas > 0).sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) }); }} />
+        <StatCard label="Asociadas Activas" value={activas} icon={UserCheck} onClick={() => { closeAllModals(); setListModal({ title: "Asociadas Activas", items: asociadas.filter(a => visitasPorAsociada[a.id]).sort((a, b) => visitasPorAsociada[b.id] - visitasPorAsociada[a.id]).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${visitasPorAsociada[a.id]} visitas` })) }); }} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Visitas Realizadas" value={visitasRealizadas} icon={CheckCircle} onClick={() => { closeAllModals(); setListModal({ title: "Visitas Realizadas", items: visitas.filter(v => v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
-        <StatCard label="Visitas Pendientes" value={visitasPendientes} icon={Clock} onClick={() => { closeAllModals(); setListModal({ title: "Visitas Pendientes", items: visitas.filter(v => !v.realizada).map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
-        <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} onClick={() => { closeAllModals(); setListModal({ title: "Total Visitas", items: [...asociadas].sort((a, b) => b.numVisitas - a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numVisitas} visitas` })) }); }} />
-        <StatCard label="Sin Visitas" value={sinVisitas} icon={XCircle} onClick={() => { closeAllModals(); setListModal({ title: "Sin Visitas", items: asociadas.filter(a => !a.numVisitas).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Sin visitas" })) }); }} />
+        <StatCard label="Visitas Realizadas" value={visitasRealizadas} icon={CheckCircle} onClick={() => { closeAllModals(); setListModal({ title: "Visitas Realizadas", items: realizadas.map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
+        <StatCard label="Visitas Pendientes" value={visitasPendientes} icon={Clock} onClick={() => { closeAllModals(); setListModal({ title: "Visitas Pendientes", items: pendientes.map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
+        <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} onClick={() => { closeAllModals(); setListModal({ title: "Total Visitas", items: [...asociadas].sort((a, b) => (visitasPorAsociada[b.id]||0) - (visitasPorAsociada[a.id]||0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${visitasPorAsociada[a.id]||0} visitas` })) }); }} />
+        <StatCard label="Sin Visitas" value={sinVisitas} icon={XCircle} onClick={() => { closeAllModals(); setListModal({ title: "Sin Visitas", items: asociadas.filter(a => !visitasPorAsociada[a.id]).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Sin visitas" })) }); }} />
         <button onClick={() => document.getElementById('alertas-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-amber-200 active:bg-amber-50/50">
           <div className="flex items-center gap-4">
