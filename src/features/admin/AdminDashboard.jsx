@@ -208,9 +208,9 @@ function AdminDashboard() {
     return { sectores, sectoresEdad, sectoresPersonas, sectoresVisitas, tipos };
   }, [asociadas]);
 
-  const totalVisitas = visitas.length;
-  const visitasRealizadas = visitas.filter((v) => v.realizada).length;
-  const visitasPendientes = visitas.length - visitasRealizadas;
+  const visitasRealizadas = asociadas.reduce((sum, a) => sum + (a.numVisitas || 0), 0);
+  const visitasPendientes = visitas.filter((v) => !v.realizada).length;
+  const totalVisitas = visitasRealizadas + visitasPendientes;
   const edadValidas = asociadas.filter((a) => a.edad != null && !isNaN(a.edad));
   const promedioEdad = edadValidas.length > 0 ? (edadValidas.reduce((sum, a) => sum + a.edad, 0) / edadValidas.length).toFixed(1) : "—";
   const activas = asociadas.filter((a) => a.numVisitas > 0).length;

@@ -1,31 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "../../services/supabase";
+import { api } from "../../services/api";
+import { toFrontendVisita, toBackendVisita } from "../../shared/utils/normalizer";
+import { io } from "socket.io-client";
 
 const VisitasContext = createContext(null);
-
-function toFrontend(row) {
-  return {
-    id: row.id,
-    asociadaId: row.asociada_id,
-    fecha: row.fecha,
-    tipo: row.tipo,
-    observaciones: row.observaciones || "",
-    proximaVisita: row.proxima_visita || null,
-    realizada: row.realizada ?? false,
-  };
-}
-
-function toDB(data) {
-  return {
-    asociada_id: data.asociadaId,
-    fecha: data.fecha,
-    tipo: data.tipo,
-    observaciones: data.observaciones || null,
-    proxima_visita: data.proximaVisita || null,
-    realizada: data.realizada ?? false,
-  };
-}
+const SOCKET_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace("/api", "") : "http://localhost:5000";
 
 export function VisitasProvider({ children }) {
   const [visitas, setVisitas] = useState([]);
@@ -34,16 +14,14 @@ export function VisitasProvider({ children }) {
   const refreshing = useRef(false);
 
   const fetchVisitas = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("visitas")
-      .select("*")
-      .order("fecha", { ascending: false });
-
-    if (error) {
+    try {
+      const res = await api.getVisitas();
+      const items = Array.isArray(res) ? res : (res.data || []);
+      return items.map(toFrontendVisita);
+    } catch (error) {
       console.error("Error cargando visitas:", error.message);
       return null;
     }
-    return (data || []).map(toFrontend);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -75,97 +53,70 @@ export function VisitasProvider({ children }) {
       const mapped = await fetchVisitas();
       if (mapped) setVisitas(mapped);
     }, 15000);
-
     return () => clearInterval(id);
   }, [fetchVisitas]);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("visitas-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "visitas" },
-        async (payload) => {
-          if (payload.eventType === "DELETE") {
-            setVisitas((prev) => prev.filter((v) => v.id !== payload.old.id));
-            return;
-          }
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"],
+    });
 
-          const { data, error } = await supabase
-            .from("visitas")
-            .select("*")
-            .eq("id", payload.new.id)
-            .single();
+    socket.on("connect", () => {
+      console.log("Conectado en tiempo real al backend (Visitas)");
+    });
 
-          if (error || !data) return;
-
-          const mapped = toFrontend(data);
-
-          setVisitas((prev) => {
-            const idx = prev.findIndex((v) => v.id === mapped.id);
-            if (idx >= 0) {
-              const next = [...prev];
-              next[idx] = mapped;
-              return next;
-            }
-            return [mapped, ...prev];
-          });
+    socket.on("visita-inserted", (data) => {
+      const mapped = toFrontendVisita(data);
+      setVisitas((prev) => {
+        const idx = prev.findIndex((v) => v.id === mapped.id);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = mapped;
+          return next;
         }
-      )
-      .subscribe();
+        return [mapped, ...prev];
+      });
+    });
 
-    return () => { supabase.removeChannel(channel); };
+    socket.on("visita-updated", (data) => {
+      const mapped = toFrontendVisita(data);
+      setVisitas((prev) => prev.map((v) => (v.id === mapped.id ? mapped : v)));
+    });
+
+    socket.on("visita-deleted", (data) => {
+      setVisitas((prev) => prev.filter((v) => v.id !== data.id));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const addVisita = useCallback(async (visita) => {
-    const { data: newRow, error } = await supabase
-      .from("visitas")
-      .insert(toDB(visita))
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Supabase insert error:", error);
-      throw new Error(error.message);
-    }
-
-    const mapped = toFrontend(newRow);
+    const backendData = toBackendVisita(visita);
+    const res = await api.createVisita(backendData);
+    const mapped = toFrontendVisita(res.data || res);
     setVisitas((prev) => [mapped, ...prev]);
     return mapped;
   }, []);
 
   const editVisita = useCallback(async (id, data) => {
-    const { error } = await supabase
-      .from("visitas")
-      .update(toDB(data))
-      .eq("id", id);
-
-    if (error) {
-      console.error("Supabase update error:", error);
-      throw new Error(error.message);
-    }
-
+    const backendData = toBackendVisita(data);
+    await api.updateVisita(id, backendData);
     setVisitas((prev) => prev.map((v) => (v.id === id ? { ...v, ...data } : v)));
   }, []);
 
   const marcarRealizada = useCallback(async (id) => {
-    const { error } = await supabase
-      .from("visitas")
-      .update({ realizada: true })
-      .eq("id", id);
-    if (error) {
-      console.error("Supabase update error:", error);
-      throw new Error(error.message);
-    }
+    // Para simplificar, obtenemos la visita y le ponemos realizada=true
+    const visita = visitas.find(v => v.id === id);
+    if (!visita) return;
+    
+    await api.updateVisita(id, { realizada: true });
     setVisitas((prev) => prev.map((v) => (v.id === id ? { ...v, realizada: true } : v)));
-  }, []);
+  }, [visitas]);
 
   const deleteVisita = useCallback(async (id) => {
-    const { error } = await supabase.from("visitas").delete().eq("id", id);
-    if (error) {
-      console.error("Supabase delete error:", error);
-      throw new Error(error.message);
-    }
+    await api.deleteVisita(id);
     setVisitas((prev) => prev.filter((v) => v.id !== id));
   }, []);
 

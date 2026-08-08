@@ -1,59 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "../../services/supabase";
+import { api } from "../../services/api";
+import { toFrontendAsociada, toBackendAsociada } from "../../shared/utils/normalizer";
+import { io } from "socket.io-client";
 
 const AsociadasContext = createContext(null);
-
-function toFrontend(row) {
-  const baseFotos = row.fotos || [];
-  let allFotos = [...baseFotos];
-  if (row.url_foto && !allFotos.includes(row.url_foto)) {
-    allFotos.unshift(row.url_foto);
-  }
-
-  return {
-    id: row.id,
-    nombre: row.nombre,
-    edad: row.edad,
-    telefono: row.telefono,
-    numPersonas: row.num_personas,
-    menoresHogar: row.menores_hogar,
-    sector: row.sector || "",
-    areaHuerta: row.area_huerta,
-    productos: row.productos,
-    fechaSiembra: row.fecha_siembra,
-    fechaUltimaVisita: row.fecha_ultima_visita,
-    numVisitas: row.num_visitas,
-    tipoPersona: row.tipo_persona,
-    observaciones: row.observaciones,
-    lat: row.lat,
-    lng: row.lng,
-    fotos: allFotos,
-    urlFoto: row.url_foto || null,
-  };
-}
-
-function toDB(data, sectorId) {
-  return {
-    nombre: data.nombre,
-    edad: data.edad === "" ? null : (data.edad ?? null),
-    telefono: data.telefono || null,
-    num_personas: data.numPersonas === "" ? null : (data.numPersonas ?? null),
-    menores_hogar: data.menoresHogar === "" ? null : (data.menoresHogar ?? null),
-    sector_id: sectorId,
-    area_huerta: data.areaHuerta || null,
-    productos: data.productos || null,
-    fecha_siembra: data.fechaSiembra || null,
-    fecha_ultima_visita: data.fechaUltimaVisita || null,
-    num_visitas: data.numVisitas === "" ? null : (data.numVisitas ?? null),
-    tipo_persona: data.tipoPersona || null,
-    observaciones: data.observaciones || null,
-    lat: data.lat ?? null,
-    lng: data.lng ?? null,
-    url_foto: data.fotos && data.fotos.length > 0 ? data.fotos[0] : null,
-    fotos: data.fotos || [],
-  };
-}
+const SOCKET_URL = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace("/api", "") : "http://localhost:5000";
 
 export function AsociadasProvider({ children }) {
   const [asociadas, setAsociadas] = useState([]);
@@ -63,36 +15,25 @@ export function AsociadasProvider({ children }) {
   const refreshing = useRef(false);
 
   useEffect(() => {
-    supabase
-      .from("sectores")
-      .select("id, nombre")
-      .then(({ data, error }) => {
-        if (error) {
-          console.error("Error cargando sectores:", error.message);
-          return;
-        }
+    api.getSectores()
+      .then((res) => {
         const map = {};
-        data.forEach((s) => { map[s.nombre] = s.id; });
+        const items = Array.isArray(res) ? res : (res.data || []);
+        items.forEach((s) => { map[s.nombre] = s.id; });
         setSectorMap(map);
-      });
+      })
+      .catch((err) => console.error("Error cargando sectores:", err.message));
   }, []);
 
   const fetchAsociadas = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("asociadas")
-      .select("*, sectores(nombre)")
-      .order("id", { ascending: true });
-
-    if (error) {
+    try {
+      const res = await api.getAsociadas();
+      const items = Array.isArray(res) ? res : (res.data || []);
+      return items.map(toFrontendAsociada);
+    } catch (error) {
       console.error("Error cargando asociadas:", error.message);
       return null;
     }
-
-    const mapped = (data || []).map((row) => {
-      const { sectores, ...rest } = row;
-      return toFrontend({ ...rest, sector: sectores?.nombre || "" });
-    });
-    return mapped;
   }, []);
 
   useEffect(() => {
@@ -100,10 +41,8 @@ export function AsociadasProvider({ children }) {
       if (mapped) {
         setAsociadas(mapped);
         setLastUpdated(Date.now());
-        setLoading(false);
-      } else {
-        setLoading(false);
       }
+      setLoading(false);
     });
   }, [fetchAsociadas]);
 
@@ -112,120 +51,98 @@ export function AsociadasProvider({ children }) {
       const mapped = await fetchAsociadas();
       if (mapped) setAsociadas(mapped);
     }, 15000);
-
     return () => clearInterval(id);
   }, [fetchAsociadas]);
 
+  // Sockets
   useEffect(() => {
-    const channel = supabase
-      .channel("asociadas-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "asociadas" },
-        async (payload) => {
-          if (payload.eventType === "DELETE") {
-            setAsociadas((prev) => prev.filter((a) => a.id !== payload.old.id));
-            return;
-          }
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"],
+    });
 
-          const { data, error } = await supabase
-            .from("asociadas")
-            .select("*, sectores(nombre)")
-            .eq("id", payload.new.id)
-            .single();
+    socket.on("connect", () => {
+      console.log("Conectado en tiempo real al backend (Asociadas)");
+    });
 
-          if (error || !data) return;
-
-          const { sectores, ...rest } = data;
-          const mapped = toFrontend({ ...rest, sector: sectores?.nombre || "" });
-
-          setAsociadas((prev) => {
-            const idx = prev.findIndex((a) => a.id === mapped.id);
-            if (idx >= 0) {
-              const next = [...prev];
-              next[idx] = mapped;
-              return next;
-            }
-            return [...prev, mapped];
-          });
+    socket.on("asociada-inserted", (data) => {
+      const mapped = toFrontendAsociada(data);
+      setAsociadas((prev) => {
+        const idx = prev.findIndex((a) => a.id === mapped.id);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = mapped;
+          return next;
         }
-      )
-      .subscribe();
+        return [...prev, mapped];
+      });
+    });
 
-    return () => { supabase.removeChannel(channel); };
+    socket.on("asociada-updated", (data) => {
+      const mapped = toFrontendAsociada(data);
+      setAsociadas((prev) => prev.map(a => a.id === mapped.id ? mapped : a));
+    });
+
+    socket.on("asociada-deleted", (data) => {
+      setAsociadas((prev) => prev.filter((a) => a.id !== data.id));
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const addAsociada = useCallback(async (data) => {
     let sectorId = sectorMap[data.sector];
     if (!sectorId) {
-      const { data: sectorRow } = await supabase
-        .from("sectores")
-        .select("id")
-        .eq("nombre", data.sector)
-        .single();
-      if (!sectorRow) throw new Error(`Sector "${data.sector}" no encontrado`);
-      sectorId = sectorRow.id;
+      // Si el sector no existe, dejamos que el backend lo cree o lo ignoramos
+      // O podemos intentar crearlo
+      try {
+        const sectorRes = await api.createSector({ nombre: data.sector });
+        sectorId = (sectorRes.data || sectorRes).id;
+        setSectorMap(prev => ({ ...prev, [data.sector]: sectorId }));
+      } catch (err) {
+        console.error("Error al crear sector:", err);
+      }
     }
 
-    const { data: newRow, error } = await supabase
-      .from("asociadas")
-      .insert(toDB(data, sectorId))
-      .select("*, sectores(nombre)")
-      .single();
-
-    if (error) {
-      console.error("Supabase insert error:", error);
-      throw new Error(error.message);
-    }
-
-    const { sectores, ...rest } = newRow;
-    const mapped = toFrontend({ ...rest, sector: sectores?.nombre || "" });
+    const backendData = toBackendAsociada({ ...data, sectorId });
+    const res = await api.createAsociada(backendData);
+    const mapped = toFrontendAsociada(res.data || res);
     setAsociadas((prev) => [...prev, mapped]);
     return mapped;
   }, [sectorMap]);
 
   const updateAsociada = useCallback(async (id, data) => {
-    let sectorId;
+    let sectorId = undefined;
     if (data.sector !== undefined) {
       if (data.sector === "" || data.sector === null) {
         sectorId = null;
       } else {
         sectorId = sectorMap[data.sector];
         if (!sectorId) {
-          const { data: sectorRow } = await supabase
-            .from("sectores")
-            .select("id")
-            .eq("nombre", data.sector)
-            .single();
-          sectorId = sectorRow?.id || null;
+          try {
+            const sectorRes = await api.createSector({ nombre: data.sector });
+            sectorId = (sectorRes.data || sectorRes).id;
+            setSectorMap(prev => ({ ...prev, [data.sector]: sectorId }));
+          } catch (err) {
+            console.error("Error al crear sector:", err);
+            sectorId = null;
+          }
         }
       }
     }
 
-    const dbData = toDB(data, sectorId);
-    if (dbData.sector_id === undefined) {
-      delete dbData.sector_id;
-    }
+    const backendData = toBackendAsociada({ ...data, sectorId });
+    if (backendData.sector_id === undefined) delete backendData.sector_id;
 
-    const { error } = await supabase
-      .from("asociadas")
-      .update(dbData)
-      .eq("id", id);
-
-    if (error) {
-      console.error("Supabase update error:", error);
-      throw new Error(error.message);
-    }
-
+    await api.updateAsociada(id, backendData);
+    
+    // Optimizamos en memoria asumiendo éxito
     setAsociadas((prev) => prev.map((a) => (a.id === id ? { ...a, ...data } : a)));
   }, [sectorMap]);
 
   const deleteAsociada = useCallback(async (id) => {
-    const { error } = await supabase.from("asociadas").delete().eq("id", id);
-    if (error) {
-      console.error("Supabase delete error:", error);
-      throw new Error(error.message);
-    }
+    await api.deleteAsociada(id);
     setAsociadas((prev) => prev.filter((a) => a.id !== id));
   }, []);
 

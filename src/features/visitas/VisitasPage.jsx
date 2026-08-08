@@ -58,16 +58,16 @@ function VisitasPage() {
 
   const stats = useMemo(() => {
     const now = new Date();
-    const today = now.toISOString().split("T")[0];
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const prefix = nextMonth.toISOString().slice(0, 7);
-    const nextMonthCount = visitas.filter((v) => v.fecha.startsWith(prefix)).length;
-    const programadas = visitas.filter((v) => v.proximaVisita && v.proximaVisita >= today && !v.realizada);
-    const uniqueAsociadas = new Set(programadas.map((v) => v.asociadaId)).size;
+    const nextMonthCount = visitas.filter((v) => (v.proximaVisita || v.fecha).startsWith(prefix)).length;
+    
+    const uniqueAsociadas = new Set(visitas.map((v) => v.asociadaId)).size;
     const byType = {};
-    programadas.forEach((v) => { byType[v.tipo] = (byType[v.tipo] || 0) + 1; });
+    visitas.forEach((v) => { byType[v.tipo] = (byType[v.tipo] || 0) + 1; });
     const mostType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
-    return { total: programadas.length, nextMonth: nextMonthCount, uniqueAsociadas, byType, mostType };
+    
+    return { total: visitas.length, nextMonth: nextMonthCount, uniqueAsociadas, byType, mostType };
   }, [visitas]);
 
   const filtered = useMemo(() => {
@@ -88,7 +88,7 @@ function VisitasPage() {
       } else if (quickFilter === "month") {
         matchesQuick = v.fecha.startsWith(getLocalDateString().slice(0, 7));
       }
-      return matchesSearch && matchesTipo && matchesAsociada && matchesQuick && !v.realizada;
+      return matchesSearch && matchesTipo && matchesAsociada && matchesQuick;
     });
   }, [visitas, debouncedSearch, filterTipo, filterAsociada, quickFilter, asociadaMap]);
 
@@ -433,45 +433,17 @@ function VisitasPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Tipo</label>
-            <div className="flex gap-2">
-              {TIPOS_VISITA.map((t) => {
-                const colorClasses = t === "visita"
-                  ? { active: "bg-blue-600 text-white border-blue-600", inactive: "bg-white text-blue-600 border-blue-200 hover:border-blue-400 hover:bg-blue-50" }
-                  : t === "seguimiento"
-                  ? { active: "bg-amber-500 text-white border-amber-500", inactive: "bg-white text-amber-600 border-amber-200 hover:border-amber-400 hover:bg-amber-50" }
-                  : { active: "bg-emerald-600 text-white border-emerald-600", inactive: "bg-white text-emerald-600 border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50" };
-                return (
-                  <label key={t} className={`cursor-pointer flex-1 rounded-lg border px-3 py-2 text-xs font-medium text-center transition-colors ${formData.tipo === t ? colorClasses.active : colorClasses.inactive}`}>
-                    <input type="radio" name="tipo" value={t} checked={formData.tipo === t} onChange={(e) => setFormData({ ...formData, tipo: e.target.value })} className="sr-only" />
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-          <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Observaciones</label>
             <textarea value={formData.observaciones} onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })} rows={3}
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 transition-colors focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
               placeholder="Notas sobre la visita..." />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-blue-500" />
-                Fecha de visita <span className="text-red-400">*</span>
-              </label>
-              <Input type="date" value={formData.fecha} onChange={(e) => setFormData({ ...formData, fecha: e.target.value })} required />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-500 flex items-center gap-1.5">
-                <CalendarClock className="h-3.5 w-3.5 text-slate-400" />
-                Próxima (opcional)
-              </label>
-              <Input type="date" value={formData.proximaVisita} onChange={(e) => setFormData({ ...formData, proximaVisita: e.target.value })}
-                min={formData.fecha || getLocalDateString()} />
-            </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500 flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-blue-500" />
+              Fecha de visita <span className="text-red-400">*</span>
+            </label>
+            <Input type="date" value={formData.fecha} onChange={(e) => setFormData({ ...formData, fecha: e.target.value })} required />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="cursor-pointer rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">

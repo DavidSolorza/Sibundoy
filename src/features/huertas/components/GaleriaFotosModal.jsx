@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Plus, Trash2, Camera, Loader2 } from "lucide-react";
 import useAsociadas from "../../asociadas/useAsociadas";
 import Modal from "../../../shared/ui/Modal";
-import { supabase } from "../../../services/supabase";
+import { api } from "../../../services/api";
 
 export default function GaleriaFotosModal({ asociada, open, onClose }) {
   const { updateAsociada } = useAsociadas();
@@ -75,16 +75,8 @@ export default function GaleriaFotosModal({ asociada, open, onClose }) {
     try {
       const newUrls = await Promise.all(
         files.map(async (file) => {
-          const timestamp = Date.now();
-          const randomString = Math.random().toString(36).substring(2, 8);
-          const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-          const fileName = `${timestamp}_${randomString}_${cleanName}`;
-          
-          const { error } = await supabase.storage.from("fotos").upload(fileName, file);
-          if (error) throw error;
-          
-          const { data: publicData } = supabase.storage.from("fotos").getPublicUrl(fileName);
-          return publicData.publicUrl;
+          const res = await api.uploadFoto(file);
+          return res.data.publicUrl;
         })
       );
       
@@ -106,13 +98,8 @@ export default function GaleriaFotosModal({ asociada, open, onClose }) {
     try {
       const fotoUrl = fotos[activeIndex];
       
-      if (fotoUrl && fotoUrl.includes("/storage/v1/object/public/fotos/")) {
-        const parts = fotoUrl.split("/storage/v1/object/public/fotos/");
-        if (parts.length > 1) {
-          const fileName = parts[1];
-          await supabase.storage.from("fotos").remove([fileName]).catch(e => console.error("Error eliminando archivo:", e));
-        }
-      }
+      // Supabase storage delete logic removed as it is now handled differently or skipped
+      // You may add api.deleteFoto(fotoUrl) later if implemented in backend
       
       const updatedFotos = fotos.filter((_, idx) => idx !== activeIndex);
       await updateAsociada(asociada.id, { ...asociada, fotos: updatedFotos });

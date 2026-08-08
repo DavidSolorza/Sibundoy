@@ -8,8 +8,6 @@ import ErrorBoundary from "../shared/ui/ErrorBoundary";
 import ExportadorAsociadas from "../features/asociadas/components/ExportadorAsociadas";
 import ExportadorVisitas from "../features/visitas/components/ExportadorVisitas";
 import ImportarPage from "../features/importar/ImportarPage";
-import { isSupabaseMock } from "../services/supabase";
-
 const HuertasPage = lazy(() => import("../features/huertas/HuertasPage"));
 const AdminPage = lazy(() => import("../features/admin/AdminPage"));
 const VisitasPage = lazy(() => import("../features/visitas/VisitasPage"));
@@ -21,15 +19,8 @@ function App() {
       <AsociadasProvider>
         <VisitasProvider>
           <div className="min-h-screen bg-slate-50 md:flex">
-            {isSupabaseMock && (
-              <div className="fixed top-0 left-0 right-0 z-[9999] flex items-center gap-2 bg-amber-50 border-b border-amber-200 px-4 py-2 text-xs text-amber-800">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                <span className="font-medium">Supabase no conectado.</span>
-                <span>Copia <code className="bg-amber-100 px-1 rounded">.env.example</code> a <code className="bg-amber-100 px-1 rounded">.env</code> y agrega tus credenciales, o configúralas en Vercel.</span>
-              </div>
-            )}
             <Navbar />
-            <main className={`flex-1 overflow-auto px-4 pb-4 md:px-6 md:py-6 ${isSupabaseMock ? 'pt-20' : 'pt-14'}`}>
+            <main className="flex-1 overflow-auto px-4 pb-4 md:px-6 md:py-6 pt-14">
               <ErrorBoundary>
                 <Suspense fallback={
                   <div className="flex items-center justify-center py-20">
