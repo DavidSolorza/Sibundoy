@@ -19,6 +19,8 @@ const DB_FIELDS = [
   { key: "fecha_siembra", label: "Fecha Siembra", type: "date" },
   { key: "historial_visitas", label: "Historial Visitas (separado por comas)", type: "text" },
   { key: "observaciones", label: "Observaciones", type: "text" },
+  { key: "fecha_ultima_visita", label: "Fecha Última Visita", type: "date" },
+  { key: "num_visitas", label: "Total Visitas Históricas", type: "number" },
   { key: "lat", label: "Latitud", type: "number" },
   { key: "lng", label: "Longitud", type: "number" },
 ];
@@ -34,7 +36,9 @@ const AUTO_MAP = {
   area_huerta: ["area_huerta", "área huerta", "area huerta", "área de la huerta", "area de la huerta", "huerta", "tamaño huerta", "m²", "area", "área", "tamaño", "tamano"],
   productos: ["productos", "productos a sembrar", "productos sembrar", "cultivos", "siembra", "que siembra", "que cultiva", "cosecha"],
   fecha_siembra: ["fecha_siembra", "fecha siembra", "siembra", "fecha de siembra", "fecha_siembra", "fecha de la siembra"],
-  historial_visitas: ["historial", "visitas", "historial_visitas", "historial visitas", "fechas visitas", "fecha visita", "ultima visita", "última visita", "visita"],
+  historial_visitas: ["historial", "historial_visitas", "historial visitas", "fechas visitas"],
+  fecha_ultima_visita: ["fecha de visita", "fecha visita", "ultima visita", "última visita", "fecha_ultima_visita"],
+  num_visitas: ["visitas", "visita", "num_visitas", "total visitas", "numero de visitas", "número de visitas"],
   observaciones: ["observaciones", "observacion", "observación", "notas", "comentarios", "nota", "comentario", "descripcion", "descripción", "detalle", "detalles"],
   lat: ["lat", "latitud", "latitude", "latitud (mapa)", "latitud mapa"],
   lng: ["lng", "lon", "longitud", "longitude", "lng", "longitud (mapa)", "longitud mapa"],
@@ -268,7 +272,7 @@ function ImportarPage() {
             val = val.replace(/\d+/g, "").trim();
             if (!val) { valid = false; break; }
             record.nombre = val;
-          } else if (dbKey === "edad" || dbKey === "num_personas" || dbKey === "menores_hogar") {
+          } else if (dbKey === "edad" || dbKey === "num_personas" || dbKey === "menores_hogar" || dbKey === "num_visitas") {
             const num = parseInt(val, 10);
             record[dbKey] = isNaN(num) ? null : num;
           } else if (dbKey === "lat" || dbKey === "lng") {
@@ -309,6 +313,9 @@ function ImportarPage() {
               // Separamos por comas y limpiamos espacios
               visitasDates = val.split(",").map(v => v.trim()).filter(Boolean);
             }
+          } else if (dbKey === "fecha_ultima_visita") {
+            const d = parseImportDate(val);
+            record.fecha_ultima_visita = (d && !isNaN(d.getTime())) ? d.toISOString().split("T")[0] : null;
           } else {
             record[dbKey] = val || null;
           }
@@ -333,9 +340,13 @@ function ImportarPage() {
 
         if (existingData) {
           asocId = existingData.id;
-          // Si existe, actualizamos el resto de los datos, pero no sobreescribimos lat/lng si no venían en el excel
-          if (latWasNull) delete record.lat;
-          if (lngWasNull) delete record.lng;
+          
+          // No sobreescribir con null o vacío los campos que la asociada ya tiene registrados
+          for (const key of Object.keys(record)) {
+            if (record[key] === null || record[key] === "") {
+              delete record[key];
+            }
+          }
 
           try {
             await api.updateAsociada(existingData.id, record);
