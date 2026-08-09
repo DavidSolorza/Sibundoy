@@ -78,43 +78,49 @@ function VisitasPage() {
     return { total: visitas.length, nextMonth: nextMonthCount, uniqueAsociadas, byType, mostType };
   }, [visitas]);
 
-  const filtered = useMemo(() => {
+  const grouped = useMemo(() => {
     const q = debouncedSearch.toLowerCase();
     const today = new Date().toISOString().split("T")[0];
-    return visitas.filter((v) => {
-      const a = asociadaMap[v.asociadaId];
-      const matchesSearch = !q || a?.nombre?.toLowerCase().includes(q) || a?.sector?.toLowerCase().includes(q);
-      const matchesTipo = !filterTipo || v.tipo === filterTipo;
-      const matchesAsociada = !filterAsociada || v.asociadaId === filterAsociada;
-      let matchesQuick = true;
-      if (quickFilter === "today") matchesQuick = v.fecha === today;
-      else if (quickFilter === "week") {
-        const d = new Date(v.fecha);
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        matchesQuick = d >= weekAgo;
-      } else if (quickFilter === "month") {
-        matchesQuick = v.fecha.startsWith(getLocalDateString().slice(0, 7));
-      } else if (quickFilter === "proximas") {
-        matchesQuick = !!v.proximaVisita && v.proximaVisita >= today;
-      }
-      return matchesSearch && matchesTipo && matchesAsociada && matchesQuick;
-    });
-  }, [visitas, debouncedSearch, filterTipo, filterAsociada, quickFilter, asociadaMap]);
-
-  const grouped = useMemo(() => {
     const groups = {};
-    filtered.forEach((v) => {
-      const sector = asociadaMap[v.asociadaId]?.sector?.replace("Vereda ", "") || "Sin sector";
-      if (!groups[sector]) groups[sector] = [];
-      groups[sector].push(v);
+
+    asociadas.forEach((a) => {
+      const sector = a.sector?.replace("Vereda ", "") || "Sin sector";
+      if (!groups[sector]) groups[sector] = { sector, asociadas: [], visitas: [] };
+      groups[sector].asociadas.push(a);
     });
-    return Object.entries(groups).sort(([, visitsA], [, visitsB]) => {
-      const maxA = Math.max(...visitsA.map((v) => new Date(v.fecha).getTime()));
-      const maxB = Math.max(...visitsB.map((v) => new Date(v.fecha).getTime()));
-      return maxB - maxA;
+
+    visitas.forEach((v) => {
+      const a = asociadaMap[v.asociadaId];
+      if (!a) return;
+      const sector = a.sector?.replace("Vereda ", "") || "Sin sector";
+      if (groups[sector]) groups[sector].visitas.push(v);
     });
-  }, [filtered, asociadaMap]);
+
+    return Object.values(groups).filter((g) => {
+      const matchSearch = !q || g.sector.toLowerCase().includes(q) || g.asociadas.some(a => a.nombre.toLowerCase().includes(q));
+      if (!matchSearch) return false;
+
+      const matchAsociada = !filterAsociada || g.asociadas.some(a => a.id === filterAsociada);
+      if (!matchAsociada) return false;
+
+      if (filterTipo && !g.visitas.some(v => v.tipo === filterTipo)) return false;
+
+      if (quickFilter === "today" && !g.visitas.some(v => v.fecha === today)) return false;
+      if (quickFilter === "week") {
+        const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+        if (!g.visitas.some(v => new Date(v.fecha) >= weekAgo)) return false;
+      }
+      if (quickFilter === "month" && !g.visitas.some(v => v.fecha.startsWith(today.slice(0, 7)))) return false;
+      if (quickFilter === "proximas" && !g.visitas.some(v => !!v.proximaVisita && v.proximaVisita >= today)) return false;
+
+      return true;
+    }).sort((a, b) => {
+      const maxA = Math.max(0, ...a.visitas.map(v => new Date(v.fecha).getTime()));
+      const maxB = Math.max(0, ...b.visitas.map(v => new Date(v.fecha).getTime()));
+      if (maxA !== maxB) return maxB - maxA;
+      return a.sector.localeCompare(b.sector);
+    });
+  }, [asociadas, visitas, asociadaMap, debouncedSearch, filterTipo, filterAsociada, quickFilter]);
 
   const totalPages = Math.ceil(grouped.length / PER_PAGE);
   const paginatedGroups = grouped.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
@@ -339,22 +345,25 @@ function VisitasPage() {
             <div className="flex items-center justify-center py-16">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
             </div>
-          ) : filtered.length === 0 ? (
+          ) : grouped.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 border border-slate-100">
                 <ClipboardList className="h-8 w-8 text-slate-300" />
               </div>
-              <p className="text-sm font-bold text-slate-700">No hay visitas registradas</p>
-              <p className="text-xs font-medium text-slate-400 mt-1.5">Programa la primera visita para empezar el seguimiento.</p>
+              <p className="text-sm font-bold text-slate-700">No hay resultados</p>
+              <p className="text-xs font-medium text-slate-400 mt-1.5">No se encontraron sectores o visitas con esos filtros.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {paginatedGroups.map(([sector, items]) => {
-                const realizadas = items.filter((v) => v.realizada).length;
-                const pendientes = items.length - realizadas;
-                const total = items.length;
+              {paginatedGroups.map((g) => {
+                const sector = g.sector;
+                const realizadas = g.visitas.filter((v) => v.realizada).length;
+                const pendientes = g.visitas.filter((v) => !v.realizada).length;
+                const asociadasConVisita = new Set(g.visitas.map((v) => v.asociadaId)).size;
+                const sinVisitar = g.asociadas.length - asociadasConVisita;
+                
                 return (
-                  <button key={sector} onClick={() => setSectorModalVisitas({ sector, items })}
+                  <button key={sector} onClick={() => setSectorModalVisitas(g)}
                     className="cursor-pointer w-full text-left rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:border-blue-300 hover:scale-[1.01] active:bg-blue-50/50 group">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2 min-w-0">
@@ -363,10 +372,15 @@ function VisitasPage() {
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-slate-800 truncate">{sector}</p>
-                          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest">{total} visita{total !== 1 ? "s" : ""}</p>
+                          <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest">{g.asociadas.length} asociada{g.asociadas.length !== 1 ? "s" : ""}</p>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        {sinVisitar > 0 && (
+                          <span className="inline-flex items-center rounded-md bg-rose-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-rose-700">
+                            {sinVisitar} sin visita
+                          </span>
+                        )}
                         {pendientes > 0 && (
                           <span className="inline-flex items-center rounded-md bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-amber-700">
                             {pendientes} pend.
@@ -381,7 +395,7 @@ function VisitasPage() {
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {(["visita", "seguimiento", "capacitacion"]).map((tipo) => {
-                        const count = items.filter((v) => v.tipo === tipo).length;
+                        const count = g.visitas.filter((v) => v.tipo === tipo).length;
                         if (!count) return null;
                         return (
                           <span key={tipo} className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${
@@ -399,7 +413,7 @@ function VisitasPage() {
               })}
             </div>
           )}
-          {!loading && filtered.length > 0 && totalPages > 1 && (
+          {!loading && grouped.length > 0 && totalPages > 1 && (
             <div className="flex items-center justify-between mt-4 px-2 py-2 border-t border-slate-100">
               <span className="text-[11px] font-bold tracking-widest uppercase text-slate-400">
                 Mostrando {page * PER_PAGE + 1} – {Math.min((page + 1) * PER_PAGE, grouped.length)} de {grouped.length} sectores
@@ -483,57 +497,95 @@ function VisitasPage() {
       <Modal open={!!sectorModalVisitas} onClose={() => setSectorModalVisitas(null)}
         title={sectorModalVisitas ? `Visitas — ${sectorModalVisitas.sector}` : ""}>
         {sectorModalVisitas && (
-          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-            {[...sectorModalVisitas.items]
-              .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
-              .map((v) => {
-              const a = asociadaMap[v.asociadaId];
-              const esRealizada = v.realizada;
+          <div className="space-y-6 max-h-96 overflow-y-auto pr-1">
+            {/* Lista de asociadas sin visita */}
+            {(() => {
+              const conVisita = new Set(sectorModalVisitas.visitas.map(v => v.asociadaId));
+              const sinVisita = sectorModalVisitas.asociadas.filter(a => !conVisita.has(a.id));
+              if (sinVisita.length === 0) return null;
               return (
-                <div key={v.id} className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors ${esRealizada ? "bg-slate-100 border-slate-300" : "bg-white border-slate-100"}`}>
-                  <div className={`mt-0.5 shrink-0 rounded-full p-1.5 ${v.tipo === "visita" ? "bg-blue-50" : v.tipo === "seguimiento" ? "bg-amber-50" : "bg-emerald-50"}`}>
-                    <Clock className={`h-3 w-3 ${v.tipo === "visita" ? "text-blue-500" : v.tipo === "seguimiento" ? "text-amber-500" : "text-emerald-500"}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                        v.tipo === "visita" ? "bg-blue-100 text-blue-700" :
-                        v.tipo === "seguimiento" ? "bg-amber-100 text-amber-700" :
-                        "bg-emerald-100 text-emerald-700"
-                      }`}>{v.tipo}</span>
-                      {esRealizada ? (
-                        <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                          <CheckCircle className="h-3 w-3" /> Realizada
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
-                          <Clock className="h-3 w-3" /> Pendiente
-                        </span>
-                      )}
-                      <span className={`text-xs font-medium ${esRealizada ? "text-slate-500" : "text-slate-800"}`}>{a?.nombre || "—"}</span>
-                      <span className="text-[10px] text-slate-400">{parseLocalDate(v.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</span>
-                    </div>
-                    {v.observaciones && <p className={`text-xs mt-1 ${esRealizada ? "text-slate-400" : "text-slate-500"}`}>{v.observaciones}</p>}
-                  </div>
-                  <div className="flex flex-col gap-1 shrink-0">
-                    {!esRealizada && (
-                      <button onClick={async (e) => { e.stopPropagation(); try { await marcarRealizada(v.id); showToast("Visita marcada como realizada"); } catch { showToast("Error", "error"); } }}
-                        className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 transition-colors" title="Marcar como realizada">
-                        <CheckCircle className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    <button onClick={(e) => { e.stopPropagation(); openEditForm(v); }}
-                      className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-blue-50 hover:text-blue-500 transition-colors" title="Editar">
-                      <Edit3 className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); setDeletingVisita(v); setSectorModalVisitas(null); }}
-                      className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors" title="Eliminar">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                <div>
+                  <h3 className="text-xs font-bold text-rose-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                    <AlertTriangle className="h-4 w-4" /> Falta Visitar ({sinVisita.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {sinVisita.map(a => (
+                      <div key={`sin-${a.id}`} className="flex items-center justify-between rounded-lg border border-rose-100 bg-rose-50/50 px-3 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="rounded-full bg-rose-100 p-1.5 text-rose-500"><User className="h-3 w-3" /></div>
+                          <span className="text-sm font-semibold text-slate-800">{a.nombre}</span>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); openAddForm(a.id); }}
+                          className="cursor-pointer rounded-md bg-white border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm">
+                          Registrar
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
-            })}
+            })()}
+
+            {/* Historial de visitas */}
+            {sectorModalVisitas.visitas.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                  <ClipboardList className="h-4 w-4" /> Visitas Registradas ({sectorModalVisitas.visitas.length})
+                </h3>
+                <div className="space-y-2">
+                  {[...sectorModalVisitas.visitas]
+                    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+                    .map((v) => {
+                    const a = asociadaMap[v.asociadaId];
+                    const esRealizada = v.realizada;
+                    return (
+                      <div key={v.id} className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 transition-colors ${esRealizada ? "bg-slate-100 border-slate-300" : "bg-white border-slate-100"}`}>
+                        <div className={`mt-0.5 shrink-0 rounded-full p-1.5 ${v.tipo === "visita" ? "bg-blue-50" : v.tipo === "seguimiento" ? "bg-amber-50" : "bg-emerald-50"}`}>
+                          <Clock className={`h-3 w-3 ${v.tipo === "visita" ? "text-blue-500" : v.tipo === "seguimiento" ? "text-amber-500" : "text-emerald-500"}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                              v.tipo === "visita" ? "bg-blue-100 text-blue-700" :
+                              v.tipo === "seguimiento" ? "bg-amber-100 text-amber-700" :
+                              "bg-emerald-100 text-emerald-700"
+                            }`}>{v.tipo}</span>
+                            {esRealizada ? (
+                              <span className="inline-flex items-center gap-0.5 rounded-md bg-slate-700 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                                <CheckCircle className="h-3 w-3" /> Realizada
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                                <Clock className="h-3 w-3" /> Pendiente
+                              </span>
+                            )}
+                            <span className={`text-xs font-medium ${esRealizada ? "text-slate-500" : "text-slate-800"}`}>{a?.nombre || "—"}</span>
+                            <span className="text-[10px] text-slate-400">{parseLocalDate(v.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</span>
+                          </div>
+                          {v.observaciones && <p className={`text-xs mt-1 ${esRealizada ? "text-slate-400" : "text-slate-500"}`}>{v.observaciones}</p>}
+                        </div>
+                        <div className="flex flex-col gap-1 shrink-0">
+                          {!esRealizada && (
+                            <button onClick={async (e) => { e.stopPropagation(); try { await marcarRealizada(v.id); showToast("Visita marcada como realizada"); } catch { showToast("Error", "error"); } }}
+                              className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-emerald-50 hover:text-emerald-600 transition-colors" title="Marcar como realizada">
+                              <CheckCircle className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <button onClick={(e) => { e.stopPropagation(); openEditForm(v); }}
+                            className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-blue-50 hover:text-blue-500 transition-colors" title="Editar">
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); setDeletingVisita(v); setSectorModalVisitas(null); }}
+                            className="cursor-pointer rounded-md p-1 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors" title="Eliminar">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>
