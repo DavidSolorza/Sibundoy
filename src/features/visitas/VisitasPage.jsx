@@ -75,8 +75,8 @@ function VisitasPage() {
     visitas.forEach((v) => { byType[v.tipo] = (byType[v.tipo] || 0) + 1; });
     const mostType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
     
-    return { total: visitas.length, nextMonth: nextMonthCount, uniqueAsociadas, byType, mostType };
-  }, [visitas]);
+    return { total: visitas.length, nextMonth: nextMonthCount, uniqueAsociadas, totalAsociadas: asociadas.length, byType, mostType };
+  }, [visitas, asociadas]);
 
   const grouped = useMemo(() => {
     const q = debouncedSearch.toLowerCase();
@@ -267,7 +267,7 @@ function VisitasPage() {
         )}
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm group hover:border-slate-300 transition-colors">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Total Visitas</p>
           <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-800 group-hover:scale-105 origin-left transition-transform">{stats.total}</p>
@@ -277,7 +277,11 @@ function VisitasPage() {
           <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-800 group-hover:scale-105 origin-left transition-transform">{stats.nextMonth}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm group hover:border-slate-300 transition-colors">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Asociadas</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400" title="Total de asociadas en la base de datos">Asociadas (Total)</p>
+          <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-800 group-hover:scale-105 origin-left transition-transform">{stats.totalAsociadas}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm group hover:border-slate-300 transition-colors">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400" title="Asociadas que tienen al menos 1 visita registrada">Con Visita</p>
           <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-800 group-hover:scale-105 origin-left transition-transform">{stats.uniqueAsociadas}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-sm group hover:border-slate-300 transition-colors col-span-2 md:col-span-1">

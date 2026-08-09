@@ -35,8 +35,16 @@ function CalendarView({ visitas, onDayClick }) {
   const visitsByDate = useMemo(() => {
     const m = {};
     visitas.forEach((v) => {
+      // Add actual visit date
       if (!m[v.fecha]) m[v.fecha] = [];
       m[v.fecha].push(v);
+      
+      // Add next planned visit date as well
+      if (v.proximaVisita && v.proximaVisita !== v.fecha) {
+        if (!m[v.proximaVisita]) m[v.proximaVisita] = [];
+        // Add a marker so we know this is the "next" visit on the calendar
+        m[v.proximaVisita].push({ ...v, _isProxima: true });
+      }
     });
     return m;
   }, [visitas]);
@@ -82,19 +90,29 @@ function CalendarView({ visitas, onDayClick }) {
     const estaSemana = [];
 
     visitas.forEach((v) => {
-      if (v.realizada) return;
-
-      if (v.fecha < todayStr) {
-        retrasadas.push(v);
-      } else if (v.fecha >= formattedStart && v.fecha <= formattedEnd) {
-        estaSemana.push(v);
+      // Si la visita no está realizada, revisamos su fecha original
+      if (!v.realizada) {
+        if (v.fecha < todayStr) {
+          retrasadas.push(v);
+        } else if (v.fecha >= formattedStart && v.fecha <= formattedEnd) {
+          estaSemana.push(v);
+        }
+      }
+      
+      // Si la visita tiene programada una próxima cita, revisamos esa fecha
+      if (v.proximaVisita) {
+        if (v.proximaVisita < todayStr) {
+          retrasadas.push({ ...v, _isProxima: true });
+        } else if (v.proximaVisita >= formattedStart && v.proximaVisita <= formattedEnd) {
+          estaSemana.push({ ...v, _isProxima: true });
+        }
       }
     });
 
     return {
-      retrasadas: retrasadas.slice(0, 8),
+      retrasadas: retrasadas.sort((a, b) => new Date(a._isProxima ? a.proximaVisita : a.fecha) - new Date(b._isProxima ? b.proximaVisita : b.fecha)).slice(0, 8),
       totalRetrasadas: retrasadas.length,
-      estaSemana: estaSemana.slice(0, 8),
+      estaSemana: estaSemana.sort((a, b) => new Date(a._isProxima ? a.proximaVisita : a.fecha) - new Date(b._isProxima ? b.proximaVisita : b.fecha)).slice(0, 8),
       totalEstaSemana: estaSemana.length,
     };
   }, [visitas, todayStr]);
@@ -185,19 +203,21 @@ function CalendarView({ visitas, onDayClick }) {
                 {/* Day events list */}
                 {cell.visitCount > 0 && (
                   <div className="flex-1 flex flex-col gap-1 overflow-hidden mt-1 select-none">
-                    {cell.visits.slice(0, 3).map((v) => {
+                    {cell.visits.slice(0, 3).map((v, i) => {
                       const asocName = asociadaMap[v.asociadaId]?.nombre || "—";
-                      const color = typeColors[v.tipo] || "bg-slate-500";
+                      const esPendiente = v._isProxima || !v.realizada;
                       return (
                         <div 
-                          key={v.id} 
-                          onClick={() => onDayClick(cell.dateStr)}
-                          className={`cursor-pointer text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center justify-between text-white transition-opacity hover:opacity-85 ${color} ${
-                            v.realizada ? "opacity-45" : ""
+                          key={`${v.id}-${i}`}
+                          className={`text-[9px] px-1.5 py-0.5 rounded truncate font-medium flex items-center justify-between border ${
+                            esPendiente 
+                              ? "bg-amber-50 text-amber-700 border-amber-200" 
+                              : "bg-slate-50 text-slate-500 border-slate-200"
                           }`}
+                          title={`${asocName} - ${v.tipo}`}
                         >
                           <span className="truncate max-w-[50px]">{asocName.split(" ")[0]}</span>
-                          <span className="scale-75 shrink-0">{v.realizada ? "✓" : "⌛"}</span>
+                          <span className="scale-75 shrink-0">{esPendiente ? "⌛" : "✓"}</span>
                         </div>
                       );
                     })}
@@ -232,11 +252,16 @@ function CalendarView({ visitas, onDayClick }) {
                           <div key={v.id} className="border-b border-slate-800 last:border-0 pb-1.5 last:pb-0">
                             <div className="flex items-center justify-between">
                               <span className="font-semibold text-slate-200 truncate max-w-[120px]">{asoc?.nombre}</span>
-                              <span className={`text-[8px] px-1 rounded font-bold uppercase ${
-                                v.tipo === "visita" ? "bg-blue-500/20 text-blue-300" :
-                                v.tipo === "seguimiento" ? "bg-amber-500/20 text-amber-300" :
-                                "bg-emerald-500/20 text-emerald-300"
-                              }`}>{v.tipo}</span>
+                              <div className="flex items-center gap-1">
+                                {(v._isProxima || !v.realizada) && (
+                                  <span className="text-[8px] px-1 rounded font-bold uppercase bg-amber-500/20 text-amber-300">Pend.</span>
+                                )}
+                                <span className={`text-[8px] px-1 rounded font-bold uppercase ${
+                                  v.tipo === "visita" ? "bg-blue-500/20 text-blue-300" :
+                                  v.tipo === "seguimiento" ? "bg-amber-500/20 text-amber-300" :
+                                  "bg-emerald-500/20 text-emerald-300"
+                                }`}>{v.tipo}</span>
+                              </div>
                             </div>
                             <p className="text-slate-400 text-[9px] mt-0.5">{asoc?.sector?.replace("Vereda ", "")}</p>
                             {v.observaciones && <p className="italic text-slate-400 mt-1 line-clamp-2">"{v.observaciones}"</p>}
@@ -265,22 +290,26 @@ function CalendarView({ visitas, onDayClick }) {
           
           {sidebarData.totalRetrasadas > 0 ? (
             <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-              {sidebarData.retrasadas.map((v) => {
+              {sidebarData.retrasadas.map((v, i) => {
                 const asoc = asociadaMap[v.asociadaId];
+                const dateToShow = v._isProxima ? v.proximaVisita : v.fecha;
                 return (
                   <div 
-                    key={v.id} 
-                    onClick={() => onDayClick(v.fecha)}
+                    key={`ret-${v.id}-${i}`} 
+                    onClick={() => onDayClick(dateToShow)}
                     className="cursor-pointer bg-white border border-red-100 hover:border-red-300 rounded-xl p-3 text-[10px] shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-800 truncate max-w-[110px]">{asoc?.nombre}</span>
-                      <span className="text-[8px] text-red-500 font-semibold">{parseLocalDate(v.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span>
+                      <span className="text-[8px] text-red-500 font-semibold">{parseLocalDate(dateToShow).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span>
                     </div>
                     <p className="text-slate-400 mt-0.5 truncate">{asoc?.sector?.replace("Vereda ", "")}</p>
-                    <div className="mt-1.5 flex items-center gap-1 text-[9px] font-semibold text-slate-500">
-                      <span className={`inline-block h-1.5 w-1.5 rounded-full ${typeColors[v.tipo]}`} />
-                      <span className="capitalize">{v.tipo}</span>
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-[9px] font-semibold text-slate-500">
+                        <span className={`inline-block h-1.5 w-1.5 rounded-full ${typeColors[v.tipo]}`} />
+                        <span className="capitalize">{v.tipo}</span>
+                      </div>
+                      {v._isProxima && <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1 rounded border border-amber-100">Cita Prox.</span>}
                     </div>
                   </div>
                 );
@@ -303,17 +332,18 @@ function CalendarView({ visitas, onDayClick }) {
 
           {sidebarData.totalEstaSemana > 0 ? (
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {sidebarData.estaSemana.map((v) => {
+              {sidebarData.estaSemana.map((v, i) => {
                 const asoc = asociadaMap[v.asociadaId];
+                const dateToShow = v._isProxima ? v.proximaVisita : v.fecha;
                 return (
                   <div 
-                    key={v.id} 
-                    onClick={() => onDayClick(v.fecha)}
+                    key={`sem-${v.id}-${i}`} 
+                    onClick={() => onDayClick(dateToShow)}
                     className="cursor-pointer bg-white border border-slate-200 hover:border-blue-300 rounded-xl p-3 text-[10px] shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 active:translate-y-0"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-800 truncate max-w-[110px]">{asoc?.nombre}</span>
-                      <span className="text-[8px] text-blue-600 font-semibold">{parseLocalDate(v.fecha).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span>
+                      <span className="text-[8px] text-blue-600 font-semibold">{parseLocalDate(dateToShow).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span>
                     </div>
                     <p className="text-slate-400 mt-0.5 truncate">{asoc?.sector?.replace("Vereda ", "")}</p>
                     <div className="mt-1.5 flex items-center justify-between">
@@ -321,6 +351,7 @@ function CalendarView({ visitas, onDayClick }) {
                         <span className={`inline-block h-1.5 w-1.5 rounded-full ${typeColors[v.tipo]}`} />
                         <span className="capitalize">{v.tipo}</span>
                       </span>
+                      {v._isProxima && <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1 rounded border border-amber-100">Cita Prox.</span>}
                     </div>
                   </div>
                 );
