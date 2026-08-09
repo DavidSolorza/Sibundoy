@@ -159,6 +159,33 @@ export const api = {
   },
 
   // =========================================================
+  // ARCHIVOS (UPLOADS)
+  // =========================================================
+  uploadFoto: async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_URL}/upload`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const parsed = await res.json();
+    if (!res.ok) {
+      throw new Error(parsed?.error || parsed?.message || "Error al subir la imagen");
+    }
+    
+    // Convertir ruta relativa a absoluta
+    if (parsed.data && parsed.data.publicUrl) {
+      if (parsed.data.publicUrl.startsWith("/")) {
+        parsed.data.publicUrl = `https://dashboard.servidor.blog${parsed.data.publicUrl}`;
+      }
+    }
+    
+    return parsed.data;
+  },
+
+  // =========================================================
   // DASHBOARD (calculado en frontend, no hay ruta dedicada)
   // =========================================================
   getDashboard: () => Promise.resolve(null),

@@ -76,7 +76,7 @@ export default function GaleriaFotosModal({ asociada, open, onClose }) {
       const newUrls = await Promise.all(
         files.map(async (file) => {
           const res = await api.uploadFoto(file);
-          return res.data.publicUrl;
+          return res.publicUrl;
         })
       );
       
