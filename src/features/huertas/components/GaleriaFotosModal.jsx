@@ -98,11 +98,17 @@ export default function GaleriaFotosModal({ asociada, open, onClose }) {
     try {
       const fotoUrl = fotos[activeIndex];
       
-      // Supabase storage delete logic removed as it is now handled differently or skipped
       // You may add api.deleteFoto(fotoUrl) later if implemented in backend
       
       const updatedFotos = fotos.filter((_, idx) => idx !== activeIndex);
-      await updateAsociada(asociada.id, { ...asociada, fotos: updatedFotos });
+      
+      // Update urlFoto if the deleted photo was the profile photo
+      let newUrlFoto = asociada.urlFoto;
+      if (asociada.urlFoto === fotoUrl) {
+        newUrlFoto = updatedFotos.length > 0 ? updatedFotos[0] : null;
+      }
+      
+      await updateAsociada(asociada.id, { ...asociada, fotos: updatedFotos, urlFoto: newUrlFoto });
       setActiveIndex((prev) => Math.max(0, prev - 1));
     } catch (err) {
       console.error("Error eliminando:", err);

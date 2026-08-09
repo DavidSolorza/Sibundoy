@@ -211,14 +211,24 @@ function AdminDashboard() {
   const realizadas = visitas.filter((v) => v.realizada);
   const pendientes = visitas.filter((v) => !v.realizada);
   
-  const visitasRealizadas = realizadas.length;
-  const visitasPendientes = pendientes.length;
-  const totalVisitas = visitas.length;
-  
+  // Calcular visitas faltantes (históricas sin registro en tabla visitas)
   const visitasPorAsociada = {};
-  realizadas.forEach(v => {
+  visitas.forEach(v => {
     visitasPorAsociada[v.asociadaId] = (visitasPorAsociada[v.asociadaId] || 0) + 1;
   });
+
+  let faltantesHistoricas = 0;
+  asociadas.forEach((a) => {
+    const registradas = visitasPorAsociada[a.id] || 0;
+    const historicas = a.num_visitas || 0;
+    if (historicas > registradas) {
+      faltantesHistoricas += (historicas - registradas);
+    }
+  });
+  
+  const visitasRealizadas = realizadas.length + faltantesHistoricas;
+  const visitasPendientes = pendientes.length;
+  const totalVisitas = visitas.length + faltantesHistoricas;
 
   const edadValidas = asociadas.filter((a) => a.edad != null && !isNaN(a.edad));
   const promedioEdad = edadValidas.length > 0 ? (edadValidas.reduce((sum, a) => sum + a.edad, 0) / edadValidas.length).toFixed(1) : "—";
