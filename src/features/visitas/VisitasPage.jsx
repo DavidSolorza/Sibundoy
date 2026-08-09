@@ -60,12 +60,28 @@ function VisitasPage() {
     const prefix = nextMonth.toISOString().slice(0, 7);
     const nextMonthCount = visitas.filter((v) => (v.proximaVisita || v.fecha).startsWith(prefix)).length;
     
+    // Contar visitas reales registradas en la tabla 'visitas'
+    const visitasPorAsociada = {};
+    visitas.forEach((v) => {
+      visitasPorAsociada[v.asociadaId] = (visitasPorAsociada[v.asociadaId] || 0) + 1;
+    });
+
+    // Sumar visitas históricas que están en 'num_visitas' pero no tienen un registro en 'visitas'
+    let totalHistorico = visitas.length;
+    asociadas.forEach((a) => {
+      const registradas = visitasPorAsociada[a.id] || 0;
+      const historicas = a.num_visitas || 0;
+      if (historicas > registradas) {
+        totalHistorico += (historicas - registradas);
+      }
+    });
+
     const uniqueAsociadas = new Set(visitas.map((v) => v.asociadaId)).size;
     const byType = {};
     visitas.forEach((v) => { byType[v.tipo] = (byType[v.tipo] || 0) + 1; });
     const mostType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
     
-    return { total: visitas.length, nextMonth: nextMonthCount, uniqueAsociadas, totalAsociadas: asociadas.length, byType, mostType };
+    return { total: totalHistorico, nextMonth: nextMonthCount, uniqueAsociadas, totalAsociadas: asociadas.length, byType, mostType };
   }, [visitas, asociadas]);
 
   const grouped = useMemo(() => {
