@@ -434,10 +434,7 @@ function VisitasPage() {
       )}
 
       {view === "calendar" && (
-        <>
-          <CalendarView visitas={visitas} onDayClick={setSelectedDay} />
-          <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (visitas.filter((v) => v.fecha === selectedDay || v.proximaVisita === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} onEdit={openEditForm} onDelete={(v) => setDeletingVisita(v)} onMarcarRealizada={marcarRealizada} />
-        </>
+        <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (visitas.filter((v) => v.fecha === selectedDay || v.proximaVisita === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} onEdit={openEditForm} onDelete={(v) => setDeletingVisita(v)} onMarcarRealizada={marcarRealizada} />
       )}
 
       <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? "Editar Visita" : "Registrar Visita"}>
