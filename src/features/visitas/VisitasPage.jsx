@@ -52,17 +52,7 @@ function VisitasPage() {
 
   const proximas = useMemo(() => getProximasVisitas(), [getProximasVisitas]);
 
-  const calendarVisitas = useMemo(() => {
-    // Show each visit on its actual date AND also on proximaVisita if it exists
-    const entries = [];
-    visitas.forEach((v) => {
-      entries.push({ ...v }); // show on fecha (actual date)
-      if (v.proximaVisita) {
-        entries.push({ ...v, fecha: v.proximaVisita, _esFuturo: true }); // show on next planned date
-      }
-    });
-    return entries;
-  }, [visitas]);
+
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -444,7 +434,10 @@ function VisitasPage() {
       )}
 
       {view === "calendar" && (
-        <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (visitas.filter((v) => v.fecha === selectedDay || v.proximaVisita === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} onEdit={openEditForm} onDelete={(v) => setDeletingVisita(v)} onMarcarRealizada={marcarRealizada} />
+        <>
+          <CalendarView visitas={visitas} onDayClick={setSelectedDay} />
+          <DayDetailModal dateStr={selectedDay} visits={selectedDay ? (visitas.filter((v) => v.fecha === selectedDay || v.proximaVisita === selectedDay)) : []} asociadaMap={asociadaMap} onClose={() => setSelectedDay(null)} onEdit={openEditForm} onDelete={(v) => setDeletingVisita(v)} onMarcarRealizada={marcarRealizada} />
+        </>
       )}
 
       <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? "Editar Visita" : "Registrar Visita"}>
