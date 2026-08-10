@@ -45,7 +45,7 @@ function Navbar() {
 
       {mobileOpen && <div className="fixed inset-0 z-[1100] bg-black/40 md:hidden" onClick={closeMobile} role="presentation" />}
 
-      <aside className={`fixed inset-y-0 left-0 z-[1200] flex w-64 flex-col bg-white shadow-xl transition-transform duration-300 ease-out md:static md:z-[1] md:w-56 md:translate-x-0 md:shadow-none md:border-r md:border-slate-200 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} role="navigation" aria-label="Navegación principal" aria-hidden={!mobileOpen}>
+      <aside className={`fixed inset-y-0 left-0 z-[1200] flex w-64 flex-col bg-white shadow-xl transition-transform duration-300 ease-out md:static md:z-[1] md:w-56 md:translate-x-0 md:shadow-none md:border-r md:border-slate-200 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} role="navigation" aria-label="Navegación principal">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-5">
           <div className="flex items-center gap-3">
             <img src="/icons/plant.png" alt="" className="h-9 w-9 shrink-0 rounded-lg bg-slate-100 p-1.5 object-contain" />

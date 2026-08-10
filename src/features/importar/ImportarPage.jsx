@@ -33,15 +33,14 @@ const AUTO_MAP = {
   menores_hogar: ["menores_hogar", "menores", "menores en el hogar", "niños", "niños en casa", "hijos menores", "menores edad", "menores de edad", "num menores", "núm menores", "n menores"],
   tipo_persona: ["tipo_persona", "estado civil", "tipo", "tipo persona", "tipo de persona", "tipo de población", "poblacion", "población", "civil"],
   sector: ["sector", "vereda", "sector / vereda", "sector/vereda", "sector vereda", "lugar", "comunidad", "barrio"],
-  area_huerta: ["area_huerta", "área huerta", "area huerta", "área de la huerta", "area de la huerta", "huerta", "tamaño huerta", "m²", "area", "área", "tamaño", "tamano"],
-  productos: ["productos", "productos a sembrar", "productos sembrar", "cultivos", "siembra", "que siembra", "que cultiva", "cosecha"],
-  fecha_siembra: ["fecha_siembra", "fecha siembra", "siembra", "fecha de siembra", "fecha_siembra", "fecha de la siembra"],
-  historial_visitas: ["historial", "historial_visitas", "historial visitas", "fechas visitas"],
-  fecha_ultima_visita: ["fecha de visita", "fecha visita", "ultima visita", "última visita", "fecha_ultima_visita"],
-  num_visitas: ["visitas", "visita", "num_visitas", "total visitas", "numero de visitas", "número de visitas"],
+  area_huerta: ["area_huerta", "área huerta", "area huerta", "área de la huerta", "area de la huerta", "tamaño huerta", "m²", "m2", "metros cuadrados", "area", "área", "tamaño", "tamano", "extension", "extensión", "extensión de tierra", "extension de tierra", "medida"],
+  productos: ["productos", "productos a sembrar", "productos sembrar", "cultivos", "que siembra", "que cultiva", "cosecha", "que produce", "rubros"],
+  fecha_siembra: ["fecha_siembra", "fecha siembra", "fecha de siembra", "fecha de la siembra", "cuando sembro"],
+  fecha_ultima_visita: ["fecha de visita", "fecha visita", "ultima visita", "última visita", "fecha_ultima_visita", "fecha de la visita", "dia de visita"],
+  num_visitas: ["visitas", "visita", "num_visitas", "total visitas", "numero de visitas", "número de visitas", "cantidad de visitas"],
   observaciones: ["observaciones", "observacion", "observación", "notas", "comentarios", "nota", "comentario", "descripcion", "descripción", "detalle", "detalles"],
-  lat: ["lat", "latitud", "latitude", "latitud (mapa)", "latitud mapa"],
-  lng: ["lng", "lon", "longitud", "longitude", "lng", "longitud (mapa)", "longitud mapa"],
+  lat: ["lat", "latitud", "latitude", "latitud (mapa)", "latitud mapa", "coordenada x"],
+  lng: ["lng", "lon", "longitud", "longitude", "longitud (mapa)", "longitud mapa", "coordenada y"],
 };
 
 function normalize(str) {
@@ -73,11 +72,29 @@ function parseImportDate(val) {
 
 function autoMapColumn(col) {
   const n = normalize(col);
+  
+  // Pass 1: Exact matches
   for (const [key, aliases] of Object.entries(AUTO_MAP)) {
-    if (aliases.some((a) => normalize(a) === n || n.includes(normalize(a)) || normalize(a).includes(n))) {
+    if (aliases.some((alias) => {
+      const a = normalize(alias);
+      return a && a === n;
+    })) {
       return key;
     }
   }
+
+  // Pass 2: Partial matches (includes)
+  for (const [key, aliases] of Object.entries(AUTO_MAP)) {
+    if (aliases.some((alias) => {
+      const a = normalize(alias);
+      if (!a || a.length <= 4) return false; // Solo palabras largas para evitar falsos positivos
+      // Si la columna contiene el alias
+      return n.includes(a) || a.includes(n);
+    })) {
+      return key;
+    }
+  }
+  
   return null;
 }
 
@@ -242,8 +259,6 @@ function ImportarPage() {
   const runImport = useCallback(async (rows) => {
     setImporting(true);
     setImportPhase("importing");
-    setDuplicates(null);
-
     try {
       let sectores = sectorCache;
       if (!sectores) {
@@ -251,6 +266,15 @@ function ImportarPage() {
         sectores = {};
         (data || []).forEach((s) => { sectores[s.nombre.toLowerCase()] = s.id; });
         setSectorCache(sectores);
+      }
+
+      let allAsociadasCache = [];
+      let allVisitasCache = [];
+      try {
+        allAsociadasCache = await api.getAsociadas() || [];
+        allVisitasCache = await api.getVisitas() || [];
+      } catch (err) {
+        console.warn("Could not pre-fetch caches, might be empty", err);
       }
 
       let success = 0;
@@ -274,13 +298,17 @@ function ImportarPage() {
             record.nombre = val;
           } else if (dbKey === "edad" || dbKey === "num_personas" || dbKey === "menores_hogar" || dbKey === "num_visitas") {
             const num = parseInt(val, 10);
-            record[dbKey] = isNaN(num) ? null : num;
+            if (dbKey === "edad") {
+              record[dbKey] = (isNaN(num) || num < 1 || num > 119) ? null : num;
+            } else {
+              record[dbKey] = isNaN(num) ? null : num;
+            }
           } else if (dbKey === "lat" || dbKey === "lng") {
             const num = parseFloat(val.replace(",", "."));
             record[dbKey] = isNaN(num) ? null : num;
           } else if (dbKey === "sector") {
             const sectorName = val;
-            const sectorLower = sectorName.toLowerCase();
+            const sectorLower = sectorName.toLowerCase().replace("vereda ", "");
             
             if (sectorLower && !sectores[sectorLower]) {
               try {
@@ -304,18 +332,23 @@ function ImportarPage() {
             if (normalized.includes("madre") || normalized.includes("cabeza")) record.tipo_persona = "Madre Cabeza De Hogar";
             else if (normalized.includes("viuda")) record.tipo_persona = "Viuda";
             else if (normalized.includes("separada")) record.tipo_persona = "Separada";
+            else if (normalized.includes("soltera")) record.tipo_persona = "Soltera";
             else record.tipo_persona = "Casada";
           } else if (dbKey === "fecha_siembra") {
             const d = parseImportDate(val);
             record.fecha_siembra = (d && !isNaN(d.getTime())) ? d.toISOString().split("T")[0] : null;
-          } else if (dbKey === "historial_visitas") {
-            if (val) {
-              // Separamos por comas y limpiamos espacios
-              visitasDates = val.split(",").map(v => v.trim()).filter(Boolean);
-            }
           } else if (dbKey === "fecha_ultima_visita") {
             const d = parseImportDate(val);
-            record.fecha_ultima_visita = (d && !isNaN(d.getTime())) ? d.toISOString().split("T")[0] : null;
+            if (d && !isNaN(d.getTime())) {
+              const isoDate = d.toISOString().split("T")[0];
+              record.fecha_ultima_visita = isoDate;
+              // Add to visitasDates to generate a real visit record
+              if (!visitasDates.includes(isoDate)) {
+                visitasDates.push(isoDate);
+              }
+            } else {
+              record.fecha_ultima_visita = null;
+            }
           } else {
             record[dbKey] = val || null;
           }
@@ -326,12 +359,11 @@ function ImportarPage() {
         const latWasNull = record.lat == null;
         const lngWasNull = record.lng == null;
 
-        // Buscar si ya existe por nombre (cargamos todo y filtramos en cliente)
+        // Buscar si ya existe por nombre (usando el caché local)
         let existingData = null;
         try {
-          const allAsociadas = await api.getAsociadas();
-          const nombreNorm = record.nombre.toLowerCase().trim();
-          existingData = (allAsociadas || []).find(a => a.nombre?.toLowerCase().trim() === nombreNorm) || null;
+          const nombreNorm = normalize(record.nombre);
+          existingData = allAsociadasCache.find(a => normalize(a.nombre || "") === nombreNorm) || null;
         } catch {
           existingData = null;
         }
@@ -341,16 +373,21 @@ function ImportarPage() {
         if (existingData) {
           asocId = existingData.id;
           
-          // No sobreescribir con null o vacío los campos que la asociada ya tiene registrados
+          // Fusionar los datos viejos con los nuevos.
+          // Solo sobrescribimos con los valores del Excel que tengan algún dato real.
+          const mergedRecord = { ...existingData };
           for (const key of Object.keys(record)) {
-            if (record[key] === null || record[key] === "") {
-              delete record[key];
+            if (record[key] !== null && record[key] !== "") {
+              mergedRecord[key] = record[key];
             }
           }
 
           try {
-            await api.updateAsociada(existingData.id, record);
+            await api.updateAsociada(existingData.id, mergedRecord);
             success++;
+            // Update cache
+            const index = allAsociadasCache.findIndex(a => a.id === existingData.id);
+            if (index !== -1) allAsociadasCache[index] = { ...allAsociadasCache[index], ...mergedRecord };
           } catch (error) {
             errors++; errorRows.push(i + 1); continue;
           }
@@ -363,16 +400,17 @@ function ImportarPage() {
             const insertedData = await api.createAsociada(record);
             success++;
             asocId = insertedData.id;
+            allAsociadasCache.push(insertedData); // Add to cache to prevent dupe on next row
           } catch (error) {
             errors++; errorRows.push(i + 1); continue;
           }
         }
         
-        // Procesar historial de visitas
+        // Procesar historial de visitas (ahora desde ultima visita)
         if (asocId && visitasDates.length > 0) {
           try {
-            // Obtener visitas existentes para no duplicarlas
-            const existingVisitas = await request(`/visitas?select=fecha&asociada_id=eq.${asocId}`);
+            // Filtrar desde el caché local
+            const existingVisitas = allVisitasCache.filter(v => v.asociada_id === asocId || v.asociadaId === asocId);
               
             const existingSet = new Set((existingVisitas || []).map(v => v.fecha));
             const newVisitas = [];
@@ -381,12 +419,14 @@ function ImportarPage() {
               const d = parseImportDate(dateStr);
               if (d && !isNaN(d.getTime())) {
                 const isoDate = d.toISOString().split("T")[0];
+                // Ajustar zona horaria local para que no tome mañana por culpa de UTC
+                const todayIso = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split("T")[0];
                 if (!existingSet.has(isoDate)) {
                   newVisitas.push({
                     asociada_id: asocId,
                     fecha: isoDate,
                     tipo: "visita",
-                    realizada: true
+                    realizada: isoDate <= todayIso
                   });
                   existingSet.add(isoDate); // Prevent duplicates inside the same row
                 }
@@ -396,7 +436,8 @@ function ImportarPage() {
             if (newVisitas.length > 0) {
               // El servidor acepta visitas de a una, no en bulk array
               for (const v of newVisitas) {
-                await api.createVisita(v);
+                const insertedVisita = await api.createVisita(v);
+                if (insertedVisita) allVisitasCache.push(insertedVisita);
               }
             }
           } catch (err) {
@@ -457,7 +498,7 @@ function ImportarPage() {
           }
           // Eliminamos la validación de duplicados por nombre ya que ahora se actualizan automáticamente
         } else if (dbKey === "telefono" && val) {
-          const match = existingNorm.find((e) => e.telefono === val);
+          const match = existingNorm.find((e) => e.telefono === val && e.nombre?.toLowerCase().trim() !== record.nombre?.toLowerCase().trim());
           if (match) {
             record.reasons.push({ type: "telefono", existing: match.nombre, id: match.id });
           }
@@ -473,6 +514,7 @@ function ImportarPage() {
       if (record._lat != null && record._lng != null) {
         const match = existingNorm.find((e) => {
           if (e.lat == null || e.lng == null) return false;
+          if (e.nombre?.toLowerCase().trim() === record.nombre?.toLowerCase().trim()) return false;
           return Math.abs(e.lat - record._lat) < 0.0001 && Math.abs(e.lng - record._lng) < 0.0001;
         });
         if (match && !record.reasons.some((r) => r.type === "telefono" && r.id === match.id)) {
@@ -655,7 +697,10 @@ function ImportarPage() {
           {file && (
             <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3">
               <div className="flex items-center gap-3 min-w-0">
-                {fileIcon && <fileIcon className="h-8 w-8 shrink-0 text-slate-500" />}
+                {(() => {
+                  const FileIconCmp = fileIcon;
+                  return FileIconCmp ? <FileIconCmp className="h-8 w-8 shrink-0 text-slate-500" /> : null;
+                })()}
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-800 truncate">{file.name}</p>
                   <p className="text-xs text-slate-400">{(file.size / 1024).toFixed(1)} KB · {parsedData?.length || 0} registros</p>
@@ -851,6 +896,10 @@ function ImportarPage() {
                         <X className="h-3.5 w-3.5" /> Descartar {selectedRows.size} seleccionados
                       </button>
                     )}
+                    <button onClick={() => runImport(parsedData.map((raw, i) => ({ raw, rowIndex: i, nombre: "", reasons: [] })))} disabled={importing}
+                      className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:bg-emerald-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                      <Check className="h-3.5 w-3.5" /> Forzar Actualización (Ignorar advertencias)
+                    </button>
                     <button onClick={importWithoutDupes} disabled={importing}
                       className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-amber-700 active:bg-amber-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                       <Upload className="h-3.5 w-3.5" /> Importar {parsedData.length - duplicates.filter(d => discardedRows.has(d.rowIndex)).length} (saltar descartados)

@@ -42,30 +42,51 @@ export async function request(endpoint, options = {}) {
   };
 
   const url = `${API_URL}${endpoint}`;
-  const response = await fetch(url, config);
 
-  if (response.status === 204) return null;
-
-  const text = await response.text();
-  let parsed = null;
   try {
-    parsed = text ? JSON.parse(text) : null;
-  } catch {
-    if (!response.ok) throw new Error(`Error ${response.status}: ${text}`);
-    return text;
-  }
+    const response = await fetch(url, config);
 
-  if (!response.ok) {
-    const msg = parsed?.error || parsed?.message || `Error ${response.status}: ${response.statusText}`;
-    throw new Error(msg);
-  }
+    if (response.status === 204) return null;
 
-  // El servidor envuelve los datos en { data: [...] }
-  if (parsed && typeof parsed === "object" && "data" in parsed) {
-    return parsed.data;
-  }
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn(`[404] El recurso en ${url} no existe.`);
+        return null;
+      } else if (response.status === 400) {
+        const errText = await response.text();
+        console.warn(`[400] Los datos enviados a ${url} no son válidos. Server says: ${errText}`);
+        return null;
+      } else if (response.status === 502 || response.status === 503) {
+        console.warn(`[${response.status}] El servidor backend está temporalmente fuera de línea.`);
+        return null;
+      } else if (response.status === 429) {
+        throw new Error("Demasiadas peticiones (Rate Limit Exceeded). Intente nuevamente.");
+      }
+      const text = await response.text();
+      console.warn(`Error ${response.status} en ${url}: ${text}`);
+      return null;
+    }
 
-  return parsed;
+    const text = await response.text();
+    let parsed = null;
+    try {
+      parsed = text ? JSON.parse(text) : null;
+    } catch {
+      return text;
+    }
+
+
+    // El servidor envuelve los datos en { data: [...] }
+    if (parsed && typeof parsed === "object" && "data" in parsed) {
+      return parsed.data;
+    }
+
+    return parsed;
+
+  } catch (error) {
+    console.warn(`Error de red o CORS al conectar con ${endpoint}:`, error.message);
+    return null;
+  }
 }
 
 // Helper: primer elemento si es array, si no, el dato directo
@@ -142,6 +163,12 @@ export const api = {
   },
 
   // =========================================================
+  // METRICS & DASHBOARD
+  // =========================================================
+  getDashboard: () => request("/dashboard"),
+  getAlertas: () => request("/alertas"),
+
+  // =========================================================
   // IMPORTACIÓN MASIVA
   // El servidor no tiene ruta /importar, así que hacemos los
   // inserts uno a uno usando createAsociada
@@ -185,10 +212,5 @@ export const api = {
     return parsed.data;
   },
 
-  // =========================================================
-  // DASHBOARD (calculado en frontend, no hay ruta dedicada)
-  // =========================================================
-  getDashboard: () => Promise.resolve(null),
-  getAlertas: () => Promise.resolve([]),
   getProximasVisitas: () => request("/asociadas").catch(() => []),
 };

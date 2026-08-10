@@ -65,8 +65,9 @@ export function VisitasProvider({ children }) {
       console.log("Conectado en tiempo real al backend (Visitas)");
     });
 
-    socket.on("visita-inserted", (data) => {
-      const mapped = toFrontendVisita(data);
+    socket.on("custom-insert", (payload) => {
+      if (payload?.table !== "visitas" || !payload.new) return;
+      const mapped = toFrontendVisita(payload.new);
       setVisitas((prev) => {
         const idx = prev.findIndex((v) => v.id === mapped.id);
         if (idx >= 0) {
@@ -78,13 +79,15 @@ export function VisitasProvider({ children }) {
       });
     });
 
-    socket.on("visita-updated", (data) => {
-      const mapped = toFrontendVisita(data);
+    socket.on("custom-update", (payload) => {
+      if (payload?.table !== "visitas" || !payload.new) return;
+      const mapped = toFrontendVisita(payload.new);
       setVisitas((prev) => prev.map((v) => (v.id === mapped.id ? mapped : v)));
     });
 
-    socket.on("visita-deleted", (data) => {
-      setVisitas((prev) => prev.filter((v) => v.id !== data.id));
+    socket.on("custom-delete", (payload) => {
+      if (payload?.table !== "visitas" || !payload.old?.id) return;
+      setVisitas((prev) => prev.filter((v) => v.id !== payload.old.id));
     });
 
     return () => {
@@ -130,8 +133,12 @@ export function VisitasProvider({ children }) {
   const getProximasVisitas = useCallback(() => {
     const today = new Date().toISOString().split("T")[0];
     return visitas
-      .filter((v) => v.proximaVisita && v.proximaVisita >= today)
-      .sort((a, b) => new Date(a.proximaVisita) - new Date(b.proximaVisita));
+      .filter((v) => (v.proximaVisita && v.proximaVisita >= today) || (v.fecha >= today && !v.realizada))
+      .sort((a, b) => {
+        const dateA = new Date((a.proximaVisita >= today ? a.proximaVisita : null) || a.fecha);
+        const dateB = new Date((b.proximaVisita >= today ? b.proximaVisita : null) || b.fecha);
+        return dateA - dateB;
+      });
   }, [visitas]);
 
   return (

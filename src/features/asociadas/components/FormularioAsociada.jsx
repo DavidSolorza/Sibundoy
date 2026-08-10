@@ -129,6 +129,22 @@ function FormularioAsociada({ open, onClose, onSave, coords, initialData }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 1. Validar nombre (Obligatorio)
+    if (!form.nombre || form.nombre.trim().length < 2) {
+      showToast("El campo 'Nombre' es obligatorio.", "error");
+      return;
+    }
+
+    // 2. Validar edad (entero entre 1 y 119)
+    if (form.edad) {
+      const edadNum = parseInt(form.edad, 10);
+      if (isNaN(edadNum) || edadNum < 1 || edadNum > 119) {
+        showToast("La edad debe ser un número entre 1 y 119.", "error");
+        return;
+      }
+    }
+
     try {
       await onSave({
         ...form,

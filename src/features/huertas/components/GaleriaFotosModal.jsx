@@ -104,7 +104,7 @@ export default function GaleriaFotosModal({ asociada, open, onClose }) {
       
       // Update urlFoto if the deleted photo was the profile photo
       let newUrlFoto = asociada.urlFoto;
-      if (asociada.urlFoto === fotoUrl) {
+      if (!updatedFotos.includes(asociada.urlFoto)) {
         newUrlFoto = updatedFotos.length > 0 ? updatedFotos[0] : null;
       }
       

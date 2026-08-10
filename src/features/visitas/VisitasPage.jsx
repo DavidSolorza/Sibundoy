@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { Calendar, ClipboardList, Plus, X, Search, Clock, Trash2, Filter, LayoutList, Edit3, CalendarClock, RefreshCw, ChevronLeft, ChevronRight, MapPin, CheckCircle } from "lucide-react";
+import { Calendar, ClipboardList, Plus, X, Search, Clock, Trash2, Filter, LayoutList, Edit3, CalendarClock, RefreshCw, ChevronLeft, ChevronRight, MapPin, CheckCircle, AlertTriangle, User } from "lucide-react";
 import useDebounce from "../../shared/lib/useDebounce";
 import { formatTimeAgo } from "../../shared/lib/dates";
 import useAsociadas from "../asociadas/useAsociadas";
@@ -60,21 +60,7 @@ function VisitasPage() {
     const prefix = nextMonth.toISOString().slice(0, 7);
     const nextMonthCount = visitas.filter((v) => (v.proximaVisita || v.fecha).startsWith(prefix)).length;
     
-    // Contar visitas reales registradas en la tabla 'visitas'
-    const visitasPorAsociada = {};
-    visitas.forEach((v) => {
-      visitasPorAsociada[v.asociadaId] = (visitasPorAsociada[v.asociadaId] || 0) + 1;
-    });
-
-    // Sumar visitas históricas que están en 'num_visitas' pero no tienen un registro en 'visitas'
-    let totalHistorico = visitas.length;
-    asociadas.forEach((a) => {
-      const registradas = visitasPorAsociada[a.id] || 0;
-      const historicas = a.num_visitas || 0;
-      if (historicas > registradas) {
-        totalHistorico += (historicas - registradas);
-      }
-    });
+    const totalHistorico = visitas.length;
 
     const uniqueAsociadas = new Set(visitas.map((v) => v.asociadaId)).size;
     const byType = {};
@@ -117,7 +103,7 @@ function VisitasPage() {
         if (!g.visitas.some(v => new Date(v.fecha) >= weekAgo)) return false;
       }
       if (quickFilter === "month" && !g.visitas.some(v => v.fecha.startsWith(today.slice(0, 7)))) return false;
-      if (quickFilter === "proximas" && !g.visitas.some(v => !!v.proximaVisita && v.proximaVisita >= today)) return false;
+      if (quickFilter === "proximas" && !g.visitas.some(v => (v.proximaVisita && v.proximaVisita >= today) || (v.fecha >= today && !v.realizada))) return false;
 
       return true;
     }).sort((a, b) => {
@@ -164,7 +150,18 @@ function VisitasPage() {
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    if (!formData.asociadaId) return;
+    if (!formData.asociadaId) {
+      showToast("Debe seleccionar una asociada.", "error");
+      return;
+    }
+
+    if (formData.tipo) {
+      if (!TIPOS_VISITA.includes(formData.tipo)) {
+        showToast("Tipo de visita inválido. Seleccione de la lista.", "error");
+        return;
+      }
+    }
+
     const payload = { ...formData, proximaVisita: formData.proximaVisita || null };
     try {
       if (editingId) {
@@ -255,12 +252,14 @@ function VisitasPage() {
           <div className="flex flex-wrap gap-2">
             {proximas.slice(0, 6).map((v) => {
               const a = asociadaMap[v.asociadaId];
+              const today = new Date().toISOString().split("T")[0];
+              const targetDate = (v.proximaVisita && v.proximaVisita >= today) ? v.proximaVisita : v.fecha;
               return (
                 <div key={v.id} className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-blue-200 px-2.5 py-1.5 text-xs text-slate-700 shadow-sm">
                   <span className={`inline-block h-2 w-2 rounded-full ${typeDots[v.tipo]}`} />
                   <span className="font-medium">{a?.nombre || "—"}</span>
                   <span className="text-slate-400">·</span>
-                  <span className="text-blue-600 font-semibold">{parseLocalDate(v.proximaVisita).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span>
+                  <span className="text-blue-600 font-semibold">{parseLocalDate(targetDate).toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</span>
                 </div>
               );
             })}
@@ -466,6 +465,17 @@ function VisitasPage() {
               placeholder="Seleccionar..."
               searchPlaceholder="Buscar asociada..."
             />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500 flex items-center gap-1.5">
+              <ClipboardList className="h-3.5 w-3.5 text-slate-400" />
+              Tipo de visita <span className="text-red-400">*</span>
+            </label>
+            <Select value={formData.tipo} onChange={(e) => setFormData({ ...formData, tipo: e.target.value })} required>
+              <option value="visita">Visita</option>
+              <option value="seguimiento">Seguimiento</option>
+              <option value="capacitacion">Capacitación</option>
+            </Select>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Observaciones</label>

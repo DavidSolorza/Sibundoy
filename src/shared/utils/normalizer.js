@@ -81,7 +81,7 @@ export function toFrontendVisita(row) {
     asociadaId: row.asociada_id ?? row.asociadaId,
     asociadaNombre: row.asociada_nombre ?? row.asociadaNombre ?? "",
     fecha: row.fecha,
-    tipo: row.tipo || "visita",
+    tipo: row.tipo || "Técnica",
     observaciones: row.observaciones || "",
     proximaVisita: row.proxima_visita ?? row.proximaVisita ?? null,
     realizada: parseBoolean(row.realizada),

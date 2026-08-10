@@ -1,8 +1,9 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, BarChart3, ClipboardList, CheckCircle, User, Navigation, AlertTriangle, Clock, TrendingUp, Layers, Download, MapPin, Wheat, Heart, Baby, XCircle, UserCheck } from "lucide-react";
 import useAsociadas from "../asociadas/useAsociadas";
 import useVisitas from "../visitas/useVisitas";
+import { api } from "../../core/http/api";
 import StatCard from "../../shared/ui/StatCard";
 import { Card, CardHeader, CardTitle } from "../../shared/ui/Card";
 import Modal from "../../shared/ui/Modal";
@@ -18,107 +19,49 @@ const DIAS_ALERTA_VISITA = 30;
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
 function daysSince(dateStr) {
-  if (!dateStr) return 999;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return 999;
-  return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+  if (!dateStr) return Infinity;
+  return Math.floor((new Date() - new Date(dateStr)) / (1000 * 60 * 60 * 24));
 }
-
-function parseArea(area) {
-  if (!area) return 0;
-  const num = parseFloat(area.toString().replace(/[^0-9.,]/g, "").replace(",", "."));
-  return isNaN(num) ? 0 : num;
+function parseArea(areaStr) {
+  if (!areaStr) return 0;
+  const num = parseFloat(areaStr.toString().replace(/[^0-9.]/g, ""));
+  if (isNaN(num)) return 0;
+  if (areaStr.toString().toLowerCase().includes("hect")) return num * 10000;
+  if (areaStr.toString().toLowerCase().includes("plaza")) return num * 6400;
+  return num;
 }
-
-function CustomTooltip({ active, payload }) {
-  if (active && payload?.length) {
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
     return (
       <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
-        <p className="font-semibold text-slate-900">{payload[0].payload.name}</p>
-        <p className="text-slate-600">Asociadas: <span className="font-medium">{payload[0].value}</span></p>
-        {payload[0].payload.beneficiarios && <p className="text-slate-600">Beneficiarios: <span className="font-medium">{payload[0].payload.beneficiarios}</span></p>}
+        <p className="font-semibold text-slate-900">{payload[0].payload.fullName || payload[0].payload.name}</p>
+        <p className="text-slate-600">Asociadas: <span className="font-medium text-slate-900">{payload[0].value}</span></p>
       </div>
     );
   }
   return null;
-}
-
-function SectorDetailModal({ sectorName, asociadas: items, onClose }) {
+};
+function SectorDetailModal({ sectorName, asociadas, onClose }) {
   const navigate = useNavigate();
-  const stats = useMemo(() => {
-    const total = items.length;
-    const edades = items.map((a) => a.edad);
-    const promEdad = (edades.reduce((s, e) => s + e, 0) / total).toFixed(1);
-    const beneficiarios = items.reduce((s, a) => s + (a.numPersonas || 1), 0);
-    const visitas = items.reduce((s, a) => s + a.numVisitas, 0);
-    return { total, promEdad, beneficiarios, visitas };
-  }, [items]);
-
   return (
-    <Modal open={!!sectorName} onClose={onClose} title={sectorName || ""}>
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Asociadas</p>
-            <p className="text-lg font-bold text-slate-800">{stats.total}</p>
+    <Modal open={!!sectorName} onClose={onClose} title={`Detalle: ${sectorName || ""}`}>
+      <div className="flex flex-col gap-4 max-h-[80vh]">
+        <div className="grid grid-cols-2 gap-3 shrink-0">
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 shadow-sm">
+            <p className="text-[10px] uppercase tracking-wider text-blue-500 font-semibold mb-1">Total Asociadas</p>
+            <p className="text-2xl font-bold text-blue-700">{asociadas.length}</p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 shadow-sm">
+            <p className="text-[10px] uppercase tracking-wider text-emerald-500 font-semibold mb-1">Beneficiarios</p>
+            <p className="text-2xl font-bold text-emerald-700">{asociadas.reduce((sum, a) => sum + (a.numPersonas || 1), 0)}</p>
+          </div>
+          <div className="col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3 shadow-sm flex items-center justify-between">
             <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Edad Prom.</p>
-            <p className="text-lg font-bold text-slate-800">{stats.promEdad}</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Beneficiarios</p>
-            <p className="text-lg font-bold text-slate-800">{stats.beneficiarios}</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Visitas</p>
-            <p className="text-lg font-bold text-slate-800">{stats.visitas}</p>
+            <p className="text-lg font-bold text-slate-800">{asociadas.length > 0 ? (asociadas.reduce((s, a) => s + (a.edad || 0), 0) / asociadas.length).toFixed(1) : 0}</p>
           </div>
         </div>
-
         <div className="max-h-64 overflow-y-auto space-y-1.5">
-          {items.map((a) => (
-            <div key={a.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2.5 text-sm hover:bg-slate-50 transition-colors">
-              <div className="flex items-center gap-2 min-w-0">
-                <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <button onClick={() => { onClose(); navigate(`/asociada/${a.id}`); }} className="cursor-pointer font-medium text-slate-800 truncate hover:text-blue-600 transition-colors">{a.nombre}</button>
-              </div>
-              <div className="flex items-center gap-3 shrink-0 ml-2">
-                <span className="text-xs text-slate-400">{a.edad} años</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-function TipoDetailModal({ tipoName, asociadas: items, onClose }) {
-  const navigate = useNavigate();
-  const stats = useMemo(() => {
-    const total = items.length;
-    const edades = items.map((a) => a.edad);
-    const promEdad = (edades.reduce((s, e) => s + e, 0) / total).toFixed(1);
-    return { total, promEdad };
-  }, [items]);
-
-  return (
-    <Modal open={!!tipoName} onClose={onClose} title={tipoName || ""}>
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Asociadas</p>
-            <p className="text-lg font-bold text-slate-800">{stats.total}</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Edad Prom.</p>
-            <p className="text-lg font-bold text-slate-800">{stats.promEdad}</p>
-          </div>
-        </div>
-
-        <div className="max-h-64 overflow-y-auto space-y-1.5">
-          {items.map((a) => (
+          {asociadas.map((a) => (
             <div key={a.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2.5 text-sm hover:bg-slate-50 transition-colors">
               <div className="flex items-center gap-2 min-w-0">
                 <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
@@ -132,7 +75,6 @@ function TipoDetailModal({ tipoName, asociadas: items, onClose }) {
     </Modal>
   );
 }
-
 function ListModal({ title, items, onClose }) {
   const navigate = useNavigate();
   return (
@@ -142,10 +84,7 @@ function ListModal({ title, items, onClose }) {
           <div key={a.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2.5 text-sm hover:bg-slate-50 transition-colors">
             <div className="flex items-center gap-2 min-w-0">
               <User className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-              <button onClick={() => { onClose(); navigate(`/asociada/${a.id}`); }}
-                className="cursor-pointer font-medium text-slate-800 truncate hover:text-blue-600 transition-colors">
-                {a.nombre}
-              </button>
+              <button onClick={() => { onClose(); navigate(`/asociada/${a.id}`); }} className="cursor-pointer font-medium text-slate-800 truncate hover:text-blue-600 transition-colors">{a.nombre}</button>
             </div>
             {a.subtext && <span className="text-xs text-slate-400 shrink-0 ml-2">{a.subtext}</span>}
           </div>
@@ -154,7 +93,6 @@ function ListModal({ title, items, onClose }) {
     </Modal>
   );
 }
-
 function BreakdownModal({ title, items, onClose, valueLabel }) {
   return (
     <Modal open={!!title} onClose={onClose} title={title || ""}>
@@ -179,6 +117,11 @@ function AdminDashboard() {
   const [listModal, setListModal] = useState(null);
   const [breakdownModal, setBreakdownModal] = useState(null);
   const [exporting, setExporting] = useState(false);
+  
+  const [dashboardData, setDashboardData] = useState(null);
+  const [alertasData, setAlertasData] = useState(null);
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
+  
   const dashboardRef = useRef(null);
 
   const closeAllModals = useCallback(() => {
@@ -189,110 +132,72 @@ function AdminDashboard() {
     setBreakdownModal(null);
   }, []);
 
-  const stats = useMemo(() => {
-    const sectores = {};
-    const sectoresEdad = {};
-    const sectoresPersonas = {};
-    const sectoresVisitas = {};
-    const tipos = {};
-    asociadas.forEach((a) => {
-      if (a.sector) {
-        sectores[a.sector] = (sectores[a.sector] || 0) + 1;
-        if (!sectoresEdad[a.sector]) sectoresEdad[a.sector] = [];
-        sectoresEdad[a.sector].push(a.edad);
-        sectoresPersonas[a.sector] = (sectoresPersonas[a.sector] || 0) + (a.numPersonas || 1);
-        sectoresVisitas[a.sector] = (sectoresVisitas[a.sector] || 0) + a.numVisitas;
-      }
-      if (a.tipoPersona) tipos[a.tipoPersona] = (tipos[a.tipoPersona] || 0) + 1;
-    });
-    return { sectores, sectoresEdad, sectoresPersonas, sectoresVisitas, tipos };
-  }, [asociadas]);
+  const cargarDashboard = useCallback(async () => {
+    try {
+      const [dashRes, alertRes] = await Promise.all([
+        api.getDashboard(),
+        api.getAlertas()
+      ]);
+      setDashboardData(dashRes);
+      setAlertasData(alertRes || []);
+    } catch (error) {
+      console.error("Error cargando dashboard:", error);
+    } finally {
+      setLoadingDashboard(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarDashboard();
+  }, [cargarDashboard, asociadas, visitas]);
 
   const realizadas = visitas.filter((v) => v.realizada);
   const pendientes = visitas.filter((v) => !v.realizada);
-  
-  // Calcular visitas faltantes (históricas sin registro en tabla visitas)
+
   const visitasPorAsociada = {};
   visitas.forEach(v => {
     visitasPorAsociada[v.asociadaId] = (visitasPorAsociada[v.asociadaId] || 0) + 1;
   });
 
-  let faltantesHistoricas = 0;
-  asociadas.forEach((a) => {
-    const registradas = visitasPorAsociada[a.id] || 0;
-    const historicas = a.num_visitas || 0;
-    if (historicas > registradas) {
-      faltantesHistoricas += (historicas - registradas);
-    }
-  });
-  
-  const visitasRealizadas = realizadas.length + faltantesHistoricas;
+  const visitasRealizadas = realizadas.length;
   const visitasPendientes = pendientes.length;
-  const totalVisitas = visitas.length + faltantesHistoricas;
 
-  const edadValidas = asociadas.filter((a) => a.edad != null && !isNaN(a.edad));
-  const promedioEdad = edadValidas.length > 0 ? (edadValidas.reduce((sum, a) => sum + a.edad, 0) / edadValidas.length).toFixed(1) : "—";
+  const backendStats = dashboardData?.stats || {};
+  const sectorNamesList = (dashboardData?.stats_sectores || [])
+    .filter(s => s.total_asociadas > 0)
+    .map(s => s.nombre);
   
-  const activas = Object.keys(visitasPorAsociada).length;
-  const totalBeneficiarios = asociadas.reduce((sum, a) => sum + a.numPersonas, 0);
-  const totalExtension = asociadas.reduce((sum, a) => sum + parseArea(a.areaHuerta), 0);
-  const totalMenores = asociadas.reduce((sum, a) => sum + (a.menoresHogar || 0), 0);
-  const sinVisitas = asociadas.length - activas;
-  const sectorNamesList = Object.keys(stats.sectores);
-
-  const alertas = useMemo(() => {
-    const today = new Date();
-
-    // Calcular la última visita REAL por asociada desde la tabla de visitas
-    const ultimaVisitaPor = {};
-    const conteoVisitasPor = {};
-    visitas.forEach((v) => {
-      const aid = v.asociadaId;
-      conteoVisitasPor[aid] = (conteoVisitasPor[aid] || 0) + 1;
-      if (!ultimaVisitaPor[aid] || v.fecha > ultimaVisitaPor[aid]) {
-        ultimaVisitaPor[aid] = v.fecha;
-      }
-    });
-
-    // Asociadas sin visita en más de DIAS_ALERTA_VISITA días (o nunca visitadas)
-    const sinVisita = asociadas.filter((a) => {
-      const ultima = ultimaVisitaPor[a.id] || a.fechaUltimaVisita;
-      const dias = ultima
-        ? Math.floor((today - new Date(ultima)) / (1000 * 60 * 60 * 24))
-        : 999;
-      return dias > DIAS_ALERTA_VISITA;
-    });
-
-    // Asociadas con baja frecuencia (menos de 2 visitas reales registradas)
-    const bajaFrec = asociadas.filter((a) => (conteoVisitasPor[a.id] || 0) < 2);
-
-    const sectoresPromVisitas = Object.entries(stats.sectoresVisitas).map(([sector, visitasCount]) => ({
-      sector,
-      prom: (visitasCount / (stats.sectores[sector] || 1)).toFixed(1),
-      total: stats.sectores[sector] || 0,
-    })).sort((a, b) => a.prom - b.prom).slice(0, 3);
-
-    return { sinVisita, bajaFrec, sectoresPromVisitas };
-  }, [asociadas, visitas, stats]);
+  const sinVisita = alertasData?.filter(a => a.alerta_sin_visita) || [];
+  const bajaFrec = alertasData?.filter(a => a.alerta_baja_frecuencia) || [];
+  const sectoresPromVisitas = [...(dashboardData?.stats_sectores || [])]
+    .sort((a, b) => b.visitas_promedio - a.visitas_promedio)
+    .slice(0, 3)
+    .map(s => ({ sector: s.nombre, prom: s.visitas_promedio.toFixed(1), total: s.total_asociadas }));
 
   const sectorChartData = useMemo(() =>
-    Object.entries(stats.sectores)
-      .map(([name, value]) => ({ name: name.replace("Vereda ", ""), value, beneficiarios: stats.sectoresPersonas[name] || value, fullName: name }))
+    (dashboardData?.stats_sectores || [])
+      .filter(s => s.total_asociadas > 0)
+      .map(s => ({ name: s.nombre.replace("Vereda ", ""), value: s.total_asociadas, beneficiarios: s.total_beneficiarios, fullName: s.nombre, total_visitas: s.total_visitas }))
       .sort((a, b) => b.value - a.value),
-    [stats.sectores, stats.sectoresPersonas]
+    [dashboardData]
   );
 
-  const tipoChartData = useMemo(() =>
-    Object.entries(stats.tipos).map(([name, value]) => ({ name, value })),
-    [stats.tipos]
-  );
+  const tipoChartData = useMemo(() => {
+    const counts = {};
+    asociadas.forEach((a) => {
+      const tipo = a.tipoPersona || "Sin Especificar";
+      counts[tipo] = (counts[tipo] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [asociadas]);
 
   const edadChartData = useMemo(() =>
-    EDAD_RANGES.map((label, i) => ({
-      name: label,
-      value: asociadas.filter((a) => a.edad >= RANGE_MIN[i] && a.edad <= RANGE_MAX[i]).length,
-    })),
-    [asociadas]
+    (dashboardData?.distribucion_edad || [])
+      .filter(e => e.rango)
+      .map(e => ({ name: e.rango, value: e.total })),
+    [dashboardData]
   );
 
   const prodChartData = useMemo(() => {
@@ -328,8 +233,10 @@ function AdminDashboard() {
   }, [visitas]);
 
   const conUbicacion = asociadas.filter((a) => a.lat != null && a.lng != null).length;
-  const promVisitas = asociadas.length > 0 ? (totalVisitas / asociadas.length).toFixed(1) : "0";
+  const promVisitas = backendStats.total_asociadas > 0 ? (backendStats.total_visitas / backendStats.total_asociadas).toFixed(1) : "0";
   const promProductos = asociadas.length > 0 ? (asociadas.reduce((s, a) => s + ((a.productos || "").split(",").filter(Boolean).length), 0) / asociadas.length).toFixed(1) : "0";
+  const totalExtension = asociadas.reduce((sum, a) => sum + parseArea(a.areaHuerta), 0);
+  const totalMenores = asociadas.reduce((sum, a) => sum + (a.menoresHogar || 0), 0);
 
   const handleBarClick = useCallback((data) => {
     if (data?.fullName) {
@@ -341,7 +248,7 @@ function AdminDashboard() {
   const handlePieClick = useCallback((data) => {
     if (data?.name) {
       closeAllModals();
-      setTipoModal({ name: data.name, list: asociadas.filter((a) => a.tipoPersona === data.name) });
+      setTipoModal({ name: data.name, list: asociadas.filter((a) => (a.tipoPersona || "Sin Especificar") === data.name) });
     }
   }, [asociadas, closeAllModals]);
 
@@ -350,7 +257,7 @@ function AdminDashboard() {
     setDetailSector({ name: sectorFullName, list: asociadas.filter((a) => a.sector === sectorFullName) });
   }, [asociadas, closeAllModals]);
 
-  const totalAlertas = alertas.sinVisita.length + alertas.bajaFrec.length;
+  const totalAlertas = (sinVisita?.length || 0) + (bajaFrec?.length || 0);
 
   const handleExportPDF = useCallback(async () => {
     setExporting(true);
@@ -413,16 +320,16 @@ function AdminDashboard() {
 
       section("1. Resumen General");
       table(["Indicador", "Valor"], [
-        ["Total Asociadas", asociadas.length],
-        ["Promedio Edad", promedioEdad],
-        ["Total Visitas", totalVisitas],
-        ["Asociadas Activas (>0 visitas)", activas],
-        ["Total Beneficiarios", totalBeneficiarios],
+        ["Total Asociadas", backendStats.total_asociadas || 0],
+        ["Promedio Edad", backendStats.edad_promedio || 0],
+        ["Total Visitas", backendStats.total_visitas || 0],
+        ["Asociadas Activas (>0 visitas)", backendStats.activas || 0],
+        ["Total Beneficiarios", backendStats.total_beneficiarios || 0],
         ["Extensión De Tierra", `${totalExtension.toFixed(1)} m²`],
         ["Menores De Edad", totalMenores],
-        ["Total Sectores", sectorNamesList.length],
-        ["Con Ubicación", `${conUbicacion} / ${asociadas.length} (${asociadas.length > 0 ? ((conUbicacion / asociadas.length) * 100).toFixed(0) : 0}%)`],
-        ["Sin Visitas", sinVisitas],
+        ["Total Sectores", backendStats.total_sectores || 0],
+        ["Con Ubicación", `${conUbicacion} / ${backendStats.total_asociadas || 0}`],
+        ["Sin Visitas", backendStats.inactivas || 0],
         ["Prom. Visitas/Asoc", promVisitas],
         ["Prom. Productos/Asoc", promProductos],
         ["Alertas", totalAlertas],
@@ -433,12 +340,12 @@ function AdminDashboard() {
         ["Sector", "Asociadas", "Beneficiarios", "Visitas", "Prom."],
         sectorChartData.map((s) => [
           s.name, s.value, s.beneficiarios,
-          stats.sectoresVisitas[s.fullName] || 0,
-          ((stats.sectoresVisitas[s.fullName] || 0) / s.value).toFixed(1),
+          (dashboardData?.stats_sectores?.find(x => x.nombre === s.fullName)?.total_visitas || 0),
+          (dashboardData?.stats_sectores?.find(x => x.nombre === s.fullName)?.visitas_promedio || 0).toFixed(1),
         ])
       );
 
-      section("3. Tipo de Población");
+      section("3. Estado Civil");
       table(["Tipo", "Cantidad"], tipoChartData.map((t) => [t.name, t.value]));
 
       section("4. Rangos de Edad");
@@ -453,11 +360,11 @@ function AdminDashboard() {
       section("7. Sectores con Menor Promedio de Visitas");
       table(
         ["Sector", "Asociadas", "Prom. Visitas"],
-        alertas.sectoresPromVisitas.map((s) => [s.sector.replace("Vereda ", ""), s.total, s.prom])
+        sectoresPromVisitas.map((s) => [s.sector.replace("Vereda ", ""), s.total, s.prom])
       );
 
       section("8. Asociadas Sin Visita Reciente (+30 días)");
-      const sinVRows = alertas.sinVisita.slice(0, 20).map((a) => [a.nombre, a.sector?.replace("Vereda ", ""), a.fechaUltimaVisita || "Nunca"]);
+      const sinVRows = sinVisita.slice(0, 20).map((a) => [a.nombre, a.sector?.replace("Vereda ", ""), a.fecha_ultima_visita || "Nunca"]);
       autoTable(pdf, {
         startY: y,
         head: [["Nombre", "Sector", "Última Visita"]],
@@ -468,7 +375,7 @@ function AdminDashboard() {
         margin: { left: 14, right: 14 },
       });
       y = pdf.lastAutoTable.finalY + 8;
-      if (alertas.sinVisita.length > 20) text(`... y ${alertas.sinVisita.length - 20} más`, 8);
+      if (sinVisita.length > 20) text(`... y ${sinVisita.length - 20} más`, 8);
 
       pdf.save("informe-general.pdf");
     } catch (err) {
@@ -477,10 +384,8 @@ function AdminDashboard() {
       setExporting(false);
     }
   }, [
-    asociadas, stats, totalVisitas, promedioEdad, activas, totalBeneficiarios,
-    totalExtension, totalMenores, sectorNamesList, sectorChartData, tipoChartData,
-    edadChartData, prodChartData, visitasPorMes, alertas, conUbicacion,
-    sinVisitas, promVisitas, promProductos, totalAlertas,
+    asociadas, backendStats, totalExtension, totalMenores, sectorNamesList, sectorChartData, tipoChartData,
+    edadChartData, prodChartData, visitasPorMes, sinVisita, bajaFrec, sectoresPromVisitas, conUbicacion, promVisitas, promProductos, totalAlertas, dashboardData
   ]);
 
   return (
@@ -490,24 +395,30 @@ function AdminDashboard() {
           <BarChart3 className="h-5 w-5" />
           Panel Administrativo
         </h2>
-        <button onClick={handleExportPDF} disabled={exporting}
+        <button onClick={handleExportPDF} disabled={exporting || loadingDashboard}
           className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 hover:border-slate-400 disabled:opacity-50">
           <Download className="h-4 w-4" />
           {exporting ? "Exportando..." : "Exportar PDF"}
         </button>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Asociadas" value={asociadas.length} icon={Users} onClick={() => { closeAllModals(); setListModal({ title: "Todas las Asociadas", items: asociadas.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) }); }} />
-        <StatCard label="Total Beneficiarios" value={totalBeneficiarios} icon={Heart} onClick={() => { closeAllModals(); setListModal({ title: "Total Beneficiarios", items: [...asociadas].sort((a, b) => (b.numPersonas || 1) - (a.numPersonas || 1)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numPersonas || 1} personas` })) }); }} />
-        <StatCard label="Menores De Edad" value={totalMenores} icon={Baby} onClick={() => { closeAllModals(); setListModal({ title: "Menores De Edad", items: asociadas.filter(a => a.menoresHogar > 0).sort((a, b) => (b.menoresHogar || 0) - (a.menoresHogar || 0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.menoresHogar} menores` })) }); }} />
-        <StatCard label="Asociadas Activas" value={activas} icon={UserCheck} onClick={() => { closeAllModals(); setListModal({ title: "Asociadas Activas", items: asociadas.filter(a => visitasPorAsociada[a.id]).sort((a, b) => visitasPorAsociada[b.id] - visitasPorAsociada[a.id]).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${visitasPorAsociada[a.id]} visitas` })) }); }} />
-      </div>
+      {loadingDashboard ? (
+        <div className="flex items-center justify-center p-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Total Asociadas" value={backendStats.total_asociadas || 0} icon={Users} onClick={() => { closeAllModals(); setListModal({ title: "Todas las Asociadas", items: asociadas.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.edad} años` })) }); }} />
+            <StatCard label="Edad Promedio" value={Math.round(backendStats.edad_promedio || 0)} icon={User} onClick={() => { closeAllModals(); setBreakdownModal({ title: "Rangos de Edad", items: edadChartData, valueLabel: "personas" }); }} />
+            <StatCard label="Total Beneficiarios" value={backendStats.total_beneficiarios || 0} icon={Heart} onClick={() => { closeAllModals(); setListModal({ title: "Total Beneficiarios", items: [...asociadas].sort((a, b) => (b.numPersonas || 1) - (a.numPersonas || 1)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.numPersonas || 1} personas` })) }); }} />
+            <StatCard label="Menores De Edad" value={totalMenores} icon={Baby} onClick={() => { closeAllModals(); setListModal({ title: "Menores De Edad", items: asociadas.filter(a => a.menoresHogar > 0).sort((a, b) => (b.menoresHogar || 0) - (a.menoresHogar || 0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.menoresHogar} menores` })) }); }} />
+          </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCard label="Visitas Realizadas" value={visitasRealizadas} icon={CheckCircle} onClick={() => { closeAllModals(); setListModal({ title: "Visitas Realizadas", items: realizadas.map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
-        <StatCard label="Visitas Pendientes" value={visitasPendientes} icon={Clock} onClick={() => { closeAllModals(); setListModal({ title: "Visitas Pendientes", items: pendientes.map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
-        <StatCard label="Total Visitas" value={totalVisitas} icon={ClipboardList} onClick={() => { closeAllModals(); setListModal({ title: "Total Visitas", items: [...asociadas].sort((a, b) => (visitasPorAsociada[b.id]||0) - (visitasPorAsociada[a.id]||0)).map(a => ({ id: a.id, nombre: a.nombre, subtext: `${visitasPorAsociada[a.id]||0} visitas` })) }); }} />
-        <StatCard label="Sin Visitas" value={sinVisitas} icon={XCircle} onClick={() => { closeAllModals(); setListModal({ title: "Sin Visitas", items: asociadas.filter(a => !visitasPorAsociada[a.id]).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Sin visitas" })) }); }} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <StatCard label="Visitas Realizadas" value={visitasRealizadas} icon={CheckCircle} onClick={() => { closeAllModals(); setListModal({ title: "Visitas Realizadas", items: realizadas.map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
+            <StatCard label="Visitas Pendientes" value={visitasPendientes} icon={Clock} onClick={() => { closeAllModals(); setListModal({ title: "Visitas Pendientes", items: pendientes.map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
+            <StatCard label="Total Visitas" value={visitas.length} icon={ClipboardList} onClick={() => { closeAllModals(); setListModal({ title: "Total Visitas", items: visitas.map(v => ({ id: v.id, nombre: asociadas.find(a => a.id === v.asociadaId)?.nombre || "—", subtext: v.fecha })) }); }} />
+            <StatCard label="Sin Visitas" value={backendStats.inactivas || 0} icon={XCircle} onClick={() => { closeAllModals(); setListModal({ title: "Sin Visitas", items: asociadas.filter(a => !visitasPorAsociada[a.id]).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Sin visitas" })) }); }} />
         <button onClick={() => document.getElementById('alertas-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           className="cursor-pointer w-full text-left rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md hover:border-amber-200 active:bg-amber-50/50">
           <div className="flex items-center gap-4">
@@ -523,8 +434,8 @@ function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Sectores" value={sectorNamesList.length} icon={Layers} onClick={() => { closeAllModals(); setBreakdownModal({ title: "Total Sectores", items: Object.entries(stats.sectores).map(([name, value]) => ({ name: name.replace("Vereda ", ""), value })).sort((a, b) => b.value - a.value) }); }} />
-        <StatCard label="Con Ubicación" value={`${conUbicacion} / ${asociadas.length}`} icon={MapPin} onClick={() => { closeAllModals(); setListModal({ title: "Con Ubicación", items: asociadas.filter(a => a.lat != null && a.lng != null).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Con ubicación" })) }); }} />
+        <StatCard label="Total Sectores" value={sectorNamesList.length} icon={Layers} onClick={() => { closeAllModals(); setBreakdownModal({ title: "Total Sectores", items: sectorChartData, valueLabel: "asociadas" }); }} />
+        <StatCard label="Con Ubicación" value={`${conUbicacion} / ${backendStats.total_asociadas || 0}`} icon={MapPin} onClick={() => { closeAllModals(); setListModal({ title: "Con Ubicación", items: asociadas.filter(a => a.lat != null && a.lng != null).map(a => ({ id: a.id, nombre: a.nombre, subtext: "Con ubicación" })) }); }} />
         <StatCard label="Extensión De Tierra" value={`${totalExtension.toFixed(1)} m²`} icon={MapPin} onClick={() => { closeAllModals(); setListModal({ title: "Extensión De Tierra", items: asociadas.filter(a => a.areaHuerta && a.areaHuerta.toString().trim() !== "").sort((a, b) => parseArea(b.areaHuerta) - parseArea(a.areaHuerta)).map(a => ({ id: a.id, nombre: a.nombre, subtext: a.areaHuerta.toString().toLowerCase().includes("m") ? a.areaHuerta : `${a.areaHuerta} m²` })) }); }} />
         <StatCard label="Productos" value={prodChartData.length} icon={Wheat} onClick={() => { closeAllModals(); setBreakdownModal({ title: "Productos", items: prodChartData, valueLabel: "asoc" }); }} />
       </div>
@@ -535,15 +446,21 @@ function AdminDashboard() {
             <CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="h-4 w-4 text-amber-600" />Alertas Inteligentes</CardTitle>
           </CardHeader>
           <div className="-mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {alertas.sinVisita.length > 0 && (
+            {sinVisita.length > 0 && (
               <div className="rounded-lg border border-amber-200 bg-amber-50/50 px-4 py-3">
                 <div className="flex items-center gap-2 mb-1.5">
                   <Clock className="h-4 w-4 text-amber-600" />
                   <p className="text-xs font-semibold text-amber-800">Sin visita reciente</p>
-                  <span className="ml-auto text-lg font-bold text-amber-700">{alertas.sinVisita.length}</span>
+                  <span className="ml-auto text-lg font-bold text-amber-700">{sinVisita.length}</span>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                  {alertas.sinVisita.map((a) => (
+                  {sinVisita.length > 3 && (
+                    <button onClick={() => { closeAllModals(); setListModal({ title: "Asociadas Sin Visita", items: sinVisita.map(a => ({ id: a.id, nombre: a.nombre, subtext: `Última: ${a.fecha_ultima_visita || "Nunca"}` })) }); }}
+                      className="cursor-pointer w-full text-center text-[10px] font-medium text-blue-600 hover:text-blue-700">
+                      Ver {sinVisita.length} asociadas →
+                    </button>
+                  )}
+                  {sinVisita.slice(0, 3).map((a) => (
                     <button key={a.id} onClick={() => { closeAllModals(); setSectorModal({ name: a.sector, list: asociadas.filter((x) => x.sector === a.sector) }); }}
                       className="cursor-pointer rounded-md bg-white/80 px-2 py-0.5 text-[11px] font-medium text-slate-700 shadow-sm border border-amber-100 hover:bg-white transition-colors">
                       {a.nombre}
@@ -552,15 +469,21 @@ function AdminDashboard() {
                 </div>
               </div>
             )}
-            {alertas.bajaFrec.length > 0 && (
+            {bajaFrec.length > 0 && (
               <div className="rounded-lg border border-orange-200 bg-orange-50/50 px-4 py-3">
                 <div className="flex items-center gap-2 mb-1.5">
                   <AlertTriangle className="h-4 w-4 text-orange-600" />
                   <p className="text-xs font-semibold text-orange-800">Baja frecuencia de visitas</p>
-                  <span className="ml-auto text-lg font-bold text-orange-700">{alertas.bajaFrec.length}</span>
+                  <span className="ml-auto text-lg font-bold text-orange-700">{bajaFrec.length}</span>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                  {alertas.bajaFrec.map((a) => (
+                  {bajaFrec.length > 3 && (
+                    <button onClick={() => { closeAllModals(); setListModal({ title: "Baja Frecuencia", items: bajaFrec.map(a => ({ id: a.id, nombre: a.nombre, subtext: `${a.num_visitas || 0} visitas` })) }); }}
+                      className="cursor-pointer w-full text-center text-[10px] font-medium text-blue-600 hover:text-blue-700">
+                      Ver {bajaFrec.length} asociadas →
+                    </button>
+                  )}
+                  {bajaFrec.slice(0, 3).map((a) => (
                     <button key={a.id} onClick={() => { closeAllModals(); setSectorModal({ name: a.sector, list: asociadas.filter((x) => x.sector === a.sector) }); }}
                       className="cursor-pointer rounded-md bg-white/80 px-2 py-0.5 text-[11px] font-medium text-slate-700 shadow-sm border border-orange-100 hover:bg-white transition-colors">
                       {a.nombre}
@@ -569,14 +492,14 @@ function AdminDashboard() {
                 </div>
               </div>
             )}
-            {alertas.sectoresPromVisitas.length > 0 && (
+            {sectoresPromVisitas.length > 0 && (
               <div className="rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3">
                 <div className="flex items-center gap-2 mb-1.5">
                   <BarChart3 className="h-4 w-4 text-slate-600" />
                   <p className="text-xs font-semibold text-slate-800">Sectores con menos visitas</p>
                 </div>
                 <div className="space-y-1">
-                  {alertas.sectoresPromVisitas.map((s) => (
+                  {sectoresPromVisitas.map((s) => (
                     <button key={s.sector} onClick={() => { closeAllModals(); setDetailSector({ name: s.sector, list: asociadas.filter((x) => x.sector === s.sector) }); }}
                       className="cursor-pointer w-full flex items-center justify-between rounded-md bg-white/80 px-2 py-1 text-[11px] text-slate-700 shadow-sm border border-slate-200 hover:bg-white transition-colors">
                       <span className="font-medium truncate mr-2">{s.sector.replace("Vereda ", "")}</span>
@@ -611,7 +534,7 @@ function AdminDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-blue-600" />Tipo de Población</CardTitle>
+            <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-blue-600" />Estado Civil</CardTitle>
           </CardHeader>
           <div className="flex h-72 items-center justify-center px-2 pb-2">
             <ResponsiveContainer width="100%" height="100%">
@@ -721,7 +644,6 @@ function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {sectorChartData.map((item, i) => {
-                  const visitasSector = stats.sectoresVisitas[sectorNamesList[i]] || 0;
                   const menoresSector = asociadas.filter((a) => a.sector === item.fullName).reduce((s, a) => s + (a.menoresHogar || 0), 0);
                   return (
                     <tr key={i} onClick={() => handleTableRowClick(item.fullName)} className="transition-colors duration-150 hover:bg-slate-50 cursor-pointer">
@@ -729,7 +651,7 @@ function AdminDashboard() {
                       <td className="px-3 py-2 text-sm font-medium text-slate-900 whitespace-nowrap">{item.name}</td>
                       <td className="px-3 py-2 text-sm text-slate-700 font-semibold">{item.value}</td>
                       <td className="px-3 py-2 text-sm text-slate-600">{item.beneficiarios}</td>
-                      <td className="px-3 py-2 text-sm text-slate-600">{visitasSector}</td>
+                      <td className="px-3 py-2 text-sm text-slate-600">{item.total_visitas || 0}</td>
                       <td className="px-3 py-2 text-sm text-slate-600">{menoresSector}</td>
                     </tr>
                   );
@@ -744,18 +666,19 @@ function AdminDashboard() {
         <SectorDetailModal sectorName={sectorModal.name} asociadas={sectorModal.list} onClose={() => setSectorModal(null)} />
       )}
       {tipoModal && (
-        <TipoDetailModal tipoName={tipoModal.name} asociadas={tipoModal.list} onClose={() => setTipoModal(null)} />
+        <ListModal title={`Estado Civil: ${tipoModal.name}`} items={tipoModal.list} onClose={() => setTipoModal(null)} />
       )}
       {detailSector && (
-        <SectorDetailModal sectorName={detailSector.name} asociadas={detailSector.list} onClose={() => setDetailSector(null)} />
+        <ListModal title={`Sector: ${detailSector.name.replace("Vereda ", "")}`} items={detailSector.list} onClose={() => setDetailSector(null)} />
       )}
       {listModal && (
         <ListModal title={listModal.title} items={listModal.items} onClose={() => setListModal(null)} />
       )}
       {breakdownModal && (
-        <BreakdownModal title={breakdownModal.title} items={breakdownModal.items} onClose={() => setBreakdownModal(null)} valueLabel={breakdownModal.valueLabel} />
+        <BreakdownModal title={breakdownModal.title} items={breakdownModal.items} valueLabel={breakdownModal.valueLabel} onClose={() => setBreakdownModal(null)} />
       )}
-
+    </>
+      )}
     </div>
   );
 }

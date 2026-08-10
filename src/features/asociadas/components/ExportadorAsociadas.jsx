@@ -6,22 +6,21 @@ import { Card } from "../../../shared/ui/Card";
 import { useToast } from "../../../shared/ui/Toast";
 
 const ALL_COLUMNS = [
-  { key: "nombre", label: "Nombre", always: true },
-  { key: "edad", label: "Edad" },
+  { key: "nombre", label: "Nombre Asociada", always: true },
   { key: "telefono", label: "Teléfono" },
-  { key: "tipoPersona", label: "Estado Civil" },
-  { key: "sector", label: "Sector" },
-  { key: "areaHuerta", label: "Área Huerta" },
-  { key: "productos", label: "Productos" },
-  { key: "numPersonas", label: "Núm. Personas" },
-  { key: "fechaSiembra", label: "Fecha Siembra" },
-  { key: "fechaUltimaVisita", label: "Última Visita" },
-  { key: "numVisitas", label: "Visitas" },
-  { key: "menoresHogar", label: "Menores Hogar" },
-  { key: "observaciones", label: "Observaciones" },
+  { key: "sector", label: "Sector / Vereda" },
+  { key: "edad", label: "Edad" },
+  { key: "tipoPersona", label: "Estado Civil / Tipo" },
+  { key: "numPersonas", label: "Total Personas Hogar" },
+  { key: "menoresHogar", label: "Menores de Edad" },
+  { key: "areaHuerta", label: "Área Huerta (m²)" },
+  { key: "productos", label: "Productos Cultivados" },
+  { key: "fechaSiembra", label: "Fecha de Siembra" },
+  { key: "fechaUltimaVisita", label: "Fecha Última Visita" },
+  { key: "numVisitas", label: "Total Visitas Registradas" },
   { key: "lat", label: "Latitud" },
   { key: "lng", label: "Longitud" },
-  { key: "historial_visitas", label: "Historial Visitas" },
+  { key: "observaciones", label: "Observaciones" },
 ];
 
 const FORMATS = [
@@ -69,7 +68,8 @@ function ExportadorAsociadas() {
           const misVisitas = visitas.filter((v) => (v.asociadaId || v.asociada_id) === a.id).map(v => v.fecha).sort();
           row[c.label] = misVisitas.length > 0 ? misVisitas.join(", ") : "";
         } else if (c.key === "numVisitas") {
-          row[c.label] = visitas.filter((v) => (v.asociadaId || v.asociada_id) === a.id).length;
+          const reales = visitas.filter((v) => (v.asociadaId || v.asociada_id) === a.id).length;
+          row[c.label] = reales;
         } else {
           row[c.label] = a[c.key] ?? "";
         }

@@ -64,8 +64,9 @@ export function AsociadasProvider({ children }) {
       console.log("Conectado en tiempo real al backend (Asociadas)");
     });
 
-    socket.on("asociada-inserted", (data) => {
-      const mapped = toFrontendAsociada(data);
+    socket.on("custom-insert", (payload) => {
+      if (payload?.table !== "asociadas" || !payload.new) return;
+      const mapped = toFrontendAsociada(payload.new);
       setAsociadas((prev) => {
         const idx = prev.findIndex((a) => a.id === mapped.id);
         if (idx >= 0) {
@@ -77,13 +78,15 @@ export function AsociadasProvider({ children }) {
       });
     });
 
-    socket.on("asociada-updated", (data) => {
-      const mapped = toFrontendAsociada(data);
+    socket.on("custom-update", (payload) => {
+      if (payload?.table !== "asociadas" || !payload.new) return;
+      const mapped = toFrontendAsociada(payload.new);
       setAsociadas((prev) => prev.map(a => a.id === mapped.id ? mapped : a));
     });
 
-    socket.on("asociada-deleted", (data) => {
-      setAsociadas((prev) => prev.filter((a) => a.id !== data.id));
+    socket.on("custom-delete", (payload) => {
+      if (payload?.table !== "asociadas" || !payload.old?.id) return;
+      setAsociadas((prev) => prev.filter((a) => a.id !== payload.old.id));
     });
 
     return () => {

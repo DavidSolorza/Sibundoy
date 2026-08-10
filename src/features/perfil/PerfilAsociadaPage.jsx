@@ -201,7 +201,7 @@ function PerfilAsociadaPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center items-center text-center group hover:border-blue-200 transition-colors">
               <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"><ClipboardList className="h-6 w-6" /></div>
-              <p className="text-3xl font-black text-slate-800 tracking-tight">{visitas.length}</p>
+              <p className="text-3xl font-black text-slate-800 tracking-tight">{Math.max(visitas.length, asociada.numVisitas || 0)}</p>
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mt-1">Total Visitas</p>
             </div>
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-center items-center text-center group hover:border-emerald-200 transition-colors">
