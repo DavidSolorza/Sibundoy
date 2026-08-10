@@ -23,6 +23,7 @@
  */
 
 const API_URL = import.meta.env.VITE_API_URL;
+const API_TOKEN = import.meta.env.VITE_API_TOKEN || "core_backend_secret_key_2026";
 
 if (!API_URL) {
   console.error("Falta la variable de entorno VITE_API_URL. Ejemplo: https://dashboard.servidor.blog/api");
@@ -37,6 +38,7 @@ export async function request(endpoint, options = {}) {
     ...options,
     headers: {
       "Content-Type": "application/json",
+      "Authorization": `Bearer ${API_TOKEN}`,
       ...options.headers,
     },
   };
@@ -194,6 +196,9 @@ export const api = {
 
     const res = await fetch(`${API_URL}/upload`, {
       method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_TOKEN}`,
+      },
       body: formData,
     });
 
