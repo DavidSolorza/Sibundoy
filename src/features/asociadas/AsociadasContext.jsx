@@ -14,12 +14,14 @@ export function AsociadasProvider({ children }) {
   const [lastUpdated, setLastUpdated] = useState(null);
   const refreshing = useRef(false);
 
+  const socketConnectedRef = useRef(false);
+
   useEffect(() => {
     api.getSectores()
       .then((res) => {
         const map = {};
-        const items = Array.isArray(res) ? res : (res.data || []);
-        items.forEach((s) => { map[s.nombre] = s.id; });
+        const items = Array.isArray(res) ? res : (res?.data || []);
+        items.forEach((s) => { if (s?.nombre && s?.id) map[s.nombre] = s.id; });
         setSectorMap(map);
       })
       .catch((err) => console.error("Error cargando sectores:", err.message));
@@ -28,8 +30,8 @@ export function AsociadasProvider({ children }) {
   const fetchAsociadas = useCallback(async () => {
     try {
       const res = await api.getAsociadas();
-      const items = Array.isArray(res) ? res : (res.data || []);
-      return items.map(toFrontendAsociada);
+      const items = Array.isArray(res) ? res : (res?.data || []);
+      return items.map(toFrontendAsociada).filter(Boolean);
     } catch (error) {
       console.error("Error cargando asociadas:", error.message);
       return null;
@@ -46,8 +48,10 @@ export function AsociadasProvider({ children }) {
     });
   }, [fetchAsociadas]);
 
+  // Polling como fallback solo si los WebSockets están desconectados
   useEffect(() => {
     const id = setInterval(async () => {
+      if (socketConnectedRef.current) return; // Omitir polling si hay socket activo
       const mapped = await fetchAsociadas();
       if (mapped) setAsociadas(mapped);
     }, 15000);
@@ -61,12 +65,19 @@ export function AsociadasProvider({ children }) {
     });
 
     socket.on("connect", () => {
+      socketConnectedRef.current = true;
       console.log("Conectado en tiempo real al backend (Asociadas)");
+    });
+
+    socket.on("disconnect", () => {
+      socketConnectedRef.current = false;
+      console.warn("Desconectado de tiempo real, activando fallback de polling (Asociadas)");
     });
 
     socket.on("custom-insert", (payload) => {
       if (payload?.table !== "asociadas" || !payload.new) return;
       const mapped = toFrontendAsociada(payload.new);
+      if (!mapped) return;
       setAsociadas((prev) => {
         const idx = prev.findIndex((a) => a.id === mapped.id);
         if (idx >= 0) {
@@ -81,6 +92,7 @@ export function AsociadasProvider({ children }) {
     socket.on("custom-update", (payload) => {
       if (payload?.table !== "asociadas" || !payload.new) return;
       const mapped = toFrontendAsociada(payload.new);
+      if (!mapped) return;
       setAsociadas((prev) => prev.map(a => a.id === mapped.id ? mapped : a));
     });
 
@@ -90,6 +102,7 @@ export function AsociadasProvider({ children }) {
     });
 
     return () => {
+      socketConnectedRef.current = false;
       socket.disconnect();
     };
   }, []);
@@ -97,12 +110,12 @@ export function AsociadasProvider({ children }) {
   const addAsociada = useCallback(async (data) => {
     let sectorId = sectorMap[data.sector];
     if (!sectorId) {
-      // Si el sector no existe, dejamos que el backend lo cree o lo ignoramos
-      // O podemos intentar crearlo
       try {
         const sectorRes = await api.createSector({ nombre: data.sector });
-        sectorId = (sectorRes.data || sectorRes).id;
-        setSectorMap(prev => ({ ...prev, [data.sector]: sectorId }));
+        if (sectorRes?.id) {
+          sectorId = sectorRes.id;
+          setSectorMap(prev => ({ ...prev, [data.sector]: sectorId }));
+        }
       } catch (err) {
         console.error("Error al crear sector:", err);
       }
@@ -110,7 +123,10 @@ export function AsociadasProvider({ children }) {
 
     const backendData = toBackendAsociada({ ...data, sectorId });
     const res = await api.createAsociada(backendData);
-    const mapped = toFrontendAsociada(res.data || res);
+    const mapped = toFrontendAsociada(res);
+    if (!mapped) {
+      throw new Error("No se pudo procesar la asociada creada");
+    }
     setAsociadas((prev) => [...prev, mapped]);
     return mapped;
   }, [sectorMap]);

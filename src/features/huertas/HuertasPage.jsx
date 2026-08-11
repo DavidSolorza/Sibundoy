@@ -667,7 +667,7 @@ function HuertasPage() {
         coords={{ lat: 0, lng: 0 }} initialData={editingAsociada} />
       
       <FormularioAsociada key="create" open={creatingNew} onClose={handleFormClose}
-        onSave={async (data) => { try { await addAsociada(data); setCreatingNew(false); setCreatingCoords(null); showToast("Asociada Creada Correctamente"); } catch { showToast("Error Al Crear"); } }}
+        onSave={async (data) => { try { await addAsociada(data); setCreatingNew(false); setCreatingCoords(null); showToast("Asociada Creada Correctamente"); } catch (err) { showToast(err.message || "Error Al Crear"); } }}
         coords={creatingCoords || DEFAULT_COORDS} />
 
       <BuscadorSpotlight open={spotlightOpen} onClose={() => setSpotlightOpen(false)} onSelectAsociada={handleSpotlightSelect} />

@@ -11,13 +11,13 @@ export function VisitasProvider({ children }) {
   const [visitas, setVisitas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const refreshing = useRef(false);
+  const socketConnectedRef = useRef(false);
 
   const fetchVisitas = useCallback(async () => {
     try {
       const res = await api.getVisitas();
-      const items = Array.isArray(res) ? res : (res.data || []);
-      return items.map(toFrontendVisita);
+      const items = Array.isArray(res) ? res : (res?.data || []);
+      return items.map(toFrontendVisita).filter(Boolean);
     } catch (error) {
       console.error("Error cargando visitas:", error.message);
       return null;
@@ -48,8 +48,10 @@ export function VisitasProvider({ children }) {
     });
   }, [fetchVisitas]);
 
+  // Polling como fallback solo si los WebSockets están desconectados
   useEffect(() => {
     const id = setInterval(async () => {
+      if (socketConnectedRef.current) return; // Omitir polling si hay socket activo
       const mapped = await fetchVisitas();
       if (mapped) setVisitas(mapped);
     }, 15000);
@@ -62,12 +64,19 @@ export function VisitasProvider({ children }) {
     });
 
     socket.on("connect", () => {
+      socketConnectedRef.current = true;
       console.log("Conectado en tiempo real al backend (Visitas)");
+    });
+
+    socket.on("disconnect", () => {
+      socketConnectedRef.current = false;
+      console.warn("Desconectado de tiempo real, activando fallback de polling (Visitas)");
     });
 
     socket.on("custom-insert", (payload) => {
       if (payload?.table !== "visitas" || !payload.new) return;
       const mapped = toFrontendVisita(payload.new);
+      if (!mapped) return;
       setVisitas((prev) => {
         const idx = prev.findIndex((v) => v.id === mapped.id);
         if (idx >= 0) {
@@ -82,6 +91,7 @@ export function VisitasProvider({ children }) {
     socket.on("custom-update", (payload) => {
       if (payload?.table !== "visitas" || !payload.new) return;
       const mapped = toFrontendVisita(payload.new);
+      if (!mapped) return;
       setVisitas((prev) => prev.map((v) => (v.id === mapped.id ? mapped : v)));
     });
 
@@ -91,6 +101,7 @@ export function VisitasProvider({ children }) {
     });
 
     return () => {
+      socketConnectedRef.current = false;
       socket.disconnect();
     };
   }, []);
@@ -98,8 +109,11 @@ export function VisitasProvider({ children }) {
   const addVisita = useCallback(async (visita) => {
     const backendData = toBackendVisita(visita);
     const res = await api.createVisita(backendData);
-    // api.js already unwraps { data: [...] } -> firstOrNull -> object
-    const mapped = toFrontendVisita(Array.isArray(res) ? res[0] : res);
+    const rawObj = Array.isArray(res) && res.length > 0 ? res[0] : res;
+    const mapped = toFrontendVisita(rawObj);
+    if (!mapped) {
+      throw new Error("No se pudo procesar la visita creada");
+    }
     setVisitas((prev) => [mapped, ...prev]);
     return mapped;
   }, []);

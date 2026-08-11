@@ -211,13 +211,21 @@ function MapaAsociadas({ filteredAsociadas, initialRouteDest }) {
   }, [isViewOnly]);
 
   const handleSave = useCallback(async (asociada) => {
-    await addAsociada(asociada);
-    showToast("Asociada Agregada Correctamente");
+    try {
+      await addAsociada(asociada);
+      showToast("Asociada Agregada Correctamente");
+    } catch (err) {
+      showToast(err.message || "Error al agregar asociada");
+    }
   }, [addAsociada, showToast]);
 
   const handleUpdate = useCallback(async (asociada) => {
-    await updateAsociada(asociada.id, asociada);
-    showToast("Asociada Actualizada Correctamente");
+    try {
+      await updateAsociada(asociada.id, asociada);
+      showToast("Asociada Actualizada Correctamente");
+    } catch (err) {
+      showToast(err.message || "Error al actualizar asociada");
+    }
   }, [updateAsociada, showToast]);
 
   useEffect(() => {

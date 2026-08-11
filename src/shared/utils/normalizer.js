@@ -8,9 +8,14 @@ export function toFrontendAsociada(row) {
   if (!row) return null;
 
   // Manejar fotos (array o string JSON)
-  const baseFotos = Array.isArray(row.fotos)
-    ? row.fotos
-    : JSON.parse(row.fotos || "[]");
+  let baseFotos = [];
+  try {
+    baseFotos = Array.isArray(row.fotos)
+      ? row.fotos
+      : JSON.parse(row.fotos || "[]");
+  } catch {
+    baseFotos = [];
+  }
 
   // Extraer el nombre del sector
   let sectorNombre = "";
@@ -66,8 +71,8 @@ export function toBackendAsociada(data) {
     num_visitas: data.numVisitas || 0,
     tipo_persona: data.tipoPersona || null,
     observaciones: data.observaciones || null,
-    lat: data.lat || null,
-    lng: data.lng || null,
+    lat: data.lat ?? null,
+    lng: data.lng ?? null,
     url_foto: data.urlFoto || null,
     fotos: data.fotos || [],
   };

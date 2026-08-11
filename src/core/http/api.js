@@ -23,10 +23,19 @@
  */
 
 const API_URL = import.meta.env.VITE_API_URL;
-const API_TOKEN = import.meta.env.VITE_API_TOKEN || "core_backend_secret_key_2026";
+const API_TOKEN = import.meta.env.VITE_API_TOKEN || "";
 
 if (!API_URL) {
   console.error("Falta la variable de entorno VITE_API_URL. Ejemplo: https://dashboard.servidor.blog/api");
+}
+
+export class ApiError extends Error {
+  constructor(message, status, payload = null) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.payload = payload;
+  }
 }
 
 /**
@@ -51,22 +60,24 @@ export async function request(endpoint, options = {}) {
     if (response.status === 204) return null;
 
     if (!response.ok) {
-      if (response.status === 404) {
-        console.warn(`[404] El recurso en ${url} no existe.`);
-        return null;
-      } else if (response.status === 400) {
-        const errText = await response.text();
-        console.warn(`[400] Los datos enviados a ${url} no son válidos. Server says: ${errText}`);
-        return null;
-      } else if (response.status === 502 || response.status === 503) {
-        console.warn(`[${response.status}] El servidor backend está temporalmente fuera de línea.`);
-        return null;
-      } else if (response.status === 429) {
-        throw new Error("Demasiadas peticiones (Rate Limit Exceeded). Intente nuevamente.");
-      }
       const text = await response.text();
-      console.warn(`Error ${response.status} en ${url}: ${text}`);
-      return null;
+      let parsed = null;
+      try { parsed = JSON.parse(text); } catch {}
+      
+      let errorMsg = parsed?.error || parsed?.message || text || "Error en la petición";
+      
+      if (response.status === 404) {
+        errorMsg = `[404] El recurso en ${endpoint} no existe.`;
+      } else if (response.status === 400) {
+        errorMsg = `[400] Datos inválidos: ${errorMsg}`;
+      } else if (response.status === 502 || response.status === 503) {
+        errorMsg = `[${response.status}] El servidor backend está temporalmente fuera de línea.`;
+      } else if (response.status === 429) {
+        errorMsg = "Demasiadas peticiones (Rate Limit Exceeded). Intente nuevamente.";
+      }
+      
+      console.warn(`Error ${response.status} en ${url}:`, errorMsg);
+      throw new ApiError(errorMsg, response.status, parsed);
     }
 
     const text = await response.text();
@@ -86,8 +97,11 @@ export async function request(endpoint, options = {}) {
     return parsed;
 
   } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
     console.warn(`Error de red o CORS al conectar con ${endpoint}:`, error.message);
-    return null;
+    throw new ApiError(`Error de conexión: ${error.message}`, 0);
   }
 }
 
@@ -175,14 +189,19 @@ export const api = {
   // El servidor no tiene ruta /importar, así que hacemos los
   // inserts uno a uno usando createAsociada
   // =========================================================
-  importarMasivo: async (listaAsociadas) => {
+  importarMasivo: async (listaAsociadas, batchSize = 5) => {
     const results = [];
-    for (const asociada of listaAsociadas) {
-      const res = await request("/asociadas", {
-        method: "POST",
-        body: JSON.stringify(asociada),
-      });
-      results.push(firstOrNull(res));
+    for (let i = 0; i < listaAsociadas.length; i += batchSize) {
+      const batch = listaAsociadas.slice(i, i + batchSize);
+      const batchResults = await Promise.all(
+        batch.map((asociada) =>
+          request("/asociadas", {
+            method: "POST",
+            body: JSON.stringify(asociada),
+          }).catch(() => null)
+        )
+      );
+      batchResults.forEach((res) => results.push(firstOrNull(res)));
     }
     return results;
   },
@@ -210,7 +229,8 @@ export const api = {
     // Convertir ruta relativa a absoluta
     if (parsed.data && parsed.data.publicUrl) {
       if (parsed.data.publicUrl.startsWith("/")) {
-        parsed.data.publicUrl = `https://dashboard.servidor.blog${parsed.data.publicUrl}`;
+        const baseUrl = API_URL ? API_URL.replace(/\/api$/, '') : "";
+        parsed.data.publicUrl = `${baseUrl}${parsed.data.publicUrl}`;
       }
     }
     

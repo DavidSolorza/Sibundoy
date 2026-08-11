@@ -67,10 +67,26 @@ export default function GaleriaFotosModal({ asociada, open, onClose }) {
 
   const handleMouseUp = () => setIsDragging(false);
 
+  const MAX_SIZE_MB = 5;
+  const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+
   const handleUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    
+
+    for (const file of files) {
+      if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
+        alert(`El archivo "${file.name}" no es un formato de imagen permitido (JPG, PNG, WEBP, GIF).`);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        alert(`El archivo "${file.name}" supera el tamaño máximo permitido de 5MB.`);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+    }
+
     setIsUploading(true);
     try {
       const newUrls = await Promise.all(

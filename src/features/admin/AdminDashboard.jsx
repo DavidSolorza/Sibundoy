@@ -149,7 +149,7 @@ function AdminDashboard() {
 
   useEffect(() => {
     cargarDashboard();
-  }, [cargarDashboard, asociadas, visitas]);
+  }, [cargarDashboard]);
 
   const realizadas = visitas.filter((v) => v.realizada);
   const pendientes = visitas.filter((v) => !v.realizada);
